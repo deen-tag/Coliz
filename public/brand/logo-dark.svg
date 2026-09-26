@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 560">
+  <defs>
+    <linearGradient id="coliz-badge-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4FA8FF"/><stop offset="100%" stop-color="#0B57D0"/></linearGradient>
+    <linearGradient id="coliz-box-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E7F1FF"/><stop offset="100%" stop-color="#BBD8FF"/></linearGradient>
+    <linearGradient id="coliz-box-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#BBD8FF"/><stop offset="100%" stop-color="#8FB8F2"/></linearGradient>
+    
+  </defs>
+  <rect x="0" y="0" width="440" height="560" rx="32" fill="#0A1930"/>
+  <g transform="translate(50,40) scale(0.68)">
+      <rect x="0" y="0" width="512" height="512" rx="114" fill="url(#coliz-badge-gradient)"/>
+      <ellipse cx="378" cy="318" rx="62" ry="13" fill="#000000" opacity="0.3"/>
+      <path d="M 355.03 330.63 A 124 124 0 1 1 355.03 181.37" fill="none" stroke="#FFFFFF" stroke-width="70" stroke-linecap="round"/>
+      <g stroke="#0B57D0" stroke-width="2.5" stroke-linejoin="round">
+        <polygon points="326.00,227.00 378.00,253.00 378.00,305.00 326.00,279.00" fill="url(#coliz-box-left)"/>
+        <polygon points="378.00,253.00 430.00,227.00 430.00,279.00 378.00,305.00" fill="url(#coliz-box-right)"/>
+        <polygon points="378.00,201.00 430.00,227.00 378.00,253.00 326.00,227.00" fill="#FFFFFF"/>
+      </g>
+      <line x1="378" y1="201" x2="378" y2="253" stroke="#0B57D0" stroke-width="2" opacity="0.5"/>
+    </g>
+  <text x="220" y="470" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+        font-weight="800" font-size="72" letter-spacing="1" fill="#FFFFFF">COLIZ</text>
+</svg>

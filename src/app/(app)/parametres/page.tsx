@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { Card, PrimaryButton, SecondaryButton } from "@/components/ui";
 import { ScreenHeader } from "@/components/screen-header";
-import { BottomNav } from "@/components/bottom-nav";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -45,7 +44,7 @@ export default function ParametresPage() {
   if (!form) return null;
 
   return (
-    <main className="min-h-screen bg-surface-alt px-4 py-6 pb-24 max-w-md mx-auto">
+    <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
       <ScreenHeader title="Paramètres" right={saved && <span className="text-xs text-success">Enregistré</span>} />
 
       <h2 className="text-sm font-medium text-ink/60 mb-3">Profil</h2>
@@ -113,7 +112,6 @@ export default function ParametresPage() {
         Supprimer mon compte
       </button>
 
-      <BottomNav />
     </main>
   );
 }

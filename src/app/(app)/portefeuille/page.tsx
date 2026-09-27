@@ -2,7 +2,6 @@
 
 import useSWR from "swr";
 import { Card, PrimaryButton } from "@/components/ui";
-import { BottomNav } from "@/components/bottom-nav";
 import { ScreenHeader } from "@/components/screen-header";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -20,7 +19,7 @@ export default function PortefeuillePage() {
   const needsOnboarding = !connectStatus?.connected || !connectStatus?.onboardingCompleted;
 
   return (
-    <main className="min-h-screen bg-surface-alt px-4 py-6 pb-24 max-w-md mx-auto">
+    <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
       <ScreenHeader title="Portefeuille" />
 
       <Card className="mb-4 bg-primary text-white">
@@ -58,7 +57,6 @@ export default function PortefeuillePage() {
         )}
       </div>
 
-      <BottomNav />
     </main>
   );
 }

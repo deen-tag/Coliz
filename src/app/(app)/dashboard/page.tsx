@@ -3,7 +3,6 @@
 import useSWR from "swr";
 import Link from "next/link";
 import { Card, PrimaryButton, StatusBadge } from "@/components/ui";
-import { BottomNav } from "@/components/bottom-nav";
 import { Logo } from "@/components/logo";
 import { BellIcon, SettingsIcon } from "@/components/icons";
 
@@ -13,7 +12,7 @@ export default function DashboardPage() {
   const { data } = useSWR("/api/dashboard", fetcher);
 
   return (
-    <main className="min-h-screen bg-surface-alt px-4 py-6 pb-24 max-w-md mx-auto">
+    <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6">
         <Logo variant="symbol" size={32} />
         <div className="flex items-center gap-4">
@@ -70,7 +69,6 @@ export default function DashboardPage() {
         </Link>
       </Section>
 
-      <BottomNav />
     </main>
   );
 }

@@ -8,14 +8,17 @@ export async function GET(req: Request) {
   const from = searchParams.get("from")?.trim();
   const to = searchParams.get("to")?.trim();
   const date = searchParams.get("date");
+  // Période flexible autour de la date (brief §5) — ± jours, 3 par défaut,
+  // réglable depuis le sélecteur "Période flexible" de la homepage.
+  const flexDays = Math.max(0, Math.min(30, Number(searchParams.get("flex") ?? 3) || 0));
 
   const where: any = { status: { in: ["PUBLISHED", "PARTIALLY_BOOKED"] } };
   if (from) where.originLabel = { contains: from, mode: "insensitive" };
   if (to) where.destinationLabel = { contains: to, mode: "insensitive" };
   if (date) {
     const d = new Date(date);
-    const from_ = new Date(d); from_.setDate(from_.getDate() - 3);
-    const to_ = new Date(d); to_.setDate(to_.getDate() + 3);
+    const from_ = new Date(d); from_.setDate(from_.getDate() - flexDays);
+    const to_ = new Date(d); to_.setDate(to_.getDate() + flexDays);
     where.departureAt = { gte: from_, lte: to_ };
   }
 
@@ -43,6 +46,7 @@ export async function GET(req: Request) {
       destinationLng: t.destinationLng,
       mode: t.mode,
       departureAt: t.departureAt,
+      arrivalAt: t.arrivalAt,
       contributionAmount: t.contributionAmount,
       remainingParcels: t.remainingParcels,
     }))

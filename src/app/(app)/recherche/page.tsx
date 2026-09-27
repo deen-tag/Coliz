@@ -1,14 +1,14 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import useSWR from "swr";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Card, VerifiedBadge } from "@/components/ui";
-import { BottomNav } from "@/components/bottom-nav";
-import { StarIcon } from "@/components/icons";
+import { Card, VerifiedBadge, TransportModeBadge, SectionHeader, EmptyState, PrimaryButton } from "@/components/ui";
 import { ResultsMap } from "@/components/results-map";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+const DATE_FMT: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
 
 export default function RecherchePage() {
   return (
@@ -21,20 +21,23 @@ export default function RecherchePage() {
 function RechercheContent() {
   const params = useSearchParams();
   const router = useRouter();
+  const [showMap, setShowMap] = useState(false);
+
   const parcelId = params.get("parcelId");
   const from = params.get("from");
   const to = params.get("to");
   const date = params.get("date");
+  const flex = params.get("flex") ?? "3";
 
   const endpoint = parcelId
     ? `/api/trips/search?parcelId=${parcelId}`
     : `/api/trips/search-public?${new URLSearchParams({
         ...(from ? { from } : {}),
         ...(to ? { to } : {}),
-        ...(date ? { date } : {}),
+        ...(date ? { date, flex } : {}),
       })}`;
 
-  const { data: results } = useSWR(endpoint, fetcher);
+  const { data: results, isLoading } = useSWR(endpoint, fetcher);
 
   async function book(tripId: string) {
     if (!parcelId) {
@@ -53,66 +56,108 @@ function RechercheContent() {
   }
 
   const routeLabel = from && to ? `${from} → ${to}` : null;
+  const periodLabel = date
+    ? Number(flex) > 0
+      ? `Départ entre le ${addDays(date, -Number(flex))} et le ${addDays(date, Number(flex))}`
+      : `Départ le ${addDays(date, 0)}`
+    : null;
 
   return (
-    <main className="min-h-screen bg-surface-alt px-4 py-6 pb-24 max-w-md mx-auto">
-      <h1 className="text-xl font-semibold text-ink mb-1">{routeLabel ?? "Voyageurs disponibles"}</h1>
-      <p className="text-sm text-ink/60 mb-6">
-        {results ? `${results.length} trajet${results.length > 1 ? "s" : ""} disponible${results.length > 1 ? "s" : ""}` : "Recherche en cours..."}
-      </p>
-
-      {results?.length === 0 && (
-        <p className="text-sm text-ink/40 text-center py-10">
-          Aucun trajet compatible pour l'instant. Publiez votre colis pour être notifié dès qu'un voyageur correspondra.
-        </p>
-      )}
+    <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
+      <SectionHeader
+        title={routeLabel ?? "Voyageurs disponibles"}
+        subtitle={
+          periodLabel ??
+          (isLoading
+            ? "Recherche en cours..."
+            : `Plusieurs possibilités pour votre colis${results ? ` · ${results.length} résultat${results.length > 1 ? "s" : ""}` : ""}`)
+        }
+      />
 
       {results?.length > 0 && (
-        <ResultsMap
-          points={results.flatMap((r: any) => [
-            { lat: r.originLat, lng: r.originLng },
-            { lat: r.destinationLat, lng: r.destinationLng },
-          ])}
+        <div className="mb-4">
+          <button
+            onClick={() => setShowMap((v) => !v)}
+            className="text-sm font-medium text-primary"
+          >
+            {showMap ? "Masquer la carte" : "Voir sur la carte"}
+          </button>
+          {showMap && (
+            <div className="mt-3">
+              <ResultsMap
+                points={results.flatMap((r: any) => [
+                  { lat: r.originLat, lng: r.originLng },
+                  { lat: r.destinationLat, lng: r.destinationLng },
+                ])}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {results?.length === 0 && (
+        <EmptyState
+          title="Aucun trajet trouvé pour le moment."
+          description="Publiez votre colis pour être notifié dès qu'un voyageur correspond à votre trajet — Coliz vous propose automatiquement les nouvelles opportunités."
+          action={
+            <PrimaryButton className="w-auto px-6" onClick={() => router.push("/colis/nouveau")}>
+              Publier mon colis
+            </PrimaryButton>
+          }
         />
       )}
 
       <div className="space-y-3">
         {results?.map((r: any) => (
           <Card key={r.tripId}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-full bg-primary-light flex items-center justify-center text-primary font-medium text-sm">
+            {/* Hiérarchie : trajet → prix → timing → transport → personne (DA §10) */}
+            {!routeLabel && (
+              <p className="text-sm font-medium text-ink mb-2">
+                {r.originLabel} → {r.destinationLabel}
+              </p>
+            )}
+
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-2xl font-semibold text-ink">{Number(r.contributionAmount).toFixed(2)} €</p>
+                <p className="text-xs text-ink-muted mt-0.5">
+                  {new Date(r.departureAt).toLocaleDateString("fr-FR", DATE_FMT)}
+                  {r.arrivalAt && ` · arrivée estimée ${new Date(r.arrivalAt).toLocaleDateString("fr-FR", { ...DATE_FMT, hour: "2-digit", minute: "2-digit" })}`}
+                </p>
+              </div>
+              <TransportModeBadge mode={r.mode} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary font-medium text-xs shrink-0">
                   {r.traveler.firstName?.[0]}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-ink">{r.traveler.firstName}</p>
-                  <p className="text-xs text-ink/50 flex items-center gap-1">
-                    <StarIcon size={13} className="text-primary" /> {r.traveler.ratingAverage.toFixed(1)} ({r.traveler.ratingCount})
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink truncate">{r.traveler.firstName}</p>
+                  <p className="text-xs text-ink-muted">
+                    {r.remainingParcels} place{r.remainingParcels > 1 ? "s" : ""} restante{r.remainingParcels > 1 ? "s" : ""}
                   </p>
                 </div>
               </div>
               <VerifiedBadge identity={r.traveler.identityVerified} email={true} />
             </div>
 
-            {!routeLabel && (
-              <p className="text-sm text-ink/70 mb-1">{r.originLabel} → {r.destinationLabel}</p>
-            )}
-            <p className="text-xs text-ink/50 mb-3">
-              {new Date(r.departureAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-              {" · "}{r.remainingParcels} place(s) restante(s)
-            </p>
-
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold text-ink">{Number(r.contributionAmount).toFixed(2)} €</span>
-              <button onClick={() => book(r.tripId)} className="rounded-control bg-primary text-white text-sm font-medium px-5 py-2.5">
-                Réserver
-              </button>
-            </div>
+            <button
+              onClick={() => book(r.tripId)}
+              className="w-full mt-4 rounded-control bg-primary text-white text-sm font-medium py-2.5"
+            >
+              {parcelId ? "Réserver" : "Voir le trajet"}
+            </button>
           </Card>
         ))}
       </div>
-
-      <BottomNav />
     </main>
   );
+}
+
+function addDays(dateStr: string, days: number) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toLocaleDateString("fr-FR", DATE_FMT);
 }

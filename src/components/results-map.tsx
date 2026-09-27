@@ -24,21 +24,36 @@ export function ResultsMap({ points }: { points: Point[] }) {
           loadStyle("https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css"),
         ]);
       }
+      if (!(window as any).MapboxLanguage) {
+        try {
+          await loadScript("https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-language/v1.0.0/mapbox-gl-language.js");
+        } catch {
+          // Le plugin de langue est un bonus (traduction des noms de pays/villes) :
+          // s'il ne charge pas, la carte doit s'afficher quand même.
+        }
+      }
       if (cancelled) return;
       const mapboxgl = (window as any).mapboxgl;
       mapboxgl.accessToken = token;
 
       map = new mapboxgl.Map({
         container: containerRef.current,
-        style: "mapbox://styles/mapbox/light-v11",
+        style: "mapbox://styles/mapbox/streets-v12",
         center: [points[0].lng, points[0].lat],
         zoom: 4,
         interactive: true,
       });
 
+      // Affiche les noms de pays/villes dans la langue du navigateur de chaque
+      // visiteur (détection automatique, pas de langue figée en dur).
+      const MapboxLanguage = (window as any).MapboxLanguage;
+      if (MapboxLanguage) {
+        map.addControl(new MapboxLanguage());
+      }
+
       const bounds = new mapboxgl.LngLatBounds();
       points.forEach((p) => {
-        new mapboxgl.Marker({ color: "#0B57D0" }).setLngLat([p.lng, p.lat]).addTo(map);
+        new mapboxgl.Marker({ color: "#2457FF" }).setLngLat([p.lng, p.lat]).addTo(map);
         bounds.extend([p.lng, p.lat]);
       });
       if (points.length > 1) map.fitBounds(bounds, { padding: 40, maxZoom: 8 });

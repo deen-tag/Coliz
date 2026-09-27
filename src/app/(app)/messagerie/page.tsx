@@ -3,7 +3,6 @@
 import useSWR from "swr";
 import Link from "next/link";
 import { Card } from "@/components/ui";
-import { BottomNav } from "@/components/bottom-nav";
 import { ScreenHeader } from "@/components/screen-header";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -12,7 +11,7 @@ export default function MessagerieIndexPage() {
   const { data: conversations } = useSWR("/api/messages/conversations", fetcher);
 
   return (
-    <main className="min-h-screen bg-surface-alt px-4 py-6 pb-24 max-w-md mx-auto">
+    <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
       <ScreenHeader title="Messages" />
 
       <div className="space-y-3">
@@ -35,7 +34,6 @@ export default function MessagerieIndexPage() {
         )}
       </div>
 
-      <BottomNav />
     </main>
   );
 }

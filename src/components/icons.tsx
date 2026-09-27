@@ -195,6 +195,79 @@ export function SettingsIcon(props: IconProps) {
   );
 }
 
+export function TrainIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="5" y="3.5" width="14" height="13" rx="4" />
+      <path d="M5 12h14" />
+      <circle cx="8.5" cy="14.5" r=".4" fill="currentColor" />
+      <circle cx="15.5" cy="14.5" r=".4" fill="currentColor" />
+      <path d="m8 16.5-2.5 4M16 16.5l2.5 4" />
+    </svg>
+  );
+}
+
+export function BusIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3.5" y="5" width="17" height="11" rx="2.5" />
+      <path d="M3.5 10.5h17" />
+      <path d="M7 19v-2M17 19v-2" />
+      <circle cx="7.5" cy="13" r=".4" fill="currentColor" />
+      <circle cx="16.5" cy="13" r=".4" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function MotorcycleIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="6" cy="17" r="3" />
+      <circle cx="18" cy="17" r="3" />
+      <path d="M9 17h6l-2-6h-4l-1.5 3M13 8h3.5l2.5 6" />
+    </svg>
+  );
+}
+
+export function BicycleIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="6" cy="17" r="3.2" />
+      <circle cx="18" cy="17" r="3.2" />
+      <path d="M6 17 10 8h5l3 9M10 8 8.5 5H6M10 8l3.5 5h4.5" />
+    </svg>
+  );
+}
+
+export function FerryIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 12h16l-2 6.5H6L4 12Z" />
+      <path d="M7 12V6h4V3h2v3h4v6" />
+      <path d="M3 20c1.2.9 2.8.9 4 0 1.2.9 2.8.9 4 0 1.2.9 2.8.9 4 0 1.2.9 2.8.9 4 0" />
+    </svg>
+  );
+}
+
+export function ActivityIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="4" y="4" width="7" height="7" rx="1.5" />
+      <rect x="13" y="4" width="7" height="7" rx="1.5" />
+      <rect x="4" y="13" width="7" height="7" rx="1.5" />
+      <rect x="13" y="13" width="7" height="7" rx="1.5" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="m9 5 7 7-7 7" />
+    </svg>
+  );
+}
+
 export function CheckBadgeIcon(props: IconProps) {
   return (
     <svg {...base(props)}>

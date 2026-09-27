@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/server/stripe/client";
 import { notifyUser } from "@/server/notifications/service";
+import { issueTransferCodes } from "@/server/security/transfer-codes";
 import type Stripe from "stripe";
 
 export const runtime = "nodejs"; // nécessaire : l'edge runtime ne peut pas lire le raw body
@@ -61,7 +62,16 @@ async function handlePaymentSucceeded(pi: Stripe.PaymentIntent) {
 
   await prisma.parcel.update({ where: { id: booking.parcelId }, data: { status: "PAID" } });
 
-  await notifyUser(booking.senderId, "payment_confirmed", "Votre paiement a bien été confirmé.");
+  // Les 2 codes (remise + réception) sont générés une seule fois ici, à la
+  // confirmation du paiement — jamais à la demande d'un utilisateur, et
+  // jamais modifiables par le voyageur (cf. src/server/security/transfer-codes.ts).
+  await issueTransferCodes(booking.id);
+
+  await notifyUser(
+    booking.senderId,
+    "payment_confirmed",
+    "Votre paiement a bien été confirmé. Vos codes de remise et de réception sont disponibles dans le suivi du colis."
+  );
   await notifyUser(booking.travelerId, "booking_accepted", "Le paiement de votre réservation a été confirmé.");
 }
 

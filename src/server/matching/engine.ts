@@ -86,3 +86,48 @@ export async function findMatchingTrips(parcel: Parcel, filters: MatchFilters = 
 
   return results;
 }
+
+// Compte les colis ouverts potentiellement compatibles avec un trajet donné —
+// utilisé par "Mes voyages" pour afficher "N opportunités compatibles"
+// (brief UI/UX §22). Volontairement simple : réutilise les mêmes critères
+// de faisabilité que findMatchingTrips (fenêtre de dates du colis, gabarit,
+// proximité géographique), sans dupliquer un moteur de recherche inverse.
+export async function countCompatibleParcels(trip: {
+  originLat: number;
+  originLng: number;
+  destinationLat: number;
+  destinationLng: number;
+  departureAt: Date;
+  capacityWeightKg: number;
+  capacityLengthCm: number;
+  capacityWidthCm: number;
+  capacityHeightCm: number;
+  remainingParcels: number;
+}) {
+  if (trip.remainingParcels < 1) return 0;
+
+  const openParcels = await prisma.parcel.findMany({
+    where: { status: { in: ["SEARCHING", "MATCHED"] } },
+  });
+
+  const PROXIMITY_KM = 150; // périmètre indicatif de prise en charge/livraison
+
+  return openParcels.filter((parcel) => {
+    const daysApart = Math.abs(
+      (trip.departureAt.getTime() - parcel.desiredDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (daysApart > parcel.dateFlexibleDays) return false;
+    if (parcel.parcelCount > trip.remainingParcels) return false;
+    if (parcel.weightKg > trip.capacityWeightKg) return false;
+    if (!fitsDimensions(parcel, trip)) return false;
+
+    const distanceOrigin = haversineKm(parcel.originLat, parcel.originLng, trip.originLat, trip.originLng);
+    const distanceDestination = haversineKm(
+      parcel.destinationLat,
+      parcel.destinationLng,
+      trip.destinationLat,
+      trip.destinationLng
+    );
+    return distanceOrigin <= PROXIMITY_KM && distanceDestination <= PROXIMITY_KM;
+  }).length;
+}

@@ -59,6 +59,9 @@ export async function POST(req: Request) {
   return NextResponse.json(parcel, { status: 201 });
 }
 
+// Inclut la réservation la plus récente (trajet + transporteur) pour que
+// /mes-colis puisse afficher trajet/transporteur/prix/prochaine étape sans
+// requête supplémentaire (brief UI/UX §21).
 export async function GET(req: Request) {
   const user = await requireUser();
   const { searchParams } = new URL(req.url);
@@ -67,7 +70,41 @@ export async function GET(req: Request) {
   const parcels = await prisma.parcel.findMany({
     where: { senderId: user.id, ...(status ? { status: status as any } : {}) },
     orderBy: { createdAt: "desc" },
+    include: {
+      bookings: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        include: {
+          trip: { select: { mode: true, departureAt: true } },
+          traveler: { select: { firstName: true, identityVerifiedAt: true } },
+        },
+      },
+    },
   });
 
-  return NextResponse.json(parcels);
+  return NextResponse.json(
+    parcels.map((p) => {
+      const booking = p.bookings[0];
+      return {
+        id: p.id,
+        status: p.status,
+        originLabel: p.originLabel,
+        destinationLabel: p.destinationLabel,
+        desiredDate: p.desiredDate,
+        dateFlexibleDays: p.dateFlexibleDays,
+        createdAt: p.createdAt,
+        booking: booking
+          ? {
+              id: booking.id,
+              status: booking.status,
+              totalAmount: booking.totalAmount,
+              mode: booking.trip.mode,
+              departureAt: booking.trip.departureAt,
+              travelerFirstName: booking.traveler.firstName,
+              travelerVerified: Boolean(booking.traveler.identityVerifiedAt),
+            }
+          : null,
+      };
+    })
+  );
 }

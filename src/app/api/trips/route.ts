@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/server/auth/session";
+import { countCompatibleParcels } from "@/server/matching/engine";
 
 const tripSchema = z
   .object({
@@ -66,5 +67,14 @@ export async function GET(req: Request) {
     orderBy: { departureAt: "asc" },
   });
 
-  return NextResponse.json(trips);
+  // "N opportunités compatibles" par trajet (brief UI/UX §22) — calculé à la
+  // volée, sans notification automatique pour l'instant (voir §4 du plan).
+  const withOpportunities = await Promise.all(
+    trips.map(async (t) => ({
+      ...t,
+      compatibleParcelsCount: await countCompatibleParcels(t),
+    }))
+  );
+
+  return NextResponse.json(withOpportunities);
 }

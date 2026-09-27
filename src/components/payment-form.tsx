@@ -34,7 +34,7 @@ export function PaymentForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="mt-4 space-y-4">
       <PaymentElement />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
       <PrimaryButton type="submit" disabled={!stripe || loading}>
         {loading ? "Traitement..." : "Payer maintenant"}
       </PrimaryButton>

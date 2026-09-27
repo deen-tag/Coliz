@@ -57,10 +57,19 @@ export async function findMatchingTrips(parcel: Parcel, filters: MatchFilters = 
       // Dimensions : on vérifie que le colis rentre dans la capacité déclarée (ordre simple, sans rotation 3D)
       const fits = fitsDimensions(parcel, trip);
 
+      // Tolérance de proximité par défaut, pondérée par le mode du trajet
+      // (un trajet en avion/train/bus/ferry suppose un point de RDV autour
+      // d'un hub, donc un rayon plus large qu'en voiture/moto/vélo) — sans
+      // quoi un trajet à l'autre bout du pays remontait dès lors que les
+      // dates et la capacité correspondaient. Un filtre explicite fourni par
+      // l'appelant reste toujours prioritaire.
+      const defaultRadiusKm = proximityRadiusKm(trip.mode);
+      const maxOrigin = filters.maxDistanceFromOriginKm ?? defaultRadiusKm;
+      const maxDestination = filters.maxDistanceFromDestinationKm ?? defaultRadiusKm;
+
       if (!fits) return null;
-      if (filters.maxDistanceFromOriginKm && distanceOriginKm > filters.maxDistanceFromOriginKm) return null;
-      if (filters.maxDistanceFromDestinationKm && distanceDestinationKm > filters.maxDistanceFromDestinationKm)
-        return null;
+      if (distanceOriginKm > maxOrigin) return null;
+      if (distanceDestinationKm > maxDestination) return null;
       if (filters.maxContribution && Number(trip.contributionAmount) > filters.maxContribution) return null;
 
       // Score : plus c'est bas, mieux c'est (distance en km + pénalité de jours d'écart)
@@ -87,30 +96,53 @@ export async function findMatchingTrips(parcel: Parcel, filters: MatchFilters = 
   return results;
 }
 
-// Compte les colis ouverts potentiellement compatibles avec un trajet donné —
-// utilisé par "Mes voyages" pour afficher "N opportunités compatibles"
-// (brief UI/UX §22). Volontairement simple : réutilise les mêmes critères
-// de faisabilité que findMatchingTrips (fenêtre de dates du colis, gabarit,
-// proximité géographique), sans dupliquer un moteur de recherche inverse.
-export async function countCompatibleParcels(trip: {
+// Rayon de tolérance origine/destination selon le mode — amélioration
+// pragmatique demandée : un trajet en avion/train/bus/ferry suppose un point
+// de rendez-vous autour d'un hub (aéroport, gare, port), donc une tolérance
+// plus large qu'un trajet en voiture/moto/vélo où le point de RDV est le
+// trajet lui-même. Pas de base de données aéroports/gares : un rayon fixe
+// par catégorie, volontairement simple (brief : "pas de moteur multimodal").
+function proximityRadiusKm(mode: TransportMode) {
+  switch (mode) {
+    case "PLANE":
+    case "TRAIN":
+    case "BUS":
+    case "FERRY":
+      return 80;
+    default: // CAR, VAN, MOTORCYCLE, BICYCLE, OTHER
+      return 25;
+  }
+}
+
+type TripLike = {
   originLat: number;
   originLng: number;
   destinationLat: number;
   destinationLng: number;
   departureAt: Date;
+  mode: TransportMode;
   capacityWeightKg: number;
   capacityLengthCm: number;
   capacityWidthCm: number;
   capacityHeightCm: number;
   remainingParcels: number;
-}) {
-  if (trip.remainingParcels < 1) return 0;
+};
+
+// Colis ouverts potentiellement compatibles avec un trajet donné — utilisé
+// par "Mes voyages" ("N opportunités compatibles", brief UI/UX §22) et par
+// la notification automatique à la publication d'un trajet. Volontairement
+// simple : réutilise les mêmes critères de faisabilité que
+// findMatchingTrips (fenêtre de dates du colis, gabarit, proximité
+// géographique pondérée par mode), sans dupliquer un moteur de recherche
+// inverse complet.
+export async function findCompatibleParcels(trip: TripLike): Promise<Parcel[]> {
+  if (trip.remainingParcels < 1) return [];
 
   const openParcels = await prisma.parcel.findMany({
     where: { status: { in: ["SEARCHING", "MATCHED"] } },
   });
 
-  const PROXIMITY_KM = 150; // périmètre indicatif de prise en charge/livraison
+  const radiusKm = proximityRadiusKm(trip.mode);
 
   return openParcels.filter((parcel) => {
     const daysApart = Math.abs(
@@ -128,6 +160,10 @@ export async function countCompatibleParcels(trip: {
       trip.destinationLat,
       trip.destinationLng
     );
-    return distanceOrigin <= PROXIMITY_KM && distanceDestination <= PROXIMITY_KM;
-  }).length;
+    return distanceOrigin <= radiusKm && distanceDestination <= radiusKm;
+  });
+}
+
+export async function countCompatibleParcels(trip: TripLike) {
+  return (await findCompatibleParcels(trip)).length;
 }

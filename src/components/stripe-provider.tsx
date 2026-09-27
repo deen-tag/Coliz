@@ -7,7 +7,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 
 export function StripeProvider({ clientSecret, children }: { clientSecret: string; children: React.ReactNode }) {
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: "stripe", variables: { colorPrimary: "#1769E0" } } }}>
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: "stripe", variables: { colorPrimary: "#2457FF" } } }}>
       {children}
     </Elements>
   );

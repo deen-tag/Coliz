@@ -18,6 +18,7 @@ const TYPE_ICON: Record<string, (p: { size?: number; className?: string }) => JS
   booking_requested: PackageIcon,
   booking_accepted: PackageIcon,
   booking_refused: PackageIcon,
+  price_proposed: CardIcon,
   payment_confirmed: CardIcon,
   parcel_picked_up: MapPinIcon,
   trip_departed: MapPinIcon,

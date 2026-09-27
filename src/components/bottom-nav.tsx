@@ -28,7 +28,7 @@ export function BottomNav() {
               href={href}
               className={clsx(
                 "flex flex-col items-center gap-1 py-2.5 text-xs",
-                active ? "text-primary font-medium" : "text-ink/50"
+                active ? "text-primary font-medium" : "text-ink-muted"
               )}
             >
               <Icon size={20} />

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
-import { Card, PrimaryButton, StatusBadge, SecondaryButton } from "@/components/ui";
+import { Card, PrimaryButton, SecondaryButton, SectionHeader } from "@/components/ui";
+import { StarIcon } from "@/components/icons";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -39,11 +41,16 @@ export default function SuiviPage() {
   const currentIndex = STEPS.findIndex((s) => s.status === booking.status);
 
   return (
-    <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
-      <h1 className="text-xl font-semibold text-ink mb-1">Suivi du colis</h1>
-      <p className="text-sm text-ink/60 mb-6">
-        {booking.parcel.originLabel} → {booking.parcel.destinationLabel}
-      </p>
+    <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-lg">
+      <SectionHeader
+        title="Suivi du colis"
+        subtitle={`${booking.parcel.originLabel} → ${booking.parcel.destinationLabel}`}
+        action={
+          <Link href={`/messagerie/${id}`} className="text-sm font-medium text-primary whitespace-nowrap">
+            Message
+          </Link>
+        }
+      />
 
       <Card className="mb-6">
         <div className="space-y-4">
@@ -51,10 +58,10 @@ export default function SuiviPage() {
             <div key={step.status} className="flex items-center gap-3">
               <div
                 className={`w-3 h-3 rounded-full ${
-                  i <= currentIndex ? "bg-primary" : "bg-black/10"
+                  i <= currentIndex ? "bg-primary" : "bg-line"
                 }`}
               />
-              <span className={`text-sm ${i <= currentIndex ? "text-ink font-medium" : "text-ink/40"}`}>
+              <span className={`text-sm ${i <= currentIndex ? "text-ink font-medium" : "text-ink-muted"}`}>
                 {step.label}
               </span>
             </div>
@@ -104,12 +111,14 @@ export default function SuiviPage() {
       )}
 
       {booking.status === "DELIVERY_FAILED" && (
-        <p className="text-sm text-red-600 text-center mb-4">
+        <p className="text-sm text-error text-center mb-4">
           Livraison non finalisée — un incident a été ouvert, le colis reste avec le voyageur.
         </p>
       )}
 
-      <SecondaryButton onClick={reportIncident}>Signaler un autre problème</SecondaryButton>
+      {booking.status === "COMPLETED" && <ReviewForm bookingId={id} />}
+
+      <SecondaryButton className="mt-3" onClick={reportIncident}>Signaler un autre problème</SecondaryButton>
     </main>
   );
 }
@@ -142,12 +151,12 @@ function CodeCard({
   return (
     <Card>
       <p className="text-sm font-medium text-ink mb-1">{title}</p>
-      <p className="text-xs text-ink/50 mb-3">{hint}</p>
+      <p className="text-xs text-ink-muted mb-3">{hint}</p>
       {data?.code ? (
         <p className="text-3xl font-semibold tracking-widest text-primary">{data.code}</p>
       ) : (
         <div>
-          <p className="text-sm text-ink/50 mb-2">Ce code n'est plus disponible (expiré ou déjà utilisé).</p>
+          <p className="text-sm text-ink-muted mb-2">Ce code n'est plus disponible (expiré ou déjà utilisé).</p>
           <SecondaryButton
             onClick={async () => {
               await fetch(`/api/bookings/${bookingId}/${purpose}-code`, { method: "POST" });
@@ -201,17 +210,74 @@ function CodeEntry({
   return (
     <Card className="mb-3">
       <p className="text-sm font-medium text-ink mb-1">{label}</p>
-      <p className="text-xs text-ink/50 mb-3">{helper}</p>
+      <p className="text-xs text-ink-muted mb-3">{helper}</p>
       <input
         value={code}
         onChange={(e) => setCode(e.target.value)}
         inputMode="numeric"
         placeholder="000000"
-        className="w-full rounded-control border border-black/10 px-4 py-3 text-lg tracking-widest text-center mb-2"
+        className="w-full rounded-control border border-line px-4 py-3 text-lg tracking-widest text-center mb-2"
       />
-      {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+      {error && <p className="text-xs text-error mb-2">{error}</p>}
       <PrimaryButton onClick={submit} disabled={loading || code.length < 4}>
         Valider
+      </PrimaryButton>
+    </Card>
+  );
+}
+
+// Formulaire d'avis — n'apparaît qu'une fois la livraison confirmée et le
+// voyageur payé (brief §16), branché sur /api/reviews déjà existant.
+function ReviewForm({ bookingId }: { bookingId: string }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setError(null);
+    const res = await fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId, rating, comment: comment || undefined }),
+    });
+    if (res.ok) {
+      setSent(true);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error?.formErrors?.[0] ?? data.error ?? "Impossible d'envoyer l'avis pour l'instant.");
+    }
+  }
+
+  if (sent) {
+    return (
+      <Card className="mb-3">
+        <p className="text-sm text-success font-medium">Merci, votre avis a bien été envoyé.</p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="mb-3">
+      <p className="text-sm font-medium text-ink mb-1">Laisser un avis</p>
+      <p className="text-xs text-ink-muted mb-3">Votre expérience aide les prochains utilisateurs à choisir en confiance.</p>
+      <div className="flex gap-1 mb-3">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} onClick={() => setRating(n)} aria-label={`${n} étoile${n > 1 ? "s" : ""}`}>
+            <StarIcon size={24} className={n <= rating ? "text-primary" : "text-line"} />
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Un commentaire (optionnel)"
+        rows={3}
+        className="w-full rounded-control border border-line px-4 py-3 text-sm mb-2"
+      />
+      {error && <p className="text-xs text-error mb-2">{error}</p>}
+      <PrimaryButton onClick={submit} disabled={rating === 0}>
+        Envoyer l'avis
       </PrimaryButton>
     </Card>
   );

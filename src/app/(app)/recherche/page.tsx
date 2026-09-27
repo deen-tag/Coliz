@@ -39,20 +39,10 @@ function RechercheContent() {
 
   const { data: results, isLoading } = useSWR(endpoint, fetcher);
 
-  async function book(tripId: string) {
-    if (!parcelId) {
-      router.push(`/colis/nouveau?tripId=${tripId}`);
-      return;
-    }
-    const res = await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ parcelId, tripId }),
-    });
-    if (res.ok) {
-      const booking = await res.json();
-      router.push(`/reservations/${booking.id}`);
-    }
+  // La réservation se termine sur la page Détail trajet, pas directement
+  // depuis la liste (brief §9 : voir le trajet avant de s'engager).
+  function viewTrip(tripId: string) {
+    router.push(parcelId ? `/trajets/${tripId}?parcelId=${parcelId}` : `/trajets/${tripId}`);
   }
 
   const routeLabel = from && to ? `${from} → ${to}` : null;
@@ -144,10 +134,10 @@ function RechercheContent() {
             </div>
 
             <button
-              onClick={() => book(r.tripId)}
+              onClick={() => viewTrip(r.tripId)}
               className="w-full mt-4 rounded-control bg-primary text-white text-sm font-medium py-2.5"
             >
-              {parcelId ? "Réserver" : "Voir le trajet"}
+              Voir le trajet
             </button>
           </Card>
         ))}

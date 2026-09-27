@@ -20,7 +20,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const booking = await prisma.booking.findUnique({ where: { id: params.id } });
   if (!booking) return NextResponse.json({ error: "Réservation introuvable" }, { status: 404 });
   if (booking.senderId !== user.id) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-  if (booking.status !== "ACCEPTED" && booking.status !== "REQUESTED") {
+  // Le paiement suppose désormais l'accord explicite du voyageur
+  // (POST /api/bookings/[id]/accept) avant de pouvoir être déclenché.
+  if (booking.status !== "ACCEPTED") {
     return NextResponse.json({ error: "Cette réservation n'est pas payable dans son état actuel" }, { status: 422 });
   }
 

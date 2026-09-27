@@ -279,9 +279,10 @@ model Booking {
   travelerId      String
   traveler        User          @relation("TravelerBookings", fields: [travelerId], references: [id])
 
-  contributionAmount Decimal    @db.Decimal(10, 2) // part du voyageur
+  contributionAmount Decimal    @db.Decimal(10, 2) // part du voyageur — recalculée si negotiatedAmount est fixé
   platformFeeAmount  Decimal    @db.Decimal(10, 2) // commission Coliz
   totalAmount        Decimal    @db.Decimal(10, 2) // payé par l'expéditeur
+  negotiatedAmount   Decimal?   @db.Decimal(10, 2) // montant convenu en dehors du prix initial du trajet, avant paiement uniquement
 
   status          BookingStatus @default(REQUESTED)
   cancellationReason String?

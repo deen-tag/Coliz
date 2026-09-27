@@ -9,8 +9,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     include: {
       parcel: true,
       trip: true,
-      traveler: { select: { id: true, firstName: true, avatarUrl: true, ratingAverage: true } },
-      sender: { select: { id: true, firstName: true, avatarUrl: true } },
+      traveler: { select: { id: true, firstName: true, avatarUrl: true, ratingAverage: true, identityVerifiedAt: true } },
+      sender: { select: { id: true, firstName: true, avatarUrl: true, identityVerifiedAt: true } },
     },
   });
   if (!booking) return NextResponse.json({ error: "Réservation introuvable" }, { status: 404 });

@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, PrimaryButton } from "@/components/ui";
 import { Logo } from "@/components/logo";
 
 export default function ConnexionPage() {
+  return (
+    <Suspense fallback={null}>
+      <ConnexionForm />
+    </Suspense>
+  );
+}
+
+function ConnexionForm() {
   const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState("");

@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/server/auth/admin";
 
+export const dynamic = "force-dynamic";
+
 // Tableau de bord synthétique — écran 18 du cahier des charges.
 // Volontairement limité à quelques compteurs + incidents ouverts : le
 // back-office ne doit pas devenir un dashboard surchargé (contrainte design V2).

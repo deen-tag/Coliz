@@ -253,11 +253,18 @@ enum BookingStatus {
   REQUESTED
   ACCEPTED
   PAYMENT_PENDING
-  CONFIRMED
-  IN_PROGRESS
-  COMPLETED
+  CONFIRMED        // payé — les 2 codes (remise/réception) sont générés à cet instant
+  PICKED_UP        // code de remise vérifié par le voyageur
+  DELIVERED        // code de réception vérifié par le voyageur
+  DELIVERY_FAILED  // réceptionniste injoignable/absent — colis reste chez le voyageur
+  COMPLETED        // livraison confirmée + rémunération versée au voyageur
   CANCELLED
   INCIDENT
+
+  // Conservé temporairement pour compatibilité des données existantes en base
+  // (anciennes réservations créées avant l'introduction des codes).
+  // Ne plus utiliser dans du code neuf — supprimer après migration des données.
+  IN_PROGRESS
 }
 
 model Booking {
@@ -286,10 +293,80 @@ model Booking {
   messages        Message[]
   reviews         Review[]
   incidents       Incident[]
+  transferCodes   TransferCode[]
+  events          BookingEvent[]
 
   @@index([senderId])
   @@index([travelerId])
   @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// CODES DE REMISE / RÉCEPTION
+// ─────────────────────────────────────────────
+// Principe : les deux codes appartiennent à l'expéditeur du début à la fin.
+// Il transmet le code PICKUP au voyageur en personne au départ, et gère
+// lui-même — hors app — la transmission du code DELIVERY à la personne
+// qui réceptionnera à l'arrivée. Le voyageur ne détient jamais aucun code
+// à l'avance et ne peut donc jamais valider seul une étape (cf. cahier des
+// charges §10-11 et plan caution §3).
+
+enum CodePurpose {
+  PICKUP    // expéditeur → voyageur, au départ
+  DELIVERY  // "réceptionniste" désigné par l'expéditeur → voyageur, à l'arrivée
+}
+
+enum CodeStatus {
+  ACTIVE
+  VERIFIED
+  EXPIRED
+  LOCKED   // trop de tentatives échouées, régénération requise
+  REVOKED  // remplacé par une régénération
+}
+
+model TransferCode {
+  id            String       @id @default(cuid())
+  bookingId     String
+  booking       Booking      @relation(fields: [bookingId], references: [id])
+  purpose       CodePurpose
+  codeCipher    String       // AES-256-GCM(code, clé serveur) — réversible uniquement côté serveur,
+                              // jamais le code en clair en base ni dans un log/metadata
+  status        CodeStatus   @default(ACTIVE)
+  attemptsCount Int          @default(0)
+  maxAttempts   Int          @default(5)
+  expiresAt     DateTime
+  verifiedAt    DateTime?
+  verifiedById  String?      // toujours le voyageur en pratique ; tracé explicitement
+  createdAt     DateTime     @default(now())
+
+  @@index([bookingId, purpose])
+}
+
+// Journal d'événements immuable — c'est la preuve métier en cas de litige,
+// pas la parole de l'expéditeur ou du voyageur.
+enum BookingEventType {
+  PICKUP_CODE_ISSUED
+  PICKUP_CODE_ATTEMPT_FAILED
+  PICKUP_CODE_VERIFIED
+  DELIVERY_CODE_ISSUED
+  DELIVERY_CODE_ATTEMPT_FAILED
+  DELIVERY_CODE_VERIFIED
+  DELIVERY_ISSUE_REPORTED
+  CODE_REGENERATED
+  STATUS_CHANGED
+}
+
+model BookingEvent {
+  id        String           @id @default(cuid())
+  bookingId String
+  booking   Booking          @relation(fields: [bookingId], references: [id])
+  type      BookingEventType
+  actorId   String?          // null si déclenché par le système
+  actorRole String           // SENDER / TRAVELER / SYSTEM / ADMIN
+  metadata  Json?            // jamais le code en clair — seulement le résultat (ex: tentative n°3)
+  createdAt DateTime         @default(now())
+
+  @@index([bookingId, createdAt])
 }
 
 // Compte Stripe Connect du voyageur

@@ -1,9 +1,13 @@
+^O
+^X
+sed -i '4a\
+\
+export const dynamic = "force-dynamic";' src/app/api/admin/route.ts
+O
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/server/auth/admin";
-
-export const dynamic = "force-dynamic";
 
 // Tableau de bord synthétique — écran 18 du cahier des charges.
 // Volontairement limité à quelques compteurs + incidents ouverts : le

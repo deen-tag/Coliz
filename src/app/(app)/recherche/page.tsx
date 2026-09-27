@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import useSWR from "swr";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, VerifiedBadge } from "@/components/ui";
@@ -10,6 +11,14 @@ import { ResultsMap } from "@/components/results-map";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function RecherchePage() {
+  return (
+    <Suspense fallback={null}>
+      <RechercheContent />
+    </Suspense>
+  );
+}
+
+function RechercheContent() {
   const params = useSearchParams();
   const router = useRouter();
   const parcelId = params.get("parcelId");

@@ -46,8 +46,11 @@ const STATUS_LABELS: Record<string, { label: string; tone: "neutral" | "info" | 
   MATCHED: { label: "Correspondance trouvée", tone: "info" },
   BOOKED: { label: "Réservé", tone: "info" },
   PAID: { label: "Payé", tone: "success" },
+  PICKED_UP: { label: "Pris en charge", tone: "info" },
   IN_TRANSIT: { label: "En transit", tone: "info" },
   DELIVERED: { label: "Livré", tone: "success" },
+  DELIVERY_FAILED: { label: "Livraison non finalisée", tone: "warning" },
+  COMPLETED: { label: "Terminé", tone: "success" },
   CANCELLED: { label: "Annulé", tone: "warning" },
 };
 

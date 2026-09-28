@@ -182,19 +182,19 @@ function SearchForm({ from, to, date, flex }: { from: string; to: string; date: 
         <input className={input} placeholder="Destination" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <input
-          type="date"
-          className={input}
-          aria-label="Autour du"
-          value={f.date}
-          onChange={(e) => setF({ ...f, date: e.target.value })}
-        />
-        <select className={input} aria-label="Période flexible" value={f.flex} onChange={(e) => setF({ ...f, flex: e.target.value })}>
-          <option value="0">Date exacte</option>
-          <option value="3">± 3 jours</option>
-          <option value="7">± 7 jours</option>
-          <option value="15">± 15 jours</option>
-        </select>
+        <label className="block">
+          <span className="block text-xs text-ink-muted mb-1">Date de départ (optionnel)</span>
+          <input type="date" className={input} value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} />
+        </label>
+        <label className="block">
+          <span className="block text-xs text-ink-muted mb-1">Période flexible</span>
+          <select className={input} value={f.flex} onChange={(e) => setF({ ...f, flex: e.target.value })}>
+            <option value="0">Date exacte</option>
+            <option value="3">± 3 jours</option>
+            <option value="7">± 7 jours</option>
+            <option value="15">± 15 jours</option>
+          </select>
+        </label>
       </div>
       <PrimaryButton type="submit">Rechercher</PrimaryButton>
     </Card>

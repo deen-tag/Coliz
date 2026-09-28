@@ -57,68 +57,70 @@ export default async function HomePage() {
       </header>
 
       {/* Parcours expéditeur — recherche principale.
-          L'illustration est purement décorative (alt vide) : la page se comprend
-          sans elle. Bureau : en fond à droite, le texte reste dans la zone
-          crème à gauche. Mobile : bandeau sous le formulaire. */}
-      <section className="relative overflow-hidden">
-        <div className="hidden lg:block absolute inset-y-0 right-0 w-[68%] pointer-events-none" aria-hidden="true">
-          <Image src="/brand/hero.webp" alt="" fill sizes="70vw" priority className="object-cover object-right" />
-        </div>
-
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-6 lg:pt-16 pb-6 lg:pb-28">
-          <div className="lg:max-w-lg">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-ink leading-tight tracking-tight mb-3">
-              Envoyez votre colis avec quelqu&apos;un qui fait déjà le trajet.
-            </h1>
-            <p className="text-ink-muted text-base sm:text-lg mb-8">
-              Trouvez plusieurs possibilités, comparez le prix et le délai, puis échangez avec le voyageur.
-            </p>
-
-            <Card>
-              <form action="/recherche" className="space-y-3">
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <Field name="from" label="Départ" placeholder="Ville de départ" />
-                  <Field name="to" label="Destination" placeholder="Ville d'arrivée" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <DateField name="date" label="Date de départ" placeholder="Toutes les dates" />
-                  <label className="block">
-                    <span className="block text-sm text-ink-muted mb-1.5">Période flexible</span>
-                    <select
-                      name="flex"
-                      defaultValue="3"
-                      className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-                    >
-                      <option value="0">Date exacte</option>
-                      <option value="3">± 3 jours</option>
-                      <option value="7">± 7 jours</option>
-                      <option value="15">± 15 jours</option>
-                    </select>
-                  </label>
-                </div>
-                <PrimaryButton type="submit">Voir les possibilités</PrimaryButton>
-              </form>
-            </Card>
-
-            <div className="flex flex-wrap gap-2 mt-4">
-              {EXAMPLE_ROUTES.map(({ route, mode }) => (
-                <span key={route} className="inline-flex items-center gap-1.5 rounded-control bg-black/[0.03] px-2.5 py-1.5">
-                  <TransportModeBadge mode={mode} variant="plain" />
-                  <span className="text-sm text-ink-muted">{route}</span>
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:hidden relative h-64 overflow-hidden pointer-events-none" aria-hidden="true">
+          L'illustration (décorative, alt vide) sert de fond au titre : sa moitié
+          gauche est volontairement vide pour accueillir le texte. Elle est
+          affichée en entier, sans recadrage, à toutes les tailles. */}
+      <section className="max-w-4xl mx-auto sm:px-4">
+        <div className="relative aspect-[3/2] w-full">
           <Image
             src="/brand/hero.webp"
             alt=""
             fill
-            sizes="100vw"
-            className="object-cover object-[95%_35%] scale-[1.55] origin-[95%_35%]"
+            priority
+            sizes="(min-width: 896px) 896px, 100vw"
+            className="object-cover pointer-events-none select-none"
+            aria-hidden="true"
           />
+          <div className="absolute inset-y-0 left-0 w-[46%] flex flex-col justify-center pl-4 sm:pl-8 pr-1">
+            <h1 className="text-[21px] leading-[1.15] sm:text-3xl md:text-4xl font-semibold text-ink tracking-tight">
+              Envoyez votre colis avec quelqu&apos;un qui fait déjà le trajet.
+            </h1>
+            <p className="hidden sm:block mt-3 text-ink-muted text-sm md:text-base">
+              Trouvez plusieurs possibilités, comparez le prix et le délai, puis échangez avec le voyageur.
+            </p>
+          </div>
+        </div>
+
+        {/* Le formulaire chevauche légèrement le bas de l'image (déjà fondu dans le crème) */}
+        <div className="relative z-10 px-4 sm:px-0 -mt-8 sm:-mt-14 max-w-2xl mx-auto pb-10">
+          <p className="sm:hidden text-ink-muted text-base mb-4">
+            Trouvez plusieurs possibilités, comparez le prix et le délai, puis échangez avec le voyageur.
+          </p>
+
+          <Card>
+            <form action="/recherche" className="space-y-3">
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Field name="from" label="Départ" placeholder="Ville de départ" />
+                <Field name="to" label="Destination" placeholder="Ville d'arrivée" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <DateField name="date" label="Date de départ" placeholder="Toutes les dates" />
+                <label className="block">
+                  <span className="block text-sm text-ink-muted mb-1.5 whitespace-nowrap">Période flexible</span>
+                  <select
+                    name="flex"
+                    defaultValue="3"
+                    className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  >
+                    <option value="0">Date exacte</option>
+                    <option value="3">± 3 jours</option>
+                    <option value="7">± 7 jours</option>
+                    <option value="15">± 15 jours</option>
+                  </select>
+                </label>
+              </div>
+              <PrimaryButton type="submit">Voir les possibilités</PrimaryButton>
+            </form>
+          </Card>
+
+          <div className="flex flex-wrap gap-2 mt-4">
+            {EXAMPLE_ROUTES.map(({ route, mode }) => (
+              <span key={route} className="inline-flex items-center gap-1.5 rounded-control bg-black/[0.03] px-2.5 py-1.5">
+                <TransportModeBadge mode={mode} variant="plain" />
+                <span className="text-sm text-ink-muted">{route}</span>
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 

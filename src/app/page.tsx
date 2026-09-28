@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/server/auth/options";
 import { Logo } from "@/components/logo";
 import { PrimaryButton, SecondaryButton, Card, TransportModeBadge } from "@/components/ui";
 import { ShieldIcon, LockIcon, MapPinIcon, CheckBadgeIcon, SuitcaseIcon } from "@/components/icons";
@@ -26,18 +28,29 @@ const STEPS = [
   { n: 4, title: "Suivez", text: "Messagerie et suivi jusqu'à la remise du colis." },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Connecté : on propose l'accès à l'espace plutôt que la connexion.
+  const session = await getServerSession(authOptions);
+
   return (
     <main className="min-h-screen bg-warm">
       <header className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
         <Logo variant="primary" size={32} />
         <div className="flex gap-2">
-          <Link href="/connexion" className="text-sm font-medium text-ink-muted px-3 py-2">
-            Se connecter
-          </Link>
-          <Link href="/inscription" className="text-sm font-medium bg-primary text-white rounded-control px-4 py-2.5">
-            Créer un compte
-          </Link>
+          {session ? (
+            <Link href="/dashboard" className="text-sm font-medium bg-primary text-white rounded-control px-4 py-2.5">
+              Mon espace
+            </Link>
+          ) : (
+            <>
+              <Link href="/connexion" className="text-sm font-medium text-ink-muted px-3 py-2">
+                Se connecter
+              </Link>
+              <Link href="/inscription" className="text-sm font-medium bg-primary text-white rounded-control px-4 py-2.5">
+                Créer un compte
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -80,7 +93,7 @@ export default function HomePage() {
           {EXAMPLE_ROUTES.map(({ route, mode }) => (
             <span key={route} className="inline-flex items-center gap-1.5 rounded-control bg-black/[0.03] px-2.5 py-1.5">
               <TransportModeBadge mode={mode} variant="plain" />
-              <span className="text-xs text-ink-muted">{route}</span>
+              <span className="text-sm text-ink-muted">{route}</span>
             </span>
           ))}
         </div>
@@ -124,8 +137,8 @@ export default function HomePage() {
               <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-semibold mx-auto mb-3">
                 {s.n}
               </div>
-              <p className="font-medium text-ink text-sm mb-1">{s.title}</p>
-              <p className="text-xs text-ink-muted">{s.text}</p>
+              <p className="font-medium text-ink mb-1">{s.title}</p>
+              <p className="text-sm text-ink-muted">{s.text}</p>
             </div>
           ))}
         </div>
@@ -143,7 +156,7 @@ function Field({ label, ...props }: { label: string } & React.InputHTMLAttribute
     <label className="block">
       <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
       <input
-        className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+        className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
         {...props}
       />
     </label>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { displayPrice } from "@/server/pricing";
 import { prisma } from "@/lib/prisma";
 
 // Public — consultable avant connexion, comme /recherche déjà accessible en
@@ -30,6 +31,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     departureAt: trip.departureAt,
     arrivalAt: trip.arrivalAt,
     contributionAmount: trip.contributionAmount,
+    totalAmount: displayPrice(trip.contributionAmount),
     remainingParcels: trip.remainingParcels,
     capacityWeightKg: trip.capacityWeightKg,
     capacityLengthCm: trip.capacityLengthCm,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { displayPrice } from "@/server/pricing";
 import { prisma } from "@/lib/prisma";
 
 // Recherche "libre" : pas encore de colis publié, on filtre juste par villes/date
@@ -48,6 +49,7 @@ export async function GET(req: Request) {
       departureAt: t.departureAt,
       arrivalAt: t.arrivalAt,
       contributionAmount: t.contributionAmount,
+      totalAmount: displayPrice(t.contributionAmount),
       remainingParcels: t.remainingParcels,
     }))
   );

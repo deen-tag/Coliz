@@ -13,6 +13,10 @@ const MODES = [
   { value: "BUS", label: "Bus" },
   { value: "PLANE", label: "Avion" },
   { value: "VAN", label: "Camionnette" },
+  { value: "FERRY", label: "Ferry" },
+  { value: "MOTORCYCLE", label: "Moto" },
+  { value: "BICYCLE", label: "Vélo" },
+  { value: "OTHER", label: "Autre" },
 ];
 
 export default function NouveauTrajetPage() {
@@ -39,6 +43,7 @@ export default function NouveauTrajetPage() {
       destinationLat: destination.lat,
       destinationLng: destination.lng,
       departureAt: fd.get("departureAt"),
+      ...(fd.get("arrivalAt") ? { arrivalAt: fd.get("arrivalAt") } : {}),
       mode,
       preexistingJourneyConfirmed: confirmed,
       capacityWeightKg: Number(fd.get("capacityWeightKg")),
@@ -59,7 +64,7 @@ export default function NouveauTrajetPage() {
       setError(data.error?.fieldErrors?.preexistingJourneyConfirmed?.[0] ?? "Vérifiez les informations saisies.");
       return;
     }
-    router.push("/dashboard");
+    router.push("/mes-voyages");
   }
 
   return (
@@ -71,13 +76,14 @@ export default function NouveauTrajetPage() {
           <CityAutocomplete label="Ville de départ" value={origin} onSelect={setOrigin} />
           <CityAutocomplete label="Ville d'arrivée" value={destination} onSelect={setDestination} />
           <Field name="departureAt" label="Date et heure de départ" type="datetime-local" required />
+          <Field name="arrivalAt" label="Arrivée estimée (optionnel)" type="datetime-local" />
 
           <label className="block">
             <span className="block text-sm text-ink-muted mb-1.5">Mode de transport</span>
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value)}
-              className="w-full rounded-control border border-line px-4 py-3 text-[15px]"
+              className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px]"
             >
               {MODES.map((m) => (
                 <option key={m.value} value={m.value}>{m.label}</option>
@@ -89,7 +95,10 @@ export default function NouveauTrajetPage() {
         <Card className="space-y-4">
           <Field name="capacityWeightKg" label="Capacité disponible (kg)" type="number" required />
           <Field name="capacityParcels" label="Nombre de colis acceptés" type="number" defaultValue={1} />
-          <Field name="contributionAmount" label="Contribution demandée (€)" type="number" required />
+          <Field name="contributionAmount" label="Ce que vous souhaitez recevoir (€)" type="number" step="0.01" required />
+          <p className="text-xs text-ink-muted -mt-2">
+            Coliz ajoute 15 % de frais de service : c&apos;est ce total que l&apos;expéditeur voit et paie.
+          </p>
         </Card>
 
         {mode === "CAR" && (
@@ -122,7 +131,7 @@ function Field({
     <label className="block">
       <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
       <input
-        className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+        className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
         {...props}
       />
     </label>

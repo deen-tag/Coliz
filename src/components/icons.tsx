@@ -242,9 +242,10 @@ export function BicycleIcon(props: IconProps) {
 export function FerryIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
-      <path d="M4 12h16l-2 6.5H6L4 12Z" />
-      <path d="M7 12V6h4V3h2v3h4v6" />
-      <path d="M3 20c1.2.9 2.8.9 4 0 1.2.9 2.8.9 4 0 1.2.9 2.8.9 4 0 1.2.9 2.8.9 4 0" />
+      <path d="M3 14.5h18l-2.2 4.5H5.2L3 14.5Z" />
+      <path d="M6 14.5V10h12v4.5" />
+      <path d="M9.5 10V6.5h5V10" />
+      <path d="M2.5 21.5c1.2-.9 2.4-.9 3.6 0s2.4.9 3.6 0 2.4-.9 3.6 0 2.4.9 3.6 0 2.4-.9 3.6 0" />
     </svg>
   );
 }

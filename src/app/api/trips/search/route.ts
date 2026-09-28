@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { displayPrice } from "@/server/pricing";
 import { prisma } from "@/lib/prisma";
 import { findMatchingTrips } from "@/server/matching/engine";
 import { requireUser } from "@/server/auth/session";
@@ -34,6 +35,7 @@ export async function GET(req: Request) {
       departureAt: r.trip.departureAt,
       arrivalAt: r.trip.arrivalAt,
       contributionAmount: r.trip.contributionAmount,
+      totalAmount: displayPrice(r.trip.contributionAmount),
       remainingParcels: r.trip.remainingParcels,
       distanceOriginKm: Math.round(r.distanceOriginKm),
       distanceDestinationKm: Math.round(r.distanceDestinationKm),

@@ -45,7 +45,7 @@ function RechercheContent() {
     router.push(parcelId ? `/trajets/${tripId}?parcelId=${parcelId}` : `/trajets/${tripId}`);
   }
 
-  const routeLabel = from && to ? `${from} → ${to}` : null;
+  const routeLabel = from && to ? `${from} → ${to}` : from ? `Depuis ${from}` : to ? `Vers ${to}` : null;
   const periodLabel = date
     ? Number(flex) > 0
       ? `Départ entre le ${addDays(date, -Number(flex))} et le ${addDays(date, Number(flex))}`
@@ -54,22 +54,22 @@ function RechercheContent() {
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
+      {!parcelId && <SearchForm from={from ?? ""} to={to ?? ""} date={date ?? ""} flex={flex} />}
+
       <SectionHeader
-        title={routeLabel ?? "Voyageurs disponibles"}
+        title={routeLabel ?? "Trajets disponibles"}
         subtitle={
-          periodLabel ??
-          (isLoading
+          isLoading
             ? "Recherche en cours..."
-            : `Plusieurs possibilités pour votre colis${results ? ` · ${results.length} résultat${results.length > 1 ? "s" : ""}` : ""}`)
+            : `${periodLabel ? periodLabel + " · " : ""}${
+                results ? `${results.length} résultat${results.length > 1 ? "s" : ""}` : ""
+              }`
         }
       />
 
       {results?.length > 0 && (
         <div className="mb-4">
-          <button
-            onClick={() => setShowMap((v) => !v)}
-            className="text-sm font-medium text-primary"
-          >
+          <button onClick={() => setShowMap((v) => !v)} className="text-sm font-medium text-primary">
             {showMap ? "Masquer la carte" : "Voir sur la carte"}
           </button>
           {showMap && (
@@ -109,10 +109,18 @@ function RechercheContent() {
 
             <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="text-2xl font-semibold text-ink">{Number(r.contributionAmount).toFixed(2)} €</p>
-                <p className="text-xs text-ink-muted mt-0.5">
+                <p className="text-2xl font-semibold text-ink">
+                  {Number(r.totalAmount ?? r.contributionAmount).toFixed(2)} €
+                </p>
+                <p className="text-xs text-ink-muted mt-0.5">Prix tout compris</p>
+                <p className="text-sm text-ink-muted mt-1">
                   {new Date(r.departureAt).toLocaleDateString("fr-FR", DATE_FMT)}
-                  {r.arrivalAt && ` · arrivée estimée ${new Date(r.arrivalAt).toLocaleDateString("fr-FR", { ...DATE_FMT, hour: "2-digit", minute: "2-digit" })}`}
+                  {r.arrivalAt &&
+                    ` · arrivée estimée ${new Date(r.arrivalAt).toLocaleDateString("fr-FR", {
+                      ...DATE_FMT,
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}`}
                 </p>
               </div>
               <TransportModeBadge mode={r.mode} />
@@ -143,6 +151,53 @@ function RechercheContent() {
         ))}
       </div>
     </main>
+  );
+}
+
+// Formulaire de recherche rappelé en haut de page : on peut changer une ville
+// ou une date sans repasser par l'accueil.
+function SearchForm({ from, to, date, flex }: { from: string; to: string; date: string; flex: string }) {
+  const router = useRouter();
+  const [f, setF] = useState({ from, to, date, flex });
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const q = new URLSearchParams();
+    if (f.from.trim()) q.set("from", f.from.trim());
+    if (f.to.trim()) q.set("to", f.to.trim());
+    if (f.date) {
+      q.set("date", f.date);
+      q.set("flex", f.flex);
+    }
+    router.push(`/recherche?${q.toString()}`);
+  }
+
+  const input =
+    "w-full rounded-control border border-line bg-surface px-3 py-2.5 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+  return (
+    <Card as="form" onSubmit={submit} className="mb-6 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <input className={input} placeholder="Départ" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
+        <input className={input} placeholder="Destination" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <input
+          type="date"
+          className={input}
+          aria-label="Autour du"
+          value={f.date}
+          onChange={(e) => setF({ ...f, date: e.target.value })}
+        />
+        <select className={input} aria-label="Période flexible" value={f.flex} onChange={(e) => setF({ ...f, flex: e.target.value })}>
+          <option value="0">Date exacte</option>
+          <option value="3">± 3 jours</option>
+          <option value="7">± 7 jours</option>
+          <option value="15">± 15 jours</option>
+        </select>
+      </div>
+      <PrimaryButton type="submit">Rechercher</PrimaryButton>
+    </Card>
   );
 }
 

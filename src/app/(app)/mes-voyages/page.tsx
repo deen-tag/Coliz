@@ -15,9 +15,11 @@ export default function MesVoyagesPage() {
         title="Mes voyages"
         subtitle="Vos trajets publiés et leurs opportunités"
         action={
+          trips?.length > 0 ? (
           <Link href="/trajets/nouveau">
             <PrimaryButton className="w-auto px-4 py-2.5 text-sm">Proposer un trajet</PrimaryButton>
-          </Link>
+            </Link>
+          ) : undefined
         }
       />
 
@@ -37,7 +39,8 @@ export default function MesVoyagesPage() {
 
       <div className="space-y-3">
         {trips?.map((t: any) => (
-          <Card key={t.id}>
+          <Link key={t.id} href={`/trajets/${t.id}`} className="block">
+          <Card className="hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-ink">
                 {t.originLabel} → {t.destinationLabel}
@@ -54,6 +57,11 @@ export default function MesVoyagesPage() {
               </span>
             </div>
 
+            {t.pendingRequests > 0 && (
+              <p className="text-xs font-medium text-warning mb-1">
+                {t.pendingRequests} demande{t.pendingRequests > 1 ? "s" : ""} en attente de votre réponse
+              </p>
+            )}
             {["PUBLISHED", "PARTIALLY_BOOKED"].includes(t.status) && (
               <p className={`text-xs font-medium ${t.compatibleParcelsCount > 0 ? "text-teal" : "text-ink-muted"}`}>
                 {t.compatibleParcelsCount > 0
@@ -62,6 +70,7 @@ export default function MesVoyagesPage() {
               </p>
             )}
           </Card>
+          </Link>
         ))}
       </div>
     </main>

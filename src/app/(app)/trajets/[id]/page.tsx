@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
+import { useSession } from "next-auth/react";
 import { Card, SectionHeader, PrimaryButton, VerifiedBadge, TransportModeBadge, StatusBadge } from "@/components/ui";
 import { StarIcon } from "@/components/icons";
 
@@ -15,6 +16,7 @@ export default function TrajetDetailPage() {
   const parcelId = params.get("parcelId");
 
   const { data: trip, isLoading } = useSWR(`/api/trips/${id}`, fetcher);
+  const { data: session } = useSession();
 
   async function reserve() {
     if (!parcelId) {
@@ -41,6 +43,7 @@ export default function TrajetDetailPage() {
     );
   }
 
+  const isOwner = (session?.user as any)?.id === trip.traveler.id;
   const bookable = trip.remainingParcels > 0 && ["PUBLISHED", "PARTIALLY_BOOKED"].includes(trip.status);
 
   return (
@@ -53,7 +56,12 @@ export default function TrajetDetailPage() {
 
       <Card className="mb-4">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-3xl font-semibold text-ink">{Number(trip.contributionAmount).toFixed(2)} €</p>
+          <div>
+            <p className="text-3xl font-semibold text-ink">
+              {Number(trip.totalAmount ?? trip.contributionAmount).toFixed(2)} €
+            </p>
+            <p className="text-xs text-ink-muted mt-0.5">Prix tout compris, frais de service inclus</p>
+          </div>
           <TransportModeBadge mode={trip.mode} />
         </div>
 
@@ -92,7 +100,9 @@ export default function TrajetDetailPage() {
         </Card>
       </Link>
 
-      {bookable ? (
+      {isOwner ? (
+        <p className="text-sm text-ink-muted text-center py-3">C&apos;est votre trajet. Les demandes apparaissent dans Réservations.</p>
+      ) : bookable ? (
         <PrimaryButton onClick={reserve}>{parcelId ? "Réserver" : "Envoyer un colis sur ce trajet"}</PrimaryButton>
       ) : (
         <p className="text-sm text-ink-muted text-center py-3">Ce trajet n&apos;a plus de place disponible.</p>

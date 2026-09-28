@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/server/auth/session";
-import { countCompatibleParcels } from "@/server/matching/engine";
+import { countCompatibleParcels, findCompatibleParcels } from "@/server/matching/engine";
+import { notifyUser } from "@/server/notifications/service";
 
 const tripSchema = z
   .object({
@@ -54,6 +55,21 @@ export async function POST(req: Request) {
     },
   });
 
+  // Propose automatiquement ce trajet aux colis déjà ouverts compatibles
+  // (symétrique de la notification à la création d'un colis, brief §13).
+  try {
+    const compatibleParcels = await findCompatibleParcels(trip);
+    for (const parcel of compatibleParcels.slice(0, 10)) {
+      await notifyUser(
+        parcel.senderId,
+        "new_match",
+        `Un nouveau trajet correspond à votre colis ${parcel.originLabel} → ${parcel.destinationLabel}.`
+      );
+    }
+  } catch {
+    // best-effort : la publication du trajet ne doit pas dépendre des notifications
+  }
+
   return NextResponse.json(trip, { status: 201 });
 }
 
@@ -67,12 +83,12 @@ export async function GET(req: Request) {
     orderBy: { departureAt: "asc" },
   });
 
-  // "N opportunités compatibles" par trajet (brief UI/UX §22) — calculé à la
-  // volée, sans notification automatique pour l'instant (voir §4 du plan).
+  // "N opportunités compatibles" par trajet (brief UI/UX §22) — calculé à la volée.
   const withOpportunities = await Promise.all(
     trips.map(async (t) => ({
       ...t,
       compatibleParcelsCount: await countCompatibleParcels(t),
+      pendingRequests: await prisma.booking.count({ where: { tripId: t.id, status: "REQUESTED" } }),
     }))
   );
 

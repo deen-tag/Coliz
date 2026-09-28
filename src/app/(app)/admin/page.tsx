@@ -1,8 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { Card } from "@/components/ui";
-import { ScreenHeader } from "@/components/screen-header";
+import { Card, SectionHeader } from "@/components/ui";
+
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -11,7 +11,7 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-3xl mx-auto">
-      <ScreenHeader title="Back-office Coliz" />
+      <SectionHeader title="Back-office Coliz" />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         <Counter label="Incidents ouverts" value={data?.counters?.openIncidents} tone="warning" />

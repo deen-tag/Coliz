@@ -1,8 +1,8 @@
 "use client";
 
 import useSWR from "swr";
-import { Card, PrimaryButton } from "@/components/ui";
-import { ScreenHeader } from "@/components/screen-header";
+import { Card, PrimaryButton, SectionHeader } from "@/components/ui";
+
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -20,7 +20,7 @@ export default function PortefeuillePage() {
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
-      <ScreenHeader title="Portefeuille" />
+      <SectionHeader title="Portefeuille" />
 
       <Card className="mb-4 bg-primary text-white">
         <p className="text-sm opacity-80">Solde disponible</p>

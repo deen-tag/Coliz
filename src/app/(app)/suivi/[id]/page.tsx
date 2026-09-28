@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
-import { Card, PrimaryButton, SecondaryButton, SectionHeader } from "@/components/ui";
+import { Card, PrimaryButton, SecondaryButton, SectionHeader, LoadingState } from "@/components/ui";
 import { StarIcon } from "@/components/icons";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -25,18 +25,31 @@ export default function SuiviPage() {
   const isSender = booking && userId === booking.senderId;
   const isTraveler = booking && userId === booking.travelerId;
 
-  async function reportIncident() {
-    const description = window.prompt("Décrivez le problème rencontré :");
-    if (!description) return;
-    await fetch("/api/incidents", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookingId: id, category: "autre", description }),
-    });
+  const [report, setReport] = useState<null | "incident" | "delivery">(null);
+
+  async function submitReport(description: string) {
+    if (report === "delivery") {
+      const res = await fetch(`/api/bookings/${id}/delivery/report-issue`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description }),
+      });
+      if (!res.ok) return false;
+    } else {
+      const res = await fetch("/api/incidents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: id, category: "autre", description }),
+      });
+      if (!res.ok) return false;
+    }
+    setReport(null);
     mutate();
+    return true;
   }
 
-  if (!booking) return null;
+  if (!booking) return <LoadingState />;
+  if (booking.error) return <LoadingState text="Ce suivi est introuvable ou ne vous est pas accessible." />;
 
   const currentIndex = STEPS.findIndex((s) => s.status === booking.status);
 
@@ -104,7 +117,7 @@ export default function SuiviPage() {
             helper="Demandez ce code à la personne qui réceptionne le colis à l'arrivée."
             onSuccess={mutate}
           />
-          <SecondaryButton className="mt-3" onClick={() => reportDeliveryIssue(id, mutate)}>
+          <SecondaryButton className="mt-3" onClick={() => setReport("delivery")}>
             Le réceptionniste est injoignable
           </SecondaryButton>
         </>
@@ -118,20 +131,24 @@ export default function SuiviPage() {
 
       {booking.status === "COMPLETED" && <ReviewForm bookingId={id} />}
 
-      <SecondaryButton className="mt-3" onClick={reportIncident}>Signaler un autre problème</SecondaryButton>
+      {report ? (
+        <ReportForm
+          title={report === "delivery" ? "Réceptionniste injoignable" : "Signaler un problème"}
+          placeholder={
+            report === "delivery"
+              ? "Décrivez la situation (absent, injoignable...)"
+              : "Décrivez le problème rencontré"
+          }
+          onCancel={() => setReport(null)}
+          onSubmit={submitReport}
+        />
+      ) : (
+        <SecondaryButton className="mt-3" onClick={() => setReport("incident")}>
+          Signaler un autre problème
+        </SecondaryButton>
+      )}
     </main>
   );
-}
-
-async function reportDeliveryIssue(bookingId: string, onDone: () => void) {
-  const description = window.prompt("Décrivez la situation (réceptionniste absent, injoignable...) :");
-  if (!description) return;
-  const res = await fetch(`/api/bookings/${bookingId}/delivery/report-issue`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ description }),
-  });
-  if (res.ok) onDone();
 }
 
 // Carte de consultation d'un code, côté expéditeur.
@@ -279,6 +296,52 @@ function ReviewForm({ bookingId }: { bookingId: string }) {
       <PrimaryButton onClick={submit} disabled={rating === 0}>
         Envoyer l'avis
       </PrimaryButton>
+    </Card>
+  );
+}
+
+// Formulaire de signalement intégré à la page (plus agréable au téléphone
+// que la fenêtre de saisie du navigateur).
+function ReportForm({
+  title,
+  placeholder,
+  onCancel,
+  onSubmit,
+}: {
+  title: string;
+  placeholder: string;
+  onCancel: () => void;
+  onSubmit: (description: string) => Promise<boolean>;
+}) {
+  const [text, setText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  async function send() {
+    setSending(true);
+    setError(null);
+    const ok = await onSubmit(text.trim());
+    setSending(false);
+    if (!ok) setError("Impossible d'envoyer pour le moment. Réessayez.");
+  }
+
+  return (
+    <Card className="mt-3">
+      <p className="text-sm font-medium text-ink mb-2">{title}</p>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={placeholder}
+        rows={4}
+        className="w-full rounded-control border border-line bg-surface px-4 py-3 text-sm mb-2"
+      />
+      {error && <p className="text-xs text-error mb-2">{error}</p>}
+      <div className="flex gap-2">
+        <PrimaryButton onClick={send} disabled={sending || text.trim().length < 5}>
+          Envoyer
+        </PrimaryButton>
+        <SecondaryButton onClick={onCancel}>Annuler</SecondaryButton>
+      </div>
     </Card>
   );
 }

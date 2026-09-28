@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
-import { Card, PrimaryButton, SecondaryButton, StatusBadge, SectionHeader, TransportModeBadge, VerifiedBadge } from "@/components/ui";
+import { Card, PrimaryButton, SecondaryButton, StatusBadge, SectionHeader, TransportModeBadge, VerifiedBadge, LoadingState } from "@/components/ui";
 import { StripeProvider } from "@/components/stripe-provider";
 import { PaymentForm } from "@/components/payment-form";
 
@@ -17,6 +17,7 @@ export default function ReservationPage() {
   const { data: session } = useSession();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [negotiating, setNegotiating] = useState(false);
+  const [cancelMsg, setCancelMsg] = useState<string | null>(null);
 
   const userId = (session?.user as any)?.id;
   const isSender = booking && userId === booking.senderId;
@@ -28,13 +29,36 @@ export default function ReservationPage() {
     mutate();
   }
 
+  async function cancel() {
+    const paid = ["CONFIRMED"].includes(booking.status);
+    const ok = window.confirm(
+      paid
+        ? "Annuler cette réservation ? Le remboursement dépend du délai avant le départ."
+        : "Annuler cette réservation ?"
+    );
+    if (!ok) return;
+    const res = await fetch(`/api/bookings/${id}/cancel`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setCancelMsg(data.error ?? "Impossible d'annuler pour le moment.");
+      return;
+    }
+    setCancelMsg(
+      data.refundAmount > 0
+        ? `Réservation annulée. ${Number(data.refundAmount).toFixed(2)} € vous seront remboursés.`
+        : "Réservation annulée."
+    );
+    mutate();
+  }
+
   async function startPayment() {
     const res = await fetch(`/api/bookings/${id}/pay`, { method: "POST" });
     const data = await res.json();
     if (data.clientSecret) setClientSecret(data.clientSecret);
   }
 
-  if (!booking) return null;
+  if (!booking) return <LoadingState />;
+  if (booking.error) return <LoadingState text="Cette réservation est introuvable ou ne vous est pas accessible." />;
 
   const canNegotiate = ["REQUESTED", "ACCEPTED"].includes(booking.status);
 
@@ -108,6 +132,13 @@ export default function ReservationPage() {
         <StripeProvider clientSecret={clientSecret}>
           <PaymentForm onSuccess={() => mutate()} />
         </StripeProvider>
+      )}
+
+      {cancelMsg && <p className="text-sm text-ink text-center my-4">{cancelMsg}</p>}
+      {["REQUESTED", "ACCEPTED", "PAYMENT_PENDING", "CONFIRMED"].includes(booking.status) && (
+        <button onClick={cancel} className="w-full text-center text-sm text-error py-3 mt-2">
+          Annuler la réservation
+        </button>
       )}
 
       {["CONFIRMED", "PICKED_UP", "IN_TRANSIT", "ARRIVED", "DELIVERED"].includes(booking.status) && (

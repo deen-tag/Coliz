@@ -14,9 +14,9 @@ export async function GET() {
 
 export async function PATCH(req: Request) {
   const user = await requireUser();
-  const { id } = await req.json();
+  const { id, all } = await req.json();
   await prisma.notification.updateMany({
-    where: { id, userId: user.id },
+    where: all ? { userId: user.id, readAt: null } : { id, userId: user.id },
     data: { readAt: new Date() },
   });
   return NextResponse.json({ ok: true });

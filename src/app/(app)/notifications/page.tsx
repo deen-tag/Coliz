@@ -1,6 +1,7 @@
 "use client";
 
 import useSWR, { mutate } from "swr";
+import { useRouter } from "next/navigation";
 import { SectionHeader, EmptyState } from "@/components/ui";
 import {
   PackageIcon,
@@ -30,7 +31,27 @@ const TYPE_ICON: Record<string, (p: { size?: number; className?: string }) => JS
 
 // Ni compteur agressif, ni relance systématique : un point discret pour le
 // non-lu, marqué lu au toucher (brief UI/UX §23).
+// Où mène chaque notification (les notifications ne portent pas d'identifiant,
+// on renvoie vers la liste concernée).
+function destination(n: { type: string; content: string }) {
+  switch (n.type) {
+    case "new_message":
+      return "/messagerie";
+    case "new_match":
+      return n.content.startsWith("Un colis") ? "/mes-voyages" : "/mes-colis";
+    case "trip_departed":
+    case "trip_arrived":
+      return "/mes-voyages";
+    case "parcel_picked_up":
+    case "delivery_confirmed":
+      return "/mes-colis";
+    default:
+      return "/reservations"; // demandes, accords, prix, paiement, incidents
+  }
+}
+
 export default function NotificationsPage() {
+  const router = useRouter();
   const { data: notifications, isLoading } = useSWR("/api/notifications", fetcher);
 
   async function markRead(id: string) {
@@ -46,9 +67,33 @@ export default function NotificationsPage() {
     });
   }
 
+  async function markAllRead() {
+    mutate(
+      "/api/notifications",
+      notifications?.map((n: any) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })),
+      false
+    );
+    await fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ all: true }),
+    });
+  }
+
+  const hasUnread = notifications?.some((n: any) => !n.readAt);
+
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
-      <SectionHeader title="Notifications" />
+      <SectionHeader
+        title="Notifications"
+        action={
+          hasUnread ? (
+            <button onClick={markAllRead} className="text-sm font-medium text-primary whitespace-nowrap">
+              Tout marquer comme lu
+            </button>
+          ) : undefined
+        }
+      />
 
       {isLoading && <p className="text-sm text-ink-muted text-center py-10">Chargement...</p>}
 
@@ -66,7 +111,10 @@ export default function NotificationsPage() {
           return (
             <button
               key={n.id}
-              onClick={() => unread && markRead(n.id)}
+              onClick={() => {
+                if (unread) markRead(n.id);
+                router.push(destination(n));
+              }}
               className="w-full flex items-start gap-3 py-4 text-left"
             >
               <div className="w-9 h-9 rounded-full bg-primary-light flex items-center justify-center text-primary shrink-0">

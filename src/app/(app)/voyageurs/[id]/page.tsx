@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import useSWR from "swr";
-import { Card, VerifiedBadge } from "@/components/ui";
+import { Card, VerifiedBadge, LoadingState } from "@/components/ui";
 import { StarIcon } from "@/components/icons";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -11,7 +11,7 @@ export default function ProfilVoyageurPage() {
   const { id } = useParams<{ id: string }>();
   const { data: profile } = useSWR(`/api/users/${id}`, fetcher);
 
-  if (!profile) return null;
+  if (!profile) return <LoadingState />;
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">

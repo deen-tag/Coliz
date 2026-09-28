@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Card, PrimaryButton } from "@/components/ui";
-import { ScreenHeader } from "@/components/screen-header";
+import { Card, PrimaryButton, SectionHeader } from "@/components/ui";
+
 import { ShieldIcon } from "@/components/icons";
 
 export default function VerificationIdentitePage() {
@@ -18,7 +18,7 @@ export default function VerificationIdentitePage() {
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
-      <ScreenHeader title="Vérification d'identité" />
+      <SectionHeader title="Vérification d'identité" />
 
       <Card className="text-center py-10 mb-6">
         <ShieldIcon size={40} className="text-primary mx-auto mb-4" />

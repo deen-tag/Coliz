@@ -17,6 +17,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
 
+  // Une fois le colis pris en charge, on ne peut plus annuler : il faut
+  // passer par un signalement (incident).
+  if (!["REQUESTED", "ACCEPTED", "PAYMENT_PENDING", "CONFIRMED"].includes(booking.status)) {
+    return NextResponse.json(
+      { error: "Cette réservation ne peut plus être annulée. Signalez un problème depuis le suivi." },
+      { status: 422 }
+    );
+  }
+
   const paymentTx = await prisma.transaction.findFirst({
     where: { bookingId: booking.id, type: "PAYMENT_INTENT", status: "SUCCEEDED" },
   });

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Card, SecondaryButton, SectionHeader } from "@/components/ui";
+import { Card, SecondaryButton, SectionHeader, LoadingState } from "@/components/ui";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -44,7 +44,7 @@ export default function ParametresPage() {
     router.push("/");
   }
 
-  if (!form) return null;
+  if (!form) return <LoadingState />;
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">

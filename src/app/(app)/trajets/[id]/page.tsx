@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
-import { Card, SectionHeader, PrimaryButton, VerifiedBadge, TransportModeBadge, StatusBadge } from "@/components/ui";
+import { Card, SectionHeader, PrimaryButton, VerifiedBadge, TransportModeBadge, StatusBadge, LoadingState } from "@/components/ui";
 import { StarIcon } from "@/components/icons";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -34,7 +34,7 @@ export default function TrajetDetailPage() {
     }
   }
 
-  if (isLoading) return null;
+  if (isLoading) return <LoadingState />;
   if (!trip || trip.error) {
     return (
       <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto text-center">

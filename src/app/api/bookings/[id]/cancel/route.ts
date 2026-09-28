@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { stripe, toStripeAmount } from "@/server/stripe/client";
 import { computeRefundRate } from "@/server/stripe/refund-policy";
 import { requireUser } from "@/server/auth/session";
+import { cancelBooking } from "@/server/bookings/capacity";
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const user = await requireUser();
@@ -22,7 +23,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   if (!paymentTx) {
     // Pas encore payé : simple annulation, rien à rembourser.
-    await prisma.booking.update({ where: { id: booking.id }, data: { status: "CANCELLED" } });
+    await cancelBooking(booking.id);
     return NextResponse.json({ refundRate: null });
   }
 
@@ -38,7 +39,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // Le statut de la réservation et l'écriture REFUND sont finalisés par le
     // webhook `charge.refunded` — source de vérité unique sur l'état Stripe.
   } else {
-    await prisma.booking.update({ where: { id: booking.id }, data: { status: "CANCELLED" } });
+    await cancelBooking(booking.id);
   }
 
   return NextResponse.json({ refundRate, refundAmount });

@@ -45,36 +45,41 @@ function ConnexionForm() {
         <Logo variant="primary" size={40} />
       </div>
       <h1 className="text-2xl font-semibold text-ink mb-1">Se connecter</h1>
-      <p className="text-sm text-ink/60 mb-6">Accédez à votre espace Coliz.</p>
+      <p className="text-sm text-ink-muted mb-6">Accédez à votre espace Coliz.</p>
 
       <Card as="form" onSubmit={handleSubmit} className="space-y-4">
         <label className="block">
-          <span className="block text-sm text-ink/70 mb-1.5">Email</span>
+          <span className="block text-sm text-ink-muted mb-1.5">Email</span>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-control border border-black/10 px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </label>
         <label className="block">
-          <span className="block text-sm text-ink/70 mb-1.5">Mot de passe</span>
+          <span className="block text-sm text-ink-muted mb-1.5">Mot de passe</span>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-control border border-black/10 px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </label>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-error">{error}</p>}
         <PrimaryButton type="submit" disabled={loading}>
           {loading ? "Connexion..." : "Se connecter"}
         </PrimaryButton>
+        <p className="text-center">
+          <a href="/mot-de-passe-oublie" className="text-sm text-ink-muted">
+            Mot de passe oublié ?
+          </a>
+        </p>
       </Card>
 
-      <p className="text-center text-sm text-ink/60 mt-5">
+      <p className="text-center text-sm text-ink-muted mt-5">
         Pas encore de compte ?{" "}
         <a href="/inscription" className="text-primary font-medium">
           Créer un compte

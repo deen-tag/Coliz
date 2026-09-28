@@ -39,7 +39,7 @@ export default function InscriptionPage() {
         <Logo variant="primary" size={40} />
       </div>
       <h1 className="text-2xl font-semibold text-ink mb-1">Créer un compte</h1>
-      <p className="text-sm text-ink/60 mb-6">Envoyez ou transportez des colis en quelques minutes.</p>
+      <p className="text-sm text-ink-muted mb-6">Envoyez ou transportez des colis en quelques minutes.</p>
 
       <Card as="form" onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -48,13 +48,13 @@ export default function InscriptionPage() {
         </div>
         <Input label="Email" type="email" required value={form.email} onChange={update("email")} />
         <Input label="Mot de passe" type="password" required value={form.password} onChange={update("password")} />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-error">{error}</p>}
         <PrimaryButton type="submit" disabled={loading}>
           {loading ? "Création..." : "Créer mon compte"}
         </PrimaryButton>
       </Card>
 
-      <p className="text-center text-sm text-ink/60 mt-5">
+      <p className="text-center text-sm text-ink-muted mt-5">
         Déjà inscrit ?{" "}
         <a href="/connexion" className="text-primary font-medium">
           Se connecter
@@ -67,9 +67,9 @@ export default function InscriptionPage() {
 function Input({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="block text-sm text-ink/70 mb-1.5">{label}</span>
+      <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
       <input
-        className="w-full rounded-control border border-black/10 px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+        className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
         {...props}
       />
     </label>

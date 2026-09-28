@@ -28,6 +28,12 @@ export const emailTemplates = {
     subject: "Votre colis a été livré — Coliz",
     html: `<p>Bonne nouvelle : votre colis a été marqué comme livré. Pensez à laisser un avis !</p>`,
   }),
+  passwordReset: (resetUrl: string) => ({
+    subject: "Réinitialisation de votre mot de passe — Coliz",
+    html: `<p>Vous avez demandé à réinitialiser votre mot de passe.</p>
+           <p><a href="${resetUrl}">Choisir un nouveau mot de passe</a></p>
+           <p>Ce lien est valable 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.</p>`,
+  }),
   incidentReported: () => ({
     subject: "Un incident a été signalé — Coliz",
     html: `<p>Un incident a été signalé sur l'une de vos réservations. Notre équipe va l'examiner.</p>`,

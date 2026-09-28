@@ -73,11 +73,11 @@ export default function NouveauTrajetPage() {
           <Field name="departureAt" label="Date et heure de départ" type="datetime-local" required />
 
           <label className="block">
-            <span className="block text-sm text-ink/70 mb-1.5">Mode de transport</span>
+            <span className="block text-sm text-ink-muted mb-1.5">Mode de transport</span>
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value)}
-              className="w-full rounded-control border border-black/10 px-4 py-3 text-[15px]"
+              className="w-full rounded-control border border-line px-4 py-3 text-[15px]"
             >
               {MODES.map((m) => (
                 <option key={m.value} value={m.value}>{m.label}</option>
@@ -94,7 +94,7 @@ export default function NouveauTrajetPage() {
 
         {mode === "CAR" && (
           <Card>
-            <label className="flex items-start gap-3 text-sm text-ink/80">
+            <label className="flex items-start gap-3 text-sm text-ink">
               <input
                 type="checkbox"
                 checked={confirmed}
@@ -106,7 +106,7 @@ export default function NouveauTrajetPage() {
           </Card>
         )}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-error">{error}</p>}
 
         <PrimaryButton type="submit">Publier mon trajet</PrimaryButton>
       </form>
@@ -120,9 +120,9 @@ function Field({
 }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="block text-sm text-ink/70 mb-1.5">{label}</span>
+      <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
       <input
-        className="w-full rounded-control border border-black/10 px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+        className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
         {...props}
       />
     </label>

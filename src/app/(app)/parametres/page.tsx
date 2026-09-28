@@ -47,7 +47,7 @@ export default function ParametresPage() {
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
       <ScreenHeader title="Paramètres" right={saved && <span className="text-xs text-success">Enregistré</span>} />
 
-      <h2 className="text-sm font-medium text-ink/60 mb-3">Profil</h2>
+      <h2 className="text-sm font-medium text-ink-muted mb-3">Profil</h2>
       <Card className="mb-6 space-y-4">
         <Field
           label="Prénom"
@@ -70,14 +70,14 @@ export default function ParametresPage() {
         />
       </Card>
 
-      <h2 className="text-sm font-medium text-ink/60 mb-3">Vérification</h2>
+      <h2 className="text-sm font-medium text-ink-muted mb-3">Vérification</h2>
       <Card className="mb-6 space-y-2">
         <VerificationRow label="Email" verified={form.verification?.email} />
         <VerificationRow label="Téléphone" verified={form.verification?.phone} />
         <VerificationRow label="Identité" verified={form.verification?.identity} action="/parametres/verification-identite" />
       </Card>
 
-      <h2 className="text-sm font-medium text-ink/60 mb-3">Notifications</h2>
+      <h2 className="text-sm font-medium text-ink-muted mb-3">Notifications</h2>
       <Card className="mb-6 space-y-4">
         <ToggleRow
           label="Notifications par email"
@@ -91,12 +91,12 @@ export default function ParametresPage() {
         />
       </Card>
 
-      <h2 className="text-sm font-medium text-ink/60 mb-3">Langue</h2>
+      <h2 className="text-sm font-medium text-ink-muted mb-3">Langue</h2>
       <Card className="mb-6">
         <select
           value={form.language}
           onChange={(e) => save({ language: e.target.value })}
-          className="w-full rounded-control border border-black/10 px-4 py-3 text-[15px]"
+          className="w-full rounded-control border border-line px-4 py-3 text-[15px]"
         >
           <option value="fr">Français</option>
           <option value="en">English</option>
@@ -108,7 +108,7 @@ export default function ParametresPage() {
         Se déconnecter
       </SecondaryButton>
 
-      <button onClick={handleDeleteAccount} className="w-full text-center text-sm text-red-600 py-3">
+      <button onClick={handleDeleteAccount} className="w-full text-center text-sm text-error py-3">
         Supprimer mon compte
       </button>
 
@@ -122,9 +122,9 @@ function Field({
 }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="block text-sm text-ink/70 mb-1.5">{label}</span>
+      <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
       <input
-        className="w-full rounded-control border border-black/10 px-4 py-3 text-[15px] disabled:bg-surface-alt disabled:text-ink/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+        className="w-full rounded-control border border-line px-4 py-3 text-[15px] disabled:bg-surface-alt disabled:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
         {...props}
       />
     </label>
@@ -149,7 +149,7 @@ function VerificationRow({ label, verified, action }: { label: string; verified?
       ) : action ? (
         <a href={action} className="text-xs text-primary font-medium">Vérifier</a>
       ) : (
-        <span className="text-xs text-ink/40">Non vérifié</span>
+        <span className="text-xs text-ink-muted">Non vérifié</span>
       )}
     </div>
   );

@@ -100,7 +100,7 @@ export default function ReservationPage() {
         </div>
       )}
 
-      {isSender && booking.status === "ACCEPTED" && !clientSecret && (
+      {isSender && ["ACCEPTED", "PAYMENT_PENDING"].includes(booking.status) && !clientSecret && (
         <PrimaryButton onClick={startPayment}>Procéder au paiement</PrimaryButton>
       )}
 

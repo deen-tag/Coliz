@@ -16,7 +16,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-6">
         <Logo variant="symbol" size={32} />
         <div className="flex items-center gap-4">
-          <Link href="/notifications" className="relative text-ink/70">
+          <Link href="/notifications" className="relative text-ink-muted">
             <BellIcon size={22} />
             {data?.unreadNotifications > 0 && (
               <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
@@ -24,7 +24,7 @@ export default function DashboardPage() {
               </span>
             )}
           </Link>
-          <Link href="/parametres" className="text-ink/70">
+          <Link href="/parametres" className="text-ink-muted">
             <SettingsIcon size={22} />
           </Link>
         </div>
@@ -40,7 +40,7 @@ export default function DashboardPage() {
             <Card key={p.id} className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-ink">{p.originLabel} → {p.destinationLabel}</p>
-                <p className="text-xs text-ink/50 mt-0.5">{new Date(p.desiredDate).toLocaleDateString("fr-FR")}</p>
+                <p className="text-xs text-ink-muted mt-0.5">{new Date(p.desiredDate).toLocaleDateString("fr-FR")}</p>
               </div>
               <StatusBadge status={p.status} />
             </Card>
@@ -56,7 +56,7 @@ export default function DashboardPage() {
             <Card key={t.id} className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-ink">{t.originLabel} → {t.destinationLabel}</p>
-                <p className="text-xs text-ink/50 mt-0.5">{new Date(t.departureAt).toLocaleDateString("fr-FR")}</p>
+                <p className="text-xs text-ink-muted mt-0.5">{new Date(t.departureAt).toLocaleDateString("fr-FR")}</p>
               </div>
               <StatusBadge status={t.status} />
             </Card>
@@ -76,12 +76,12 @@ export default function DashboardPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-8">
-      <h2 className="text-sm font-medium text-ink/60 mb-3">{title}</h2>
+      <h2 className="text-sm font-medium text-ink-muted mb-3">{title}</h2>
       {children}
     </section>
   );
 }
 
 function EmptyState({ text }: { text: string }) {
-  return <p className="text-sm text-ink/40 py-4 text-center">{text}</p>;
+  return <p className="text-sm text-ink-muted py-4 text-center">{text}</p>;
 }

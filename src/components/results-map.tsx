@@ -75,7 +75,7 @@ export function ResultsMap({ points }: { points: Point[] }) {
   }
 
   // Hauteur volontairement contenue : la carte illustre, elle ne remplace pas la liste.
-  return <div ref={containerRef} className="h-40 rounded-card overflow-hidden mb-4 border border-black/5" />;
+  return <div ref={containerRef} className="h-40 rounded-card overflow-hidden mb-4 border border-line" />;
 }
 
 function loadScript(src: string) {

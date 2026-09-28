@@ -20,21 +20,21 @@ export default function AdminDashboardPage() {
         <Counter label="Volume ce mois-ci" value={data ? `${Number(data.counters?.gmvThisMonth ?? 0).toFixed(0)} €` : "…"} />
       </div>
 
-      <h2 className="text-sm font-medium text-ink/60 mb-3">Incidents à traiter</h2>
+      <h2 className="text-sm font-medium text-ink-muted mb-3">Incidents à traiter</h2>
       <div className="space-y-3">
         {data?.recentIncidents?.length ? (
           data.recentIncidents.map((inc: any) => (
             <Card key={inc.id}>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium text-ink">{inc.category}</span>
-                <span className="text-xs text-ink/50">{new Date(inc.createdAt).toLocaleDateString("fr-FR")}</span>
+                <span className="text-xs text-ink-muted">{new Date(inc.createdAt).toLocaleDateString("fr-FR")}</span>
               </div>
-              <p className="text-sm text-ink/70 mb-1">{inc.description}</p>
-              <p className="text-xs text-ink/40">Signalé par {inc.reporter.firstName} {inc.reporter.lastName}</p>
+              <p className="text-sm text-ink-muted mb-1">{inc.description}</p>
+              <p className="text-xs text-ink-muted">Signalé par {inc.reporter.firstName} {inc.reporter.lastName}</p>
             </Card>
           ))
         ) : (
-          <p className="text-sm text-ink/40">Aucun incident ouvert.</p>
+          <p className="text-sm text-ink-muted">Aucun incident ouvert.</p>
         )}
       </div>
     </main>
@@ -44,8 +44,8 @@ export default function AdminDashboardPage() {
 function Counter({ label, value, tone }: { label: string; value: any; tone?: "warning" }) {
   return (
     <Card>
-      <p className="text-xs text-ink/50 mb-1">{label}</p>
-      <p className={`text-2xl font-semibold ${tone === "warning" ? "text-red-600" : "text-ink"}`}>
+      <p className="text-xs text-ink-muted mb-1">{label}</p>
+      <p className={`text-2xl font-semibold ${tone === "warning" ? "text-error" : "text-ink"}`}>
         {value ?? "…"}
       </p>
     </Card>

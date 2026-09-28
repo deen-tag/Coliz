@@ -34,7 +34,7 @@ export function CityAutocomplete({
   return (
     <div className="relative">
       <label className="block">
-        <span className="block text-sm text-ink/70 mb-1.5">{label}</span>
+        <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
         <input
           value={query}
           onChange={(e) => {
@@ -44,12 +44,12 @@ export function CityAutocomplete({
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder="Ville"
-          className="w-full rounded-control border border-black/10 px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       </label>
 
       {open && suggestions.length > 0 && (
-        <ul className="absolute z-10 left-0 right-0 mt-1 bg-surface border border-black/10 rounded-control shadow-md max-h-56 overflow-y-auto">
+        <ul className="absolute z-10 left-0 right-0 mt-1 bg-surface border border-line rounded-control shadow-md max-h-56 overflow-y-auto">
           {suggestions.map((s) => (
             <li key={s.label}>
               <button

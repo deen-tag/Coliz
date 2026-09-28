@@ -33,27 +33,27 @@ export default function PortefeuillePage() {
       {needsOnboarding && (
         <Card className="mb-6">
           <p className="text-sm font-medium text-ink mb-1">Activez vos paiements</p>
-          <p className="text-xs text-ink/60 mb-3">
+          <p className="text-xs text-ink-muted mb-3">
             Pour recevoir vos contributions en tant que voyageur, complétez la vérification Stripe (identité, coordonnées bancaires).
           </p>
           <PrimaryButton onClick={startOnboarding}>Configurer mes paiements</PrimaryButton>
         </Card>
       )}
 
-      <h2 className="text-sm font-medium text-ink/60 mb-3">Historique</h2>
+      <h2 className="text-sm font-medium text-ink-muted mb-3">Historique</h2>
       <div className="space-y-3">
         {wallet?.transactions?.length ? (
           wallet.transactions.map((t: any) => (
             <Card key={t.id} className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-ink">Transfert réservation</p>
-                <p className="text-xs text-ink/50">{new Date(t.createdAt).toLocaleDateString("fr-FR")}</p>
+                <p className="text-xs text-ink-muted">{new Date(t.createdAt).toLocaleDateString("fr-FR")}</p>
               </div>
               <span className="text-sm font-medium text-success">+{Number(t.amount).toFixed(2)} €</span>
             </Card>
           ))
         ) : (
-          <p className="text-sm text-ink/40 text-center py-6">Aucune transaction pour le moment.</p>
+          <p className="text-sm text-ink-muted text-center py-6">Aucune transaction pour le moment.</p>
         )}
       </div>
 

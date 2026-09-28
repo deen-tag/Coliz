@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/server/auth/session";
 import { notifyUser } from "@/server/notifications/service";
+import { cancelBooking } from "@/server/bookings/capacity";
 
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const user = await requireUser();
@@ -17,7 +18,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     );
   }
 
-  await prisma.booking.update({ where: { id: booking.id }, data: { status: "CANCELLED" } });
+  await cancelBooking(booking.id);
   await notifyUser(booking.senderId, "booking_refused", "Votre demande de réservation a été refusée par le voyageur.");
 
   return NextResponse.json({ ok: true, status: "CANCELLED" });

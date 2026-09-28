@@ -22,10 +22,10 @@ export default function VerificationIdentitePage() {
 
       <Card className="text-center py-10 mb-6">
         <ShieldIcon size={40} className="text-primary mx-auto mb-4" />
-        <p className="text-sm text-ink/70 mb-1">
+        <p className="text-sm text-ink-muted mb-1">
           Un document d'identité valide vous sera demandé (carte d'identité, passeport ou permis).
         </p>
-        <p className="text-xs text-ink/50">
+        <p className="text-xs text-ink-muted">
           La vérification est traitée par Stripe Identity et prend généralement quelques minutes.
         </p>
       </Card>

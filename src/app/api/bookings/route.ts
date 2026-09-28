@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { computeBookingAmounts } from "@/server/stripe/client";
 import { requireUser } from "@/server/auth/session";
 import { notifyUser } from "@/server/notifications/service";
+import { reserveCapacity } from "@/server/bookings/capacity";
 
 const bookingSchema = z.object({
   parcelId: z.string(),
@@ -37,18 +38,27 @@ export async function POST(req: Request) {
     Number(trip.contributionAmount)
   );
 
-  const booking = await prisma.booking.create({
-    data: {
-      parcelId: parcel.id,
-      tripId: trip.id,
-      senderId: user.id,
-      travelerId: trip.travelerId,
-      contributionAmount,
-      platformFeeAmount,
-      totalAmount,
-      status: "REQUESTED",
-    },
+  // Réservation de la place et création de la demande dans la même transaction :
+  // si la capacité vient de se remplir entre-temps, rien n'est créé.
+  const booking = await prisma.$transaction(async (tx) => {
+    const reserved = await reserveCapacity(tx, trip.id, parcel.parcelCount);
+    if (!reserved) return null;
+    return tx.booking.create({
+      data: {
+        parcelId: parcel.id,
+        tripId: trip.id,
+        senderId: user.id,
+        travelerId: trip.travelerId,
+        contributionAmount,
+        platformFeeAmount,
+        totalAmount,
+        status: "REQUESTED",
+      },
+    });
   });
+  if (!booking) {
+    return NextResponse.json({ error: "Capacité insuffisante sur ce trajet" }, { status: 422 });
+  }
 
   await notifyUser(trip.travelerId, "booking_requested", `Nouvelle demande de réservation pour votre trajet.`);
 

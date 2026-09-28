@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { stripe } from "@/server/stripe/client";
 import { notifyUser } from "@/server/notifications/service";
 import { issueTransferCodes } from "@/server/security/transfer-codes";
+import { cancelBookingTx } from "@/server/bookings/capacity";
 import type Stripe from "stripe";
 
 export const runtime = "nodejs"; // nécessaire : l'edge runtime ne peut pas lire le raw body
@@ -83,7 +84,8 @@ async function handlePaymentFailed(pi: Stripe.PaymentIntent) {
     where: { bookingId, stripeObjectId: pi.id },
     data: { status: "FAILED" },
   });
-  await prisma.booking.update({ where: { id: bookingId }, data: { status: "REQUESTED" } });
+  // Retour à ACCEPTED : le voyageur a déjà donné son accord, l'expéditeur peut réessayer.
+  await prisma.booking.update({ where: { id: bookingId }, data: { status: "ACCEPTED" } });
 }
 
 async function handleRefund(charge: Stripe.Charge) {
@@ -93,9 +95,11 @@ async function handleRefund(charge: Stripe.Charge) {
   const transaction = await prisma.transaction.findFirst({ where: { stripeObjectId: paymentIntentId } });
   if (!transaction) return;
 
-  await prisma.$transaction([
-    prisma.booking.update({ where: { id: transaction.bookingId }, data: { status: "CANCELLED" } }),
-    prisma.transaction.create({
+  await prisma.$transaction(async (tx) => {
+    // Annule la réservation ET restitue ses places (une seule fois, même si
+    // Stripe rejoue l'événement).
+    await cancelBookingTx(tx, transaction.bookingId);
+    await tx.transaction.create({
       data: {
         bookingId: transaction.bookingId,
         type: "REFUND",
@@ -103,8 +107,8 @@ async function handleRefund(charge: Stripe.Charge) {
         amount: charge.amount_refunded / 100,
         stripeObjectId: charge.id,
       },
-    }),
-  ]);
+    });
+  });
 }
 
 async function handleAccountUpdated(account: Stripe.Account) {

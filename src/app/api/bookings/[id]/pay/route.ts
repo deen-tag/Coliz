@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (booking.senderId !== user.id) return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   // Le paiement suppose désormais l'accord explicite du voyageur
   // (POST /api/bookings/[id]/accept) avant de pouvoir être déclenché.
-  if (booking.status !== "ACCEPTED") {
+  if (booking.status !== "ACCEPTED" && booking.status !== "PAYMENT_PENDING") {
     return NextResponse.json({ error: "Cette réservation n'est pas payable dans son état actuel" }, { status: 422 });
   }
 

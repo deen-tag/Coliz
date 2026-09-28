@@ -66,6 +66,7 @@ model User {
   reviewsWritten     Review[]     @relation("ReviewAuthor")
   reviewsReceived    Review[]     @relation("ReviewTarget")
   notifications      Notification[]
+  passwordResetTokens PasswordResetToken[]
   messages           Message[]
   incidents          Incident[]
   wallet             Wallet?
@@ -500,6 +501,21 @@ model Incident {
 // ─────────────────────────────────────────────
 // NOTIFICATIONS
 // ─────────────────────────────────────────────
+
+// Réinitialisation de mot de passe — token à usage unique, stocké haché
+// (SHA-256, à sens unique : contrairement aux codes de remise, on n'a jamais
+// besoin de le relire), durée de vie courte.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
 
 model Notification {
   id        String   @id @default(cuid())

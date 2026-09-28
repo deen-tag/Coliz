@@ -13,14 +13,20 @@ export async function GET(req: Request) {
   // réglable depuis le sélecteur "Période flexible" de la homepage.
   const flexDays = Math.max(0, Math.min(30, Number(searchParams.get("flex") ?? 3) || 0));
 
-  const where: any = { status: { in: ["PUBLISHED", "PARTIALLY_BOOKED"] } };
+  // Uniquement des trajets encore réservables : places libres, pas déjà partis.
+  const where: any = {
+    status: { in: ["PUBLISHED", "PARTIALLY_BOOKED"] },
+    remainingParcels: { gt: 0 },
+    departureAt: { gte: new Date() },
+  };
   if (from) where.originLabel = { contains: from, mode: "insensitive" };
   if (to) where.destinationLabel = { contains: to, mode: "insensitive" };
   if (date) {
     const d = new Date(date);
     const from_ = new Date(d); from_.setDate(from_.getDate() - flexDays);
     const to_ = new Date(d); to_.setDate(to_.getDate() + flexDays);
-    where.departureAt = { gte: from_, lte: to_ };
+    const now = new Date();
+    where.departureAt = { gte: from_ > now ? from_ : now, lte: to_ };
   }
 
   const trips = await prisma.trip.findMany({

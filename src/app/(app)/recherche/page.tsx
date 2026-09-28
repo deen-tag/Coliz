@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, VerifiedBadge, TransportModeBadge, SectionHeader, EmptyState, PrimaryButton } from "@/components/ui";
 import { ResultsMap } from "@/components/results-map";
+import { DateField } from "@/components/date-field";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -182,12 +183,9 @@ function SearchForm({ from, to, date, flex }: { from: string; to: string; date: 
         <input className={input} placeholder="Destination" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
       </div>
       <div className="grid grid-cols-2 gap-3">
+        <DateField label="Date de départ" value={f.date} onChange={(v) => setF({ ...f, date: v })} placeholder="Toutes les dates" />
         <label className="block">
-          <span className="block text-xs text-ink-muted mb-1">Date de départ (optionnel)</span>
-          <input type="date" className={input} value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} />
-        </label>
-        <label className="block">
-          <span className="block text-xs text-ink-muted mb-1">Période flexible</span>
+          <span className="block text-sm text-ink-muted mb-1.5 whitespace-nowrap">Période flexible</span>
           <select className={input} value={f.flex} onChange={(e) => setF({ ...f, flex: e.target.value })}>
             <option value="0">Date exacte</option>
             <option value="3">± 3 jours</option>

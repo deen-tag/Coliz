@@ -4,6 +4,7 @@ import type { TransportMode } from "@prisma/client";
 import {
   PlaneIcon,
   TrainIcon,
+  CarIcon,
   BusIcon,
   MotorcycleIcon,
   BicycleIcon,
@@ -109,7 +110,7 @@ export function VerifiedBadge({ identity, email }: { identity: boolean; email: b
 export const TrustBadge = VerifiedBadge;
 
 const TRANSPORT_MODE_CONFIG: Record<TransportMode, { label: string; Icon: (p: { size?: number; className?: string }) => JSX.Element }> = {
-  CAR: { label: "Voiture", Icon: SuitcaseIcon },
+  CAR: { label: "Voiture", Icon: CarIcon },
   TRAIN: { label: "Train", Icon: TrainIcon },
   BUS: { label: "Bus", Icon: BusIcon },
   PLANE: { label: "Avion", Icon: PlaneIcon },
@@ -187,4 +188,8 @@ export function EmptyState({
       {action}
     </div>
   );
+}
+
+export function LoadingState({ text = "Chargement..." }: { text?: string }) {
+  return <p className="text-sm text-ink-muted text-center py-16">{text}</p>;
 }

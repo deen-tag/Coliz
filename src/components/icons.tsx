@@ -195,6 +195,18 @@ export function SettingsIcon(props: IconProps) {
   );
 }
 
+export function CarIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M5 16v-4l1.6-4.4A2 2 0 0 1 8.5 6h7a2 2 0 0 1 1.9 1.6L19 12v4" />
+      <path d="M3.5 12h17v4a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-4Z" />
+      <circle cx="7.5" cy="14.5" r=".5" fill="currentColor" />
+      <circle cx="16.5" cy="14.5" r=".5" fill="currentColor" />
+      <path d="M6.5 17v2M17.5 17v2" />
+    </svg>
+  );
+}
+
 export function TrainIcon(props: IconProps) {
   return (
     <svg {...base(props)}>

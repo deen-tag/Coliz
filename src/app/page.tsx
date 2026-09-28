@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { DateField } from "@/components/date-field";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/options";
 import { Logo } from "@/components/logo";
@@ -54,48 +56,69 @@ export default async function HomePage() {
         </div>
       </header>
 
-      {/* Parcours expéditeur — recherche principale */}
-      <section className="max-w-2xl mx-auto px-4 pt-6 sm:pt-10 pb-10 text-center">
-        <h1 className="text-3xl sm:text-5xl font-semibold text-ink leading-tight tracking-tight mb-3">
-          Envoyez votre colis avec<br className="hidden sm:block" /> quelqu&apos;un qui fait déjà le trajet.
-        </h1>
-        <p className="text-ink-muted text-base sm:text-lg mb-8">
-          Trouvez plusieurs possibilités, comparez le prix et le délai, puis échangez avec le voyageur.
-        </p>
+      {/* Parcours expéditeur — recherche principale.
+          L'illustration est purement décorative (alt vide) : la page se comprend
+          sans elle. Bureau : en fond à droite, le texte reste dans la zone
+          crème à gauche. Mobile : bandeau sous le formulaire. */}
+      <section className="relative overflow-hidden">
+        <div className="hidden lg:block absolute inset-y-0 right-0 w-[68%] pointer-events-none" aria-hidden="true">
+          <Image src="/brand/hero.webp" alt="" fill sizes="70vw" priority className="object-cover object-right" />
+        </div>
 
-        <Card className="text-left">
-          <form action="/recherche" className="space-y-3">
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Field name="from" label="Départ" placeholder="Ville de départ" />
-              <Field name="to" label="Destination" placeholder="Ville d'arrivée" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field name="date" label="Autour du (optionnel)" type="date" />
-              <label className="block">
-                <span className="block text-sm text-ink-muted mb-1.5">Période flexible</span>
-                <select
-                  name="flex"
-                  defaultValue="3"
-                  className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-                >
-                  <option value="0">Date exacte</option>
-                  <option value="3">± 3 jours</option>
-                  <option value="7">± 7 jours</option>
-                  <option value="15">± 15 jours</option>
-                </select>
-              </label>
-            </div>
-            <PrimaryButton type="submit">Voir les possibilités</PrimaryButton>
-          </form>
-        </Card>
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-6 lg:pt-16 pb-6 lg:pb-28">
+          <div className="lg:max-w-lg">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-ink leading-tight tracking-tight mb-3">
+              Envoyez votre colis avec quelqu&apos;un qui fait déjà le trajet.
+            </h1>
+            <p className="text-ink-muted text-base sm:text-lg mb-8">
+              Trouvez plusieurs possibilités, comparez le prix et le délai, puis échangez avec le voyageur.
+            </p>
 
-        <div className="flex flex-wrap justify-center gap-2 mt-4">
-          {EXAMPLE_ROUTES.map(({ route, mode }) => (
-            <span key={route} className="inline-flex items-center gap-1.5 rounded-control bg-black/[0.03] px-2.5 py-1.5">
-              <TransportModeBadge mode={mode} variant="plain" />
-              <span className="text-sm text-ink-muted">{route}</span>
-            </span>
-          ))}
+            <Card>
+              <form action="/recherche" className="space-y-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Field name="from" label="Départ" placeholder="Ville de départ" />
+                  <Field name="to" label="Destination" placeholder="Ville d'arrivée" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <DateField name="date" label="Date de départ" placeholder="Toutes les dates" />
+                  <label className="block">
+                    <span className="block text-sm text-ink-muted mb-1.5">Période flexible</span>
+                    <select
+                      name="flex"
+                      defaultValue="3"
+                      className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    >
+                      <option value="0">Date exacte</option>
+                      <option value="3">± 3 jours</option>
+                      <option value="7">± 7 jours</option>
+                      <option value="15">± 15 jours</option>
+                    </select>
+                  </label>
+                </div>
+                <PrimaryButton type="submit">Voir les possibilités</PrimaryButton>
+              </form>
+            </Card>
+
+            <div className="flex flex-wrap gap-2 mt-4">
+              {EXAMPLE_ROUTES.map(({ route, mode }) => (
+                <span key={route} className="inline-flex items-center gap-1.5 rounded-control bg-black/[0.03] px-2.5 py-1.5">
+                  <TransportModeBadge mode={mode} variant="plain" />
+                  <span className="text-sm text-ink-muted">{route}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:hidden relative h-64 overflow-hidden pointer-events-none" aria-hidden="true">
+          <Image
+            src="/brand/hero.webp"
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover object-[95%_35%] scale-[1.55] origin-[95%_35%]"
+          />
         </div>
       </section>
 

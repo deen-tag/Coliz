@@ -64,7 +64,9 @@ export default function NouveauColisPage() {
       return;
     }
     const parcel = await res.json();
-    router.push(`/recherche?parcelId=${parcel.id}`);
+    // Venu d'un trajet précis : on y retourne avec le colis, prêt à réserver.
+    const tripId = new URLSearchParams(window.location.search).get("tripId");
+    router.push(tripId ? `/trajets/${tripId}?parcelId=${parcel.id}` : `/recherche?parcelId=${parcel.id}`);
   }
 
   return (

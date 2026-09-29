@@ -196,7 +196,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="max-w-3xl mx-auto px-4 py-14">
+      <section id="comment-ca-marche" className="max-w-3xl mx-auto px-4 py-14 scroll-mt-20">
         <h2 className="text-xl font-semibold text-ink text-center mb-8">Comment ça marche ?</h2>
         <div className="grid sm:grid-cols-4 gap-6">
           {STEPS.map((s) => (

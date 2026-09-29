@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     where,
     orderBy: { departureAt: "asc" },
     take: 20,
-    include: { traveler: { select: { firstName: true, ratingAverage: true, ratingCount: true, identityVerifiedAt: true } } },
+    include: { traveler: { select: { firstName: true, avatarUrl: true, ratingAverage: true, ratingCount: true, identityVerifiedAt: true } } },
   });
 
   return NextResponse.json(
@@ -41,6 +41,7 @@ export async function GET(req: Request) {
       tripId: t.id,
       traveler: {
         firstName: t.traveler.firstName,
+        avatarUrl: t.traveler.avatarUrl,
         ratingAverage: t.traveler.ratingAverage,
         ratingCount: t.traveler.ratingCount,
         identityVerified: Boolean(t.traveler.identityVerifiedAt),

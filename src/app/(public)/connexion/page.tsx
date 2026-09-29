@@ -7,6 +7,9 @@ import { Card, PrimaryButton } from "@/components/ui";
 import { Logo } from "@/components/logo";
 import { IconField } from "@/components/form-field";
 import { MailIcon, LockIcon } from "@/components/icons";
+import { JourneySteps } from "@/components/journey-steps";
+import { AuthTripContext, tripIdFromCallback } from "@/components/auth-context";
+import { authHref, safeCallbackUrl } from "@/lib/callback-url";
 
 export default function ConnexionPage() {
   return (
@@ -38,16 +41,33 @@ function ConnexionForm() {
       setError("Email ou mot de passe incorrect.");
       return;
     }
-    router.push(params.get("callbackUrl") ?? "/dashboard");
+    router.push(safeCallbackUrl(params.get("callbackUrl")));
   }
+
+  const callbackUrl = params.get("callbackUrl");
+  const tripId = tripIdFromCallback(callbackUrl);
+  const registered = params.get("registered") === "1";
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-10 max-w-sm mx-auto">
       <div className="flex justify-center mb-8">
-        <Logo variant="primary" size={40} />
+        <a href="/" aria-label="Accueil Coliz">
+          <Logo variant="primary" size={40} />
+        </a>
       </div>
-      <h1 className="text-2xl font-semibold text-ink mb-1">Se connecter</h1>
-      <p className="text-sm text-ink-muted mb-6">Accédez à votre espace Coliz.</p>
+      {tripId && <JourneySteps current={4} />}
+      <h1 className="text-2xl font-semibold text-ink mb-1">
+        {tripId ? "Connectez-vous pour réserver" : "Se connecter"}
+      </h1>
+      <p className="text-sm text-ink-muted mb-6">
+        {tripId ? "Vous reviendrez directement sur ce trajet." : "Accédez à votre espace Coliz."}
+      </p>
+      {registered && (
+        <p className="mb-5 rounded-control bg-success-light text-success text-sm px-4 py-3">
+          Votre compte est créé. Connectez-vous pour continuer.
+        </p>
+      )}
+      {tripId && <AuthTripContext tripId={tripId} />}
 
       <Card as="form" onSubmit={handleSubmit} className="space-y-4">
         <IconField
@@ -79,7 +99,7 @@ function ConnexionForm() {
 
       <p className="text-center text-sm text-ink-muted mt-5">
         Pas encore de compte ?{" "}
-        <a href="/inscription" className="text-primary font-medium">
+        <a href={authHref("/inscription", callbackUrl)} className="text-primary font-medium">
           Créer un compte
         </a>
       </p>

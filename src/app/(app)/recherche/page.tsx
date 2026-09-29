@@ -1,13 +1,17 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Card, VerifiedBadge, TransportModeBadge, SectionHeader, EmptyState, PrimaryButton } from "@/components/ui";
+import { Card, VerifiedBadge, TransportModeBadge, PrimaryButton, SecondaryButton } from "@/components/ui";
 import { ResultsMap } from "@/components/results-map";
 import { DateField } from "@/components/date-field";
 import { IconField, IconSelect } from "@/components/form-field";
-import { MapPinIcon, CalendarIcon, ClockIcon } from "@/components/icons";
+import { MapPinIcon, CalendarIcon, ClockIcon, ChevronRightIcon, StarIcon } from "@/components/icons";
+import { Avatar } from "@/components/avatar";
+import { JourneySteps } from "@/components/journey-steps";
+import { RouteLine, TrustStrip, formatPrice, formatTripMoment } from "@/components/trip-parts";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -23,7 +27,6 @@ export default function RecherchePage() {
 
 function RechercheContent() {
   const params = useSearchParams();
-  const router = useRouter();
   const [showMap, setShowMap] = useState(false);
 
   const parcelId = params.get("parcelId");
@@ -31,6 +34,11 @@ function RechercheContent() {
   const to = params.get("to");
   const date = params.get("date");
   const flex = params.get("flex") ?? "3";
+
+  // Sans recherche préalable, le formulaire est ouvert ; sinon il se replie
+  // en un résumé modifiable pour laisser la place aux résultats.
+  const hasSearch = Boolean(from || to || date);
+  const [editing, setEditing] = useState(!hasSearch);
 
   const endpoint = parcelId
     ? `/api/trips/search?parcelId=${parcelId}`
@@ -40,120 +48,147 @@ function RechercheContent() {
         ...(date ? { date, flex } : {}),
       })}`;
 
-  const { data: results, isLoading } = useSWR(endpoint, fetcher);
+  const { data, isLoading } = useSWR(endpoint, fetcher);
+  const results: any[] | undefined = Array.isArray(data) ? data : undefined;
 
-  // La réservation se termine sur la page Détail trajet, pas directement
-  // depuis la liste (brief §9 : voir le trajet avant de s'engager).
-  function viewTrip(tripId: string) {
-    router.push(parcelId ? `/trajets/${tripId}?parcelId=${parcelId}` : `/trajets/${tripId}`);
-  }
-
-  const routeLabel = from && to ? `${from} → ${to}` : from ? `Depuis ${from}` : to ? `Vers ${to}` : null;
+  const routeLabel = from && to ? `${from} → ${to}` : from ? `Depuis ${from}` : to ? `Vers ${to}` : "Tous les trajets";
   const periodLabel = date
     ? Number(flex) > 0
       ? `Départ entre le ${addDays(date, -Number(flex))} et le ${addDays(date, Number(flex))}`
       : `Départ le ${addDays(date, 0)}`
-    : null;
+    : "Toutes les dates";
+
+  const count = results?.length ?? 0;
+  const title = isLoading
+    ? "Recherche des trajets…"
+    : parcelId
+      ? `${count} trajet${count > 1 ? "s" : ""} pour votre colis`
+      : count === 0
+        ? "Aucun trajet pour le moment"
+        : `${count} trajet${count > 1 ? "s" : ""} disponible${count > 1 ? "s" : ""}`;
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
-      {!parcelId && <SearchForm from={from ?? ""} to={to ?? ""} date={date ?? ""} flex={flex} />}
+      <JourneySteps current={hasSearch || parcelId ? 2 : 1} />
 
-      <SectionHeader
-        title={routeLabel ?? "Trajets disponibles"}
-        subtitle={
-          isLoading
-            ? "Recherche en cours..."
-            : `${periodLabel ? periodLabel + " · " : ""}${
-                results ? `${results.length} résultat${results.length > 1 ? "s" : ""}` : ""
-              }`
-        }
-      />
+      {!parcelId &&
+        (editing ? (
+          <SearchForm from={from ?? ""} to={to ?? ""} date={date ?? ""} flex={flex} />
+        ) : (
+          <Card className="mb-6 !p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-control bg-primary-light text-primary flex items-center justify-center shrink-0">
+              <MapPinIcon size={20} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-ink truncate">{routeLabel}</p>
+              <p className="text-sm text-ink-muted truncate">{periodLabel}</p>
+            </div>
+            <button onClick={() => setEditing(true)} className="text-sm font-medium text-primary shrink-0 px-2 py-1">
+              Modifier
+            </button>
+          </Card>
+        ))}
 
-      {results?.length > 0 && (
-        <div className="mb-4">
-          <button onClick={() => setShowMap((v) => !v)} className="text-sm font-medium text-primary">
+      <div className="flex items-end justify-between gap-3 mb-4">
+        <div>
+          <h1 className="text-xl font-semibold text-ink leading-tight">{title}</h1>
+          {parcelId && <p className="text-sm text-ink-muted mt-1">Compatibles avec le poids et les dimensions de votre colis.</p>}
+        </div>
+        {count > 0 && (
+          <button onClick={() => setShowMap((v) => !v)} className="text-sm font-medium text-primary shrink-0">
             {showMap ? "Masquer la carte" : "Voir sur la carte"}
           </button>
-          {showMap && (
-            <div className="mt-3">
-              <ResultsMap
-                points={results.flatMap((r: any) => [
-                  { lat: r.originLat, lng: r.originLng },
-                  { lat: r.destinationLat, lng: r.destinationLng },
-                ])}
-              />
-            </div>
-          )}
+        )}
+      </div>
+
+      {showMap && results && results.length > 0 && (
+        <div className="mb-4">
+          <ResultsMap
+            points={results.flatMap((r: any) => [
+              { lat: r.originLat, lng: r.originLng },
+              { lat: r.destinationLat, lng: r.destinationLng },
+            ])}
+          />
         </div>
       )}
 
       {results?.length === 0 && (
-        <EmptyState
-          title="Aucun trajet trouvé pour le moment."
-          description="Publiez votre colis pour être notifié dès qu'un voyageur correspond à votre trajet — Coliz vous propose automatiquement les nouvelles opportunités."
-          action={
-            <PrimaryButton className="w-auto px-6" onClick={() => router.push("/colis/nouveau")}>
-              Publier mon colis
-            </PrimaryButton>
-          }
-        />
+        <Card className="text-center">
+          <p className="font-medium text-ink mb-1.5">Aucun trajet ne correspond pour le moment.</p>
+          <p className="text-sm text-ink-muted mb-5">
+            Essayez d&apos;élargir la période ou de changer de ville. Vous pouvez aussi publier votre colis : vous
+            êtes prévenu dès qu&apos;un voyageur correspond à votre trajet.
+          </p>
+          <div className="space-y-2.5">
+            {!parcelId && <SecondaryButton onClick={() => setEditing(true)}>Modifier ma recherche</SecondaryButton>}
+            <Link href="/colis/nouveau" className="block">
+              <PrimaryButton>Publier mon colis</PrimaryButton>
+            </Link>
+          </div>
+        </Card>
       )}
 
       <div className="space-y-3">
         {results?.map((r: any) => (
-          <Card key={r.tripId}>
-            {/* Hiérarchie : trajet → prix → timing → transport → personne (DA §10) */}
-            {!routeLabel && (
-              <p className="text-sm font-medium text-ink mb-2">
-                {r.originLabel} → {r.destinationLabel}
-              </p>
-            )}
-
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-2xl font-semibold text-ink">
-                  {Number(r.totalAmount ?? r.contributionAmount).toFixed(2)} €
-                </p>
-                <p className="text-xs text-ink-muted mt-0.5">Prix tout compris</p>
-                <p className="text-sm text-ink-muted mt-1">
-                  {new Date(r.departureAt).toLocaleDateString("fr-FR", DATE_FMT)}
-                  {r.arrivalAt &&
-                    ` · arrivée estimée ${new Date(r.arrivalAt).toLocaleDateString("fr-FR", {
-                      ...DATE_FMT,
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}`}
-                </p>
-              </div>
-              <TransportModeBadge mode={r.mode} />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary font-medium text-xs shrink-0">
-                  {r.traveler.firstName?.[0]}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">{r.traveler.firstName}</p>
-                  <p className="text-xs text-ink-muted">
-                    {r.remainingParcels} place{r.remainingParcels > 1 ? "s" : ""} restante{r.remainingParcels > 1 ? "s" : ""}
-                  </p>
-                </div>
-              </div>
-              <VerifiedBadge identity={r.traveler.identityVerified} email={true} />
-            </div>
-
-            <button
-              onClick={() => viewTrip(r.tripId)}
-              className="w-full mt-4 rounded-control bg-primary text-white text-sm font-medium py-2.5"
-            >
-              Voir le trajet
-            </button>
-          </Card>
+          <TripResultCard key={r.tripId} r={r} parcelId={parcelId} />
         ))}
       </div>
+
+      {results && results.length > 0 && (
+        <div className="mt-8">
+          <TrustStrip />
+        </div>
+      )}
     </main>
+  );
+}
+
+// Carte de résultat : qui transporte, sur quel trajet, quand, et à quel prix.
+// Toute la carte est cliquable : la réservation se termine sur la page du trajet.
+function TripResultCard({ r, parcelId }: { r: any; parcelId: string | null }) {
+  const href = parcelId ? `/trajets/${r.tripId}?parcelId=${parcelId}` : `/trajets/${r.tripId}`;
+  const places = r.remainingParcels;
+  return (
+    <Link href={href} className="block">
+      <Card className="!p-4 active:bg-surface-alt transition-colors">
+        <div className="flex items-center gap-3 mb-4">
+          <Avatar name={r.traveler.firstName} src={r.traveler.avatarUrl} size={40} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-ink truncate">{r.traveler.firstName}</p>
+            {r.traveler.ratingCount > 0 ? (
+              <p className="text-xs text-ink-muted flex items-center gap-1">
+                <StarIcon size={12} className="text-primary" />
+                {Number(r.traveler.ratingAverage).toFixed(1)} ({r.traveler.ratingCount} avis)
+              </p>
+            ) : (
+              <p className="text-xs text-ink-muted">Nouveau voyageur</p>
+            )}
+          </div>
+          <VerifiedBadge identity={r.traveler.identityVerified} email={true} />
+        </div>
+
+        <RouteLine from={r.originLabel} to={r.destinationLabel} className="text-[17px] mb-1.5" />
+        <p className="text-sm text-ink-muted">{formatTripMoment(r.departureAt)}</p>
+
+        <div className="flex items-end justify-between gap-3 mt-4 pt-4 border-t border-line">
+          <div className="space-y-1.5">
+            <TransportModeBadge mode={r.mode} />
+            <p className="text-xs text-ink-muted">
+              {places} place{places > 1 ? "s" : ""} restante{places > 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-semibold text-ink leading-none">
+              {formatPrice(r.totalAmount ?? r.contributionAmount)}
+            </p>
+            <p className="text-xs text-ink-muted mt-1 flex items-center justify-end gap-0.5">
+              Tout compris
+              <ChevronRightIcon size={14} className="text-primary" />
+            </p>
+          </div>
+        </div>
+      </Card>
+    </Link>
   );
 }
 
@@ -177,6 +212,10 @@ function SearchForm({ from, to, date, flex }: { from: string; to: string; date: 
 
   return (
     <Card as="form" onSubmit={submit} className="mb-6 space-y-3">
+      <div>
+        <h1 className="text-lg font-semibold text-ink">Où voulez-vous envoyer votre colis ?</h1>
+        <p className="text-sm text-ink-muted mt-0.5">Coliz trouve les voyageurs qui font déjà ce trajet.</p>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <IconField icon={<MapPinIcon size={18} />} placeholder="Départ" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
         <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
@@ -190,7 +229,7 @@ function SearchForm({ from, to, date, flex }: { from: string; to: string; date: 
           <option value="15">± 15 jours</option>
         </IconSelect>
       </div>
-      <PrimaryButton type="submit">Rechercher</PrimaryButton>
+      <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
     </Card>
   );
 }

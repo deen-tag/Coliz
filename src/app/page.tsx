@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/options";
 import { Logo } from "@/components/logo";
 import { PrimaryButton, Card } from "@/components/ui";
-import { ShieldIcon, LockIcon, MapPinIcon, CheckBadgeIcon, SuitcaseIcon, CarIcon, PlaneIcon, FerryIcon } from "@/components/icons";
+import { ShieldIcon, LockIcon, MapPinIcon, CheckBadgeIcon, SuitcaseIcon, CalendarIcon, ClockIcon, CarIcon, PlaneIcon, FerryIcon } from "@/components/icons";
 
 // Trajets réels les plus concernés par la diaspora maghrébine en France
 // (Paris, Marseille, Lyon, Lille) — à titre indicatif, non cliquables.
@@ -106,19 +106,22 @@ export default async function HomePage() {
                 <Field name="to" label="Destination" placeholder="Ville d'arrivée" />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <DateField name="date" label="Date de départ" placeholder="Toutes les dates" />
+                <DateField name="date" label="Date de départ" placeholder="Toutes les dates" icon={<CalendarIcon size={18} />} />
                 <label className="block">
                   <span className="block text-sm text-ink-muted mb-1.5 whitespace-nowrap">Période flexible</span>
-                  <select
-                    name="flex"
-                    defaultValue="3"
-                    className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  >
-                    <option value="0">Date exacte</option>
-                    <option value="3">± 3 jours</option>
-                    <option value="7">± 7 jours</option>
-                    <option value="15">± 15 jours</option>
-                  </select>
+                  <span className="relative block">
+                    <ClockIcon size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink" />
+                    <select
+                      name="flex"
+                      defaultValue="3"
+                      className="w-full rounded-control border border-line bg-surface pl-11 pr-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    >
+                      <option value="0">Date exacte</option>
+                      <option value="3">± 3 jours</option>
+                      <option value="7">± 7 jours</option>
+                      <option value="15">± 15 jours</option>
+                    </select>
+                  </span>
                 </label>
               </div>
               <PrimaryButton type="submit">Voir les possibilités</PrimaryButton>
@@ -127,16 +130,19 @@ export default async function HomePage() {
 
           {/* Purement informatif (pas de lien/clic) : juste montrer la diversité
               des trajets et des modes couverts par Coliz. */}
-          <div className="mt-5">
-            <p className="text-xs font-medium text-ink-muted mb-2">Trajets fréquents</p>
-            <div className="grid grid-cols-3 gap-1.5">
+          <div className="mt-8">
+            <h2 className="text-xl sm:text-2xl font-bold text-ink">Trajets fréquents</h2>
+            <p className="text-sm text-ink-muted mt-1 mb-4">
+              Ces trajets sont souvent recherchés par notre communauté.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {FREQUENT_ROUTES.map(({ route, mode }) => (
                 <span
                   key={route}
-                  className="flex flex-col items-center justify-center gap-1 rounded-control bg-black/[0.03] px-1.5 py-2 text-center"
+                  className="flex items-center gap-2.5 rounded-full bg-primary-light/70 px-4 py-3 text-[13px] sm:text-sm font-semibold text-ink"
                 >
-                  <TransportModeIcon mode={mode} size={13} className="text-ink-muted/70 shrink-0" />
-                  <span className="text-[11px] leading-tight text-ink-muted">{route}</span>
+                  <TransportModeIcon mode={mode} size={20} className="text-primary shrink-0" />
+                  <span className="leading-tight">{route}</span>
                 </span>
               ))}
             </div>
@@ -208,10 +214,13 @@ function Field({ label, ...props }: { label: string } & React.InputHTMLAttribute
   return (
     <label className="block">
       <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
-      <input
-        className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-        {...props}
-      />
+      <span className="relative block">
+        <MapPinIcon size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink" />
+        <input
+          className="w-full rounded-control border border-line bg-surface pl-11 pr-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+          {...props}
+        />
+      </span>
     </label>
   );
 }

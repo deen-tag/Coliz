@@ -21,10 +21,10 @@ const FREQUENT_ROUTES: { route: string; mode: "PLANE" | "CAR" | "FERRY" }[] = [
 // Réassurance portée par Coliz plutôt que par une enquête de l'utilisateur
 // sur chaque transporteur (cahier des charges §3, brief UI/UX §7).
 const TRUST_ITEMS = [
-  { Icon: ShieldIcon, label: "Identité vérifiée" },
-  { Icon: LockIcon, label: "Paiement sécurisé" },
-  { Icon: MapPinIcon, label: "Suivi du colis" },
-  { Icon: CheckBadgeIcon, label: "Remise contrôlée" },
+  { Icon: ShieldIcon, label: "Identité vérifiée", text: "Des utilisateurs vérifiés et fiables." },
+  { Icon: LockIcon, label: "Paiement sécurisé", text: "Votre paiement est protégé jusqu'à la remise." },
+  { Icon: MapPinIcon, label: "Colis suivi", text: "Suivez son acheminement à chaque étape." },
+  { Icon: CheckBadgeIcon, label: "Remise par code", text: "Code confirmé à l'enlèvement et à la livraison." },
 ];
 
 const STEPS = [
@@ -151,9 +151,12 @@ export default async function HomePage() {
             <SuitcaseIcon size={24} />
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-ink mb-1">Vous voyagez ?</p>
+            <p className="font-semibold text-ink mb-1">Vous avez déjà prévu un trajet ?</p>
             <p className="text-sm text-ink-muted">
-              Publiez votre trajet et laissez Coliz vous proposer des colis compatibles.
+              Gagnez de l&apos;argent en transportant un colis sur votre route.
+            </p>
+            <p className="text-sm text-ink-muted/80 mt-1">
+              Vous choisissez vos disponibilités et vos conditions.
             </p>
           </div>
           <Link href="/trajets/nouveau" className="w-full sm:w-auto">
@@ -164,11 +167,16 @@ export default async function HomePage() {
 
       {/* Réassurance — la confiance est portée par Coliz, pas par une enquête utilisateur */}
       <section className="bg-primary-light py-12">
+        <div className="max-w-3xl mx-auto px-4 text-center mb-8">
+          <h2 className="text-xl font-semibold text-ink mb-1">Transportez en toute confiance</h2>
+          <p className="text-sm text-ink-muted">Votre colis est entre de bonnes mains.</p>
+        </div>
         <div className="max-w-3xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-          {TRUST_ITEMS.map(({ Icon, label }) => (
+          {TRUST_ITEMS.map(({ Icon, label, text }) => (
             <div key={label}>
               <Icon size={26} className="text-primary mx-auto mb-2" />
               <p className="text-sm font-medium text-ink">{label}</p>
+              <p className="text-xs text-ink-muted mt-1">{text}</p>
             </div>
           ))}
         </div>

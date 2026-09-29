@@ -145,7 +145,7 @@ export default async function HomePage() {
                   >
                     <TransportModeIcon mode={mode} size={16} className="text-primary shrink-0" />
                     <span className="min-w-0">
-                      {from} →
+                      {from}
                       <br />
                       {to}
                     </span>

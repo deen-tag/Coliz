@@ -135,16 +135,20 @@ export default async function HomePage() {
             <p className="text-sm text-ink-muted mt-1 mb-4">
               Ces trajets sont souvent recherchés par notre communauté.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {FREQUENT_ROUTES.map(({ route, mode }) => (
-                <span
-                  key={route}
-                  className="flex items-center gap-2.5 rounded-full bg-primary-light/70 px-4 py-3 text-[13px] sm:text-sm font-semibold text-ink"
-                >
-                  <TransportModeIcon mode={mode} size={20} className="text-primary shrink-0" />
-                  <span className="leading-tight">{route}</span>
-                </span>
-              ))}
+            <div className="grid grid-cols-3 gap-2">
+              {FREQUENT_ROUTES.map(({ route, mode }) => {
+                const [from, to] = route.split(" → ");
+                return (
+                  <span
+                    key={route}
+                    className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-primary-light/70 px-1.5 py-2.5 text-center text-[12px] sm:text-sm font-semibold text-ink leading-tight"
+                  >
+                    <TransportModeIcon mode={mode} size={18} className="text-primary shrink-0" />
+                    <span>{from}</span>
+                    <span>→ {to}</span>
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>

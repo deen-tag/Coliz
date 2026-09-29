@@ -4,14 +4,18 @@ import { DateField } from "@/components/date-field";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/options";
 import { Logo } from "@/components/logo";
-import { PrimaryButton, SecondaryButton, Card, TransportModeBadge } from "@/components/ui";
-import { ShieldIcon, LockIcon, MapPinIcon, CheckBadgeIcon, SuitcaseIcon } from "@/components/icons";
+import { PrimaryButton, SecondaryButton, Card } from "@/components/ui";
+import { ShieldIcon, LockIcon, MapPinIcon, CheckBadgeIcon, SuitcaseIcon, CarIcon, PlaneIcon, FerryIcon } from "@/components/icons";
 
-const EXAMPLE_ROUTES: { route: string; mode: "PLANE" | "TRAIN" | "CAR" | "FERRY" }[] = [
-  { route: "Nantes → Paris", mode: "TRAIN" },
+// Trajets réels les plus concernés par la diaspora maghrébine en France
+// (Paris, Marseille, Lyon, Lille) — à titre indicatif, non cliquables.
+const FREQUENT_ROUTES: { route: string; mode: "PLANE" | "CAR" | "FERRY" }[] = [
+  { route: "Paris → Marseille", mode: "CAR" },
+  { route: "Paris → Lille", mode: "CAR" },
   { route: "Paris → Alger", mode: "PLANE" },
+  { route: "Marseille → Alger", mode: "FERRY" },
   { route: "Lyon → Casablanca", mode: "PLANE" },
-  { route: "Marseille → Tunis", mode: "FERRY" },
+  { route: "Marseille → Tunis", mode: "PLANE" },
 ];
 
 // Réassurance portée par Coliz plutôt que par une enquête de l'utilisateur
@@ -29,6 +33,14 @@ const STEPS = [
   { n: 3, title: "Réservez", text: "Paiement sécurisé, commission Coliz incluse dans le prix." },
   { n: 4, title: "Suivez", text: "Messagerie et suivi jusqu'à la remise du colis." },
 ];
+
+// Icônes en petit format pour la bande "Trajets fréquents" — indépendant de
+// TransportModeBadge, dont les tailles/paddings sont pensés pour les cartes
+// de résultats, pas pour un si petit format.
+function TransportModeIcon({ mode, size, className }: { mode: "PLANE" | "CAR" | "FERRY"; size: number; className?: string }) {
+  const Icon = { CAR: CarIcon, PLANE: PlaneIcon, FERRY: FerryIcon }[mode];
+  return <Icon size={size} className={className} />;
+}
 
 export default async function HomePage() {
   // Connecté : on propose l'accès à l'espace plutôt que la connexion.
@@ -83,7 +95,7 @@ export default async function HomePage() {
 
         {/* Le formulaire chevauche légèrement le bas de l'image (déjà fondu dans le crème) */}
         <div className="relative z-10 px-4 sm:px-0 -mt-8 sm:-mt-14 max-w-2xl mx-auto pb-10">
-          <p className="sm:hidden text-ink-muted text-base mb-4">
+          <p className="sm:hidden text-ink-muted text-base mt-4 mb-4">
             Trouvez plusieurs possibilités, comparez le prix et le délai, puis échangez avec le voyageur.
           </p>
 
@@ -113,13 +125,21 @@ export default async function HomePage() {
             </form>
           </Card>
 
-          <div className="flex flex-wrap gap-2 mt-4">
-            {EXAMPLE_ROUTES.map(({ route, mode }) => (
-              <span key={route} className="inline-flex items-center gap-1.5 rounded-control bg-black/[0.03] px-2.5 py-1.5">
-                <TransportModeBadge mode={mode} variant="plain" />
-                <span className="text-sm text-ink-muted">{route}</span>
-              </span>
-            ))}
+          {/* Purement informatif (pas de lien/clic) : juste montrer la diversité
+              des trajets et des modes couverts par Coliz. */}
+          <div className="mt-5">
+            <p className="text-xs font-medium text-ink-muted mb-2">Trajets fréquents</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {FREQUENT_ROUTES.map(({ route, mode }) => (
+                <span
+                  key={route}
+                  className="flex flex-col items-center justify-center gap-1 rounded-control bg-black/[0.03] px-1.5 py-2 text-center"
+                >
+                  <TransportModeIcon mode={mode} size={13} className="text-ink-muted/70 shrink-0" />
+                  <span className="text-[11px] leading-tight text-ink-muted">{route}</span>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </section>

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, PrimaryButton } from "@/components/ui";
 import { Logo } from "@/components/logo";
+import { IconField } from "@/components/form-field";
+import { UserIcon, MailIcon, LockIcon } from "@/components/icons";
 
 export default function InscriptionPage() {
   const router = useRouter();
@@ -43,11 +45,11 @@ export default function InscriptionPage() {
 
       <Card as="form" onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <Input label="Prénom" required value={form.firstName} onChange={update("firstName")} />
-          <Input label="Nom" required value={form.lastName} onChange={update("lastName")} />
+          <IconField label="Prénom" icon={<UserIcon size={18} />} required value={form.firstName} onChange={update("firstName")} />
+          <IconField label="Nom" icon={<UserIcon size={18} />} required value={form.lastName} onChange={update("lastName")} />
         </div>
-        <Input label="Email" type="email" required value={form.email} onChange={update("email")} />
-        <Input label="Mot de passe" type="password" required value={form.password} onChange={update("password")} />
+        <IconField label="Email" icon={<MailIcon size={18} />} type="email" required value={form.email} onChange={update("email")} />
+        <IconField label="Mot de passe" icon={<LockIcon size={18} />} type="password" required value={form.password} onChange={update("password")} />
         {error && <p className="text-sm text-error">{error}</p>}
         <PrimaryButton type="submit" disabled={loading}>
           {loading ? "Création..." : "Créer mon compte"}
@@ -61,17 +63,5 @@ export default function InscriptionPage() {
         </a>
       </p>
     </main>
-  );
-}
-
-function Input({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className="block">
-      <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
-      <input
-        className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-        {...props}
-      />
-    </label>
   );
 }

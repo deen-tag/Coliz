@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/options";
 import { Logo } from "@/components/logo";
 import { PrimaryButton, Card } from "@/components/ui";
+import { IconField } from "@/components/form-field";
 import { ShieldIcon, LockIcon, MapPinIcon, CheckBadgeIcon, SuitcaseIcon, CalendarIcon, ClockIcon, CarIcon, PlaneIcon, FerryIcon } from "@/components/icons";
 
 // Trajets réels les plus concernés par la diaspora maghrébine en France
@@ -102,8 +103,8 @@ export default async function HomePage() {
           <Card>
             <form action="/recherche" className="space-y-3">
               <div className="grid sm:grid-cols-2 gap-3">
-                <Field name="from" label="Départ" placeholder="Ville de départ" />
-                <Field name="to" label="Destination" placeholder="Ville d'arrivée" />
+                <IconField name="from" label="Départ" placeholder="Ville de départ" icon={<MapPinIcon size={18} />} />
+                <IconField name="to" label="Destination" placeholder="Ville d'arrivée" icon={<MapPinIcon size={18} />} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <DateField name="date" label="Date de départ" placeholder="Toutes les dates" icon={<CalendarIcon size={18} />} />
@@ -214,20 +215,5 @@ export default async function HomePage() {
         Coliz est une marketplace mettant en relation expéditeurs et voyageurs. Coliz n&apos;est ni transporteur ni assureur.
       </footer>
     </main>
-  );
-}
-
-function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className="block">
-      <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
-      <span className="relative block">
-        <MapPinIcon size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink" />
-        <input
-          className="w-full rounded-control border border-line bg-surface pl-11 pr-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-          {...props}
-        />
-      </span>
-    </label>
   );
 }

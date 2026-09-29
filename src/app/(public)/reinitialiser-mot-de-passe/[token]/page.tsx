@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Card, PrimaryButton } from "@/components/ui";
 import { Logo } from "@/components/logo";
+import { IconField } from "@/components/form-field";
+import { LockIcon } from "@/components/icons";
 
 export default function ReinitialiserMotDePassePage() {
   const { token } = useParams<{ token: string }>();
@@ -48,17 +50,15 @@ export default function ReinitialiserMotDePassePage() {
         </Card>
       ) : (
         <Card as="form" onSubmit={handleSubmit} className="space-y-4">
-          <label className="block">
-            <span className="block text-sm text-ink-muted mb-1.5">Nouveau mot de passe</span>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
-          </label>
+          <IconField
+            label="Nouveau mot de passe"
+            icon={<LockIcon size={18} />}
+            type="password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
           {error && <p className="text-sm text-error">{error}</p>}
           <PrimaryButton type="submit" disabled={loading}>
             {loading ? "Enregistrement..." : "Enregistrer"}

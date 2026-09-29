@@ -5,6 +5,8 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, PrimaryButton } from "@/components/ui";
 import { Logo } from "@/components/logo";
+import { IconField } from "@/components/form-field";
+import { MailIcon, LockIcon } from "@/components/icons";
 
 export default function ConnexionPage() {
   return (
@@ -48,26 +50,22 @@ function ConnexionForm() {
       <p className="text-sm text-ink-muted mb-6">Accédez à votre espace Coliz.</p>
 
       <Card as="form" onSubmit={handleSubmit} className="space-y-4">
-        <label className="block">
-          <span className="block text-sm text-ink-muted mb-1.5">Email</span>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </label>
-        <label className="block">
-          <span className="block text-sm text-ink-muted mb-1.5">Mot de passe</span>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </label>
+        <IconField
+          label="Email"
+          icon={<MailIcon size={18} />}
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <IconField
+          label="Mot de passe"
+          icon={<LockIcon size={18} />}
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
         {error && <p className="text-sm text-error">{error}</p>}
         <PrimaryButton type="submit" disabled={loading}>
           {loading ? "Connexion..." : "Se connecter"}

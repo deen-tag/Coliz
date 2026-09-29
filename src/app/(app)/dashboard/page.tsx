@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Card, PrimaryButton, SecondaryButton, StatusBadge } from "@/components/ui";
-import { BellIcon, ChevronRightIcon } from "@/components/icons";
+import { BellIcon, ChevronRightIcon, MapPinIcon } from "@/components/icons";
+import { IconField } from "@/components/form-field";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -53,9 +54,6 @@ export default function DashboardPage() {
     router.push(`/recherche?${p.toString()}`);
   }
 
-  const input =
-    "w-full rounded-control border border-line bg-surface px-3 py-2.5 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40";
-
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
       <div className="flex items-center justify-between mb-6">
@@ -89,8 +87,8 @@ export default function DashboardPage() {
       <Card as="form" onSubmit={search} className="mb-6 space-y-3">
         <p className="text-sm font-medium text-ink">Trouver un trajet</p>
         <div className="grid grid-cols-2 gap-3">
-          <input className={input} placeholder="Départ" value={q.from} onChange={(e) => setQ({ ...q, from: e.target.value })} />
-          <input className={input} placeholder="Destination" value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} />
+          <IconField icon={<MapPinIcon size={18} />} placeholder="Départ" value={q.from} onChange={(e) => setQ({ ...q, from: e.target.value })} />
+          <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} />
         </div>
         <PrimaryButton type="submit">Rechercher</PrimaryButton>
       </Card>

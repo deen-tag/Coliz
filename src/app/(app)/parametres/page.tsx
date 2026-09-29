@@ -7,6 +7,8 @@ import useSWR from "swr";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Card, SecondaryButton, SectionHeader, LoadingState } from "@/components/ui";
+import { IconField, IconSelect } from "@/components/form-field";
+import { UserIcon, MailIcon, PhoneIcon, GlobeIcon } from "@/components/icons";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -62,20 +64,23 @@ export default function ParametresPage() {
 
       <h2 className="text-sm font-medium text-ink-muted mb-3">Profil</h2>
       <Card className="mb-6 space-y-4">
-        <Field
+        <IconField
+          icon={<UserIcon size={18} />}
           label="Prénom"
           value={form.firstName ?? ""}
           onBlur={(e) => save({ firstName: e.target.value })}
           onChange={(e) => setForm((f: any) => ({ ...f, firstName: e.target.value }))}
         />
-        <Field
+        <IconField
+          icon={<UserIcon size={18} />}
           label="Nom"
           value={form.lastName ?? ""}
           onBlur={(e) => save({ lastName: e.target.value })}
           onChange={(e) => setForm((f: any) => ({ ...f, lastName: e.target.value }))}
         />
-        <Field label="Email" value={form.email ?? ""} disabled />
-        <Field
+        <IconField label="Email" icon={<MailIcon size={18} />} value={form.email ?? ""} disabled />
+        <IconField
+          icon={<PhoneIcon size={18} />}
           label="Téléphone"
           value={form.phone ?? ""}
           onBlur={(e) => save({ phone: e.target.value })}
@@ -106,15 +111,15 @@ export default function ParametresPage() {
 
       <h2 className="text-sm font-medium text-ink-muted mb-3">Langue</h2>
       <Card className="mb-6">
-        <select
+        <IconSelect
+          icon={<GlobeIcon size={18} />}
           value={form.language}
           onChange={(e) => save({ language: e.target.value })}
-          className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px]"
         >
           <option value="fr">Français</option>
           <option value="en">English</option>
           <option value="ar">العربية</option>
-        </select>
+        </IconSelect>
       </Card>
 
       <h2 className="text-sm font-medium text-ink-muted mb-3">Sécurité</h2>
@@ -131,21 +136,6 @@ export default function ParametresPage() {
       </button>
 
     </main>
-  );
-}
-
-function Field({
-  label,
-  ...props
-}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className="block">
-      <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
-      <input
-        className="w-full rounded-control border border-line px-4 py-3 text-[15px] disabled:bg-surface-alt disabled:text-ink-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
-        {...props}
-      />
-    </label>
   );
 }
 

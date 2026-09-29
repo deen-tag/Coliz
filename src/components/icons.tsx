@@ -289,3 +289,48 @@ export function CheckBadgeIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function MailIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3.5 7 8.5 6 8.5-6" />
+    </svg>
+  );
+}
+
+export function PhoneIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M6.5 3h3l1.5 4-2 1.5a11 11 0 0 0 5.5 5.5L16 12l4 1.5v3a2 2 0 0 1-2 2A14.5 14.5 0 0 1 4.5 5a2 2 0 0 1 2-2Z" />
+    </svg>
+  );
+}
+
+export function EuroIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M17.5 6.5A7 7 0 1 0 17.5 17.5" />
+      <path d="M4 10.5h9M4 13.5h9" />
+    </svg>
+  );
+}
+
+export function ScaleIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M6.5 8h11l2 11h-15l2-11Z" />
+      <circle cx="12" cy="5" r="2" />
+    </svg>
+  );
+}
+
+export function GlobeIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17" />
+      <path d="M12 3.5c2.5 2.5 3.5 5.3 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.3-3.5-8.5s1-6 3.5-8.5Z" />
+    </svg>
+  );
+}

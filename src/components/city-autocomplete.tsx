@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { MapPinIcon } from "@/components/icons";
 
 type Suggestion = { label: string; lat: number; lng: number };
 
@@ -35,6 +36,8 @@ export function CityAutocomplete({
     <div className="relative">
       <label className="block">
         <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
+        <span className="relative block">
+        <MapPinIcon size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink" />
         <input
           value={query}
           onChange={(e) => {
@@ -44,8 +47,9 @@ export function CityAutocomplete({
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder="Ville"
-          className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="w-full rounded-control border border-line bg-surface pl-11 pr-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
+        </span>
       </label>
 
       {open && suggestions.length > 0 && (

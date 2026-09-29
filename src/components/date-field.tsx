@@ -12,6 +12,8 @@ export function DateField({
   placeholder = "Choisir une date",
   className = "",
   icon,
+  type = "date",
+  required,
 }: {
   label: string;
   name?: string;
@@ -20,6 +22,8 @@ export function DateField({
   placeholder?: string;
   className?: string;
   icon?: ReactNode;
+  type?: "date" | "datetime-local";
+  required?: boolean;
 }) {
   const [inner, setInner] = useState("");
   const current = value !== undefined ? value : inner;
@@ -32,7 +36,8 @@ export function DateField({
           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink">{icon}</span>
         )}
         <input
-          type="date"
+          type={type}
+          required={required}
           name={name}
           value={current}
           onChange={(e) => {

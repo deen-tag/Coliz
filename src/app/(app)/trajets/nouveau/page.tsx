@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, PrimaryButton } from "@/components/ui";
 import { CityAutocomplete } from "@/components/city-autocomplete";
+import { DateField } from "@/components/date-field";
+import { IconField, IconSelect } from "@/components/form-field";
+import { CalendarIcon, CarIcon, TrainIcon, BusIcon, PlaneIcon, TruckIcon, FerryIcon, MotorcycleIcon, BicycleIcon, PackageIcon, ScaleIcon, EuroIcon } from "@/components/icons";
 
 type Place = { label: string; lat: number; lng: number };
 
@@ -18,6 +21,18 @@ const MODES = [
   { value: "BICYCLE", label: "Vélo" },
   { value: "OTHER", label: "Autre" },
 ];
+
+const MODE_ICONS: Record<string, typeof CarIcon> = {
+  CAR: CarIcon,
+  TRAIN: TrainIcon,
+  BUS: BusIcon,
+  PLANE: PlaneIcon,
+  VAN: TruckIcon,
+  FERRY: FerryIcon,
+  MOTORCYCLE: MotorcycleIcon,
+  BICYCLE: BicycleIcon,
+  OTHER: PackageIcon,
+};
 
 export default function NouveauTrajetPage() {
   const router = useRouter();
@@ -75,27 +90,41 @@ export default function NouveauTrajetPage() {
         <Card className="space-y-4">
           <CityAutocomplete label="Ville de départ" value={origin} onSelect={setOrigin} />
           <CityAutocomplete label="Ville d'arrivée" value={destination} onSelect={setDestination} />
-          <Field name="departureAt" label="Date et heure de départ" type="datetime-local" required />
-          <Field name="arrivalAt" label="Arrivée estimée (optionnel)" type="datetime-local" />
+          <DateField
+            name="departureAt"
+            label="Date et heure de départ"
+            type="datetime-local"
+            required
+            placeholder="Choisir la date et l'heure"
+            icon={<CalendarIcon size={18} />}
+          />
+          <DateField
+            name="arrivalAt"
+            label="Arrivée estimée (optionnel)"
+            type="datetime-local"
+            placeholder="Choisir la date et l'heure"
+            icon={<CalendarIcon size={18} />}
+          />
 
-          <label className="block">
-            <span className="block text-sm text-ink-muted mb-1.5">Mode de transport</span>
-            <select
-              value={mode}
-              onChange={(e) => setMode(e.target.value)}
-              className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px]"
-            >
-              {MODES.map((m) => (
-                <option key={m.value} value={m.value}>{m.label}</option>
-              ))}
-            </select>
-          </label>
+          <IconSelect
+            label="Mode de transport"
+            icon={(() => {
+              const ModeIcon = MODE_ICONS[mode] ?? PackageIcon;
+              return <ModeIcon size={18} />;
+            })()}
+            value={mode}
+            onChange={(e) => setMode(e.target.value)}
+          >
+            {MODES.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </IconSelect>
         </Card>
 
         <Card className="space-y-4">
-          <Field name="capacityWeightKg" label="Capacité disponible (kg)" type="number" required />
-          <Field name="capacityParcels" label="Nombre de colis acceptés" type="number" defaultValue={1} />
-          <Field name="contributionAmount" label="Ce que vous souhaitez recevoir (€)" type="number" step="0.01" required />
+          <IconField name="capacityWeightKg" label="Capacité disponible (kg)" type="number" required icon={<ScaleIcon size={18} />} />
+          <IconField name="capacityParcels" label="Nombre de colis acceptés" type="number" defaultValue={1} icon={<PackageIcon size={18} />} />
+          <IconField name="contributionAmount" label="Ce que vous souhaitez recevoir (€)" type="number" step="0.01" required icon={<EuroIcon size={18} />} />
           <p className="text-xs text-ink-muted -mt-2">
             Coliz ajoute 15 % de frais de service : c&apos;est ce total que l&apos;expéditeur voit et paie.
           </p>
@@ -120,20 +149,5 @@ export default function NouveauTrajetPage() {
         <PrimaryButton type="submit">Publier mon trajet</PrimaryButton>
       </form>
     </main>
-  );
-}
-
-function Field({
-  label,
-  ...props
-}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className="block">
-      <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
-      <input
-        className="w-full rounded-control border border-line bg-surface px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-        {...props}
-      />
-    </label>
   );
 }

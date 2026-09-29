@@ -6,6 +6,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Card, VerifiedBadge, TransportModeBadge, SectionHeader, EmptyState, PrimaryButton } from "@/components/ui";
 import { ResultsMap } from "@/components/results-map";
 import { DateField } from "@/components/date-field";
+import { IconField, IconSelect } from "@/components/form-field";
+import { MapPinIcon, CalendarIcon, ClockIcon } from "@/components/icons";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -173,26 +175,20 @@ function SearchForm({ from, to, date, flex }: { from: string; to: string; date: 
     router.push(`/recherche?${q.toString()}`);
   }
 
-  const input =
-    "w-full rounded-control border border-line bg-surface px-3 py-2.5 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40";
-
   return (
     <Card as="form" onSubmit={submit} className="mb-6 space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <input className={input} placeholder="Départ" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
-        <input className={input} placeholder="Destination" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
+        <IconField icon={<MapPinIcon size={18} />} placeholder="Départ" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
+        <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <DateField label="Date de départ" value={f.date} onChange={(v) => setF({ ...f, date: v })} placeholder="Toutes les dates" />
-        <label className="block">
-          <span className="block text-sm text-ink-muted mb-1.5 whitespace-nowrap">Période flexible</span>
-          <select className={input} value={f.flex} onChange={(e) => setF({ ...f, flex: e.target.value })}>
-            <option value="0">Date exacte</option>
-            <option value="3">± 3 jours</option>
-            <option value="7">± 7 jours</option>
-            <option value="15">± 15 jours</option>
-          </select>
-        </label>
+        <DateField label="Date de départ" value={f.date} onChange={(v) => setF({ ...f, date: v })} placeholder="Toutes les dates" icon={<CalendarIcon size={18} />} />
+        <IconSelect label="Période flexible" icon={<ClockIcon size={18} />} value={f.flex} onChange={(e) => setF({ ...f, flex: e.target.value })}>
+          <option value="0">Date exacte</option>
+          <option value="3">± 3 jours</option>
+          <option value="7">± 7 jours</option>
+          <option value="15">± 15 jours</option>
+        </IconSelect>
       </div>
       <PrimaryButton type="submit">Rechercher</PrimaryButton>
     </Card>

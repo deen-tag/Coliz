@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Card, PrimaryButton } from "@/components/ui";
 import { Logo } from "@/components/logo";
+import { IconField } from "@/components/form-field";
+import { MailIcon } from "@/components/icons";
 
 export default function MotDePasseOubliePage() {
   const [email, setEmail] = useState("");
@@ -38,16 +40,14 @@ export default function MotDePasseOubliePage() {
         </Card>
       ) : (
         <Card as="form" onSubmit={handleSubmit} className="space-y-4">
-          <label className="block">
-            <span className="block text-sm text-ink-muted mb-1.5">Email</span>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
-          </label>
+          <IconField
+            label="Email"
+            icon={<MailIcon size={18} />}
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
           <PrimaryButton type="submit" disabled={loading}>
             {loading ? "Envoi..." : "Envoyer le lien"}
           </PrimaryButton>

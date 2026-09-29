@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, PrimaryButton } from "@/components/ui";
 import { CityAutocomplete } from "@/components/city-autocomplete";
+import { DateField } from "@/components/date-field";
+import { IconField } from "@/components/form-field";
+import { CalendarIcon, ScaleIcon, EuroIcon } from "@/components/icons";
 
 type Place = { label: string; lat: number; lng: number };
 
@@ -74,18 +77,23 @@ export default function NouveauColisPage() {
           <div className="space-y-4">
             <CityAutocomplete label="Ville de départ" value={origin} onSelect={setOrigin} />
             <CityAutocomplete label="Ville d'arrivée" value={destination} onSelect={setDestination} />
-            <Field label="Date souhaitée" type="date" value={form.desiredDate} onChange={update("desiredDate")} />
+            <DateField
+              label="Date souhaitée"
+              value={form.desiredDate}
+              onChange={(v) => setForm((f) => ({ ...f, desiredDate: v }))}
+              icon={<CalendarIcon size={18} />}
+            />
           </div>
         )}
         {step === 2 && (
           <div className="space-y-4">
-            <Field label="Poids (kg)" type="number" value={form.weightKg} onChange={update("weightKg")} />
+            <IconField label="Poids (kg)" type="number" value={form.weightKg} onChange={update("weightKg")} icon={<ScaleIcon size={18} />} />
             <div className="grid grid-cols-3 gap-3">
               <Field label="L (cm)" type="number" value={form.lengthCm} onChange={update("lengthCm")} />
               <Field label="l (cm)" type="number" value={form.widthCm} onChange={update("widthCm")} />
               <Field label="H (cm)" type="number" value={form.heightCm} onChange={update("heightCm")} />
             </div>
-            <Field label="Valeur déclarée (€)" type="number" value={form.declaredValue} onChange={update("declaredValue")} />
+            <IconField label="Valeur déclarée (€)" type="number" value={form.declaredValue} onChange={update("declaredValue")} icon={<EuroIcon size={18} />} />
           </div>
         )}
         {step === 3 && (

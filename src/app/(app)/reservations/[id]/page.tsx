@@ -8,6 +8,8 @@ import { useSession } from "next-auth/react";
 import { Card, PrimaryButton, SecondaryButton, StatusBadge, SectionHeader, TransportModeBadge, VerifiedBadge, LoadingState } from "@/components/ui";
 import { StripeProvider } from "@/components/stripe-provider";
 import { PaymentForm } from "@/components/payment-form";
+import { IconField } from "@/components/form-field";
+import { EuroIcon } from "@/components/icons";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -185,13 +187,15 @@ function NegotiateForm({ bookingId, onDone }: { bookingId: string; onDone: () =>
     <Card>
       <p className="text-sm font-medium text-ink mb-2">Proposer un nouveau prix</p>
       <div className="flex gap-2">
-        <input
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          inputMode="decimal"
-          placeholder="Montant en €"
-          className="flex-1 rounded-control border border-line px-4 py-2.5 text-sm"
-        />
+        <div className="flex-1">
+          <IconField
+            icon={<EuroIcon size={18} />}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            inputMode="decimal"
+            placeholder="Montant en €"
+          />
+        </div>
         <button onClick={submit} className="rounded-control bg-primary text-white px-4 text-sm font-medium">
           Envoyer
         </button>

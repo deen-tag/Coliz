@@ -141,11 +141,14 @@ export default async function HomePage() {
                 return (
                   <span
                     key={route}
-                    className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-primary-light/70 px-1.5 py-2.5 text-center text-[12px] sm:text-sm font-semibold text-ink leading-tight"
+                    className="flex items-center gap-1.5 rounded-2xl bg-primary-light/70 px-2.5 py-2.5 text-[12px] sm:text-sm font-semibold text-ink leading-tight"
                   >
-                    <TransportModeIcon mode={mode} size={18} className="text-primary shrink-0" />
-                    <span>{from}</span>
-                    <span>→ {to}</span>
+                    <TransportModeIcon mode={mode} size={16} className="text-primary shrink-0" />
+                    <span className="min-w-0">
+                      {from} →
+                      <br />
+                      {to}
+                    </span>
                   </span>
                 );
               })}

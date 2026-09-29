@@ -4,7 +4,7 @@ import { DateField } from "@/components/date-field";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/options";
 import { Logo } from "@/components/logo";
-import { PrimaryButton, SecondaryButton, Card } from "@/components/ui";
+import { PrimaryButton, Card } from "@/components/ui";
 import { ShieldIcon, LockIcon, MapPinIcon, CheckBadgeIcon, SuitcaseIcon, CarIcon, PlaneIcon, FerryIcon } from "@/components/icons";
 
 // Trajets réels les plus concernés par la diaspora maghrébine en France
@@ -24,7 +24,7 @@ const TRUST_ITEMS = [
   { Icon: ShieldIcon, label: "Identité vérifiée", text: "Des utilisateurs vérifiés et fiables." },
   { Icon: LockIcon, label: "Paiement sécurisé", text: "Votre paiement est protégé jusqu'à la remise." },
   { Icon: MapPinIcon, label: "Colis suivi", text: "Suivez son acheminement à chaque étape." },
-  { Icon: CheckBadgeIcon, label: "Remise par code", text: "Code confirmé à l'enlèvement et à la livraison." },
+  { Icon: CheckBadgeIcon, label: "Remise par code", text: "Un code confirme chaque remise." },
 ];
 
 const STEPS = [
@@ -156,11 +156,11 @@ export default async function HomePage() {
               Gagnez de l&apos;argent en transportant un colis sur votre route.
             </p>
             <p className="text-sm text-ink-muted/80 mt-1">
-              Vous choisissez vos disponibilités et vos conditions.
+              Vous choisissez vos dates et vos conditions.
             </p>
           </div>
           <Link href="/trajets/nouveau" className="w-full sm:w-auto">
-            <SecondaryButton className="w-full sm:w-auto px-6">Proposer un trajet</SecondaryButton>
+            <PrimaryButton className="w-full sm:w-auto px-6">Proposer un trajet</PrimaryButton>
           </Link>
         </Card>
       </section>

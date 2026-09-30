@@ -12,6 +12,7 @@ import { StatusBanner } from "@/components/status-banner";
 import { VerticalTimeline } from "@/components/vertical-timeline";
 import { RouteLine, formatTripMoment } from "@/components/trip-parts";
 import { bookingStatusInfo, trackingTimeline } from "@/lib/booking-status";
+import { useRoleOverride } from "@/components/role-scope";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -22,6 +23,7 @@ export default function SuiviPage() {
   const userId = (session?.user as any)?.id;
   const isSender = booking && userId === booking.senderId;
   const isTraveler = booking && userId === booking.travelerId;
+  useRoleOverride(isSender ? "sender" : isTraveler ? "traveler" : null);
 
   const [report, setReport] = useState<null | "incident" | "delivery">(null);
 

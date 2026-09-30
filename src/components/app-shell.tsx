@@ -5,10 +5,19 @@ import { HeaderNav } from "@/components/header-nav";
 import { BottomNav } from "@/components/bottom-nav";
 import { BackBar } from "@/components/back-bar";
 import { PublicHeader } from "@/components/public-header";
+import { RoleProvider } from "@/components/role-scope";
 
 // Coquille des pages "de l'appli" : le visiteur (recherche, trajet, profil voyageur)
 // et l'utilisateur connecté partagent les mêmes pages mais pas la même navigation.
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <RoleProvider>
+      <ShellContent>{children}</ShellContent>
+    </RoleProvider>
+  );
+}
+
+function ShellContent({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
 
   if (status === "authenticated") {

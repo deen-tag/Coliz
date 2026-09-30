@@ -47,9 +47,11 @@ function ConnexionForm() {
   const callbackUrl = params.get("callbackUrl");
   const tripId = tripIdFromCallback(callbackUrl);
   const registered = params.get("registered") === "1";
+  // Venu de « Proposer un trajet » : on reste dans la couleur du voyageur jusqu'au bout.
+  const isTravelerFlow = callbackUrl?.startsWith("/trajets/nouveau") ?? false;
 
   return (
-    <main className="min-h-screen bg-surface-alt px-4 py-10 max-w-sm mx-auto">
+    <main data-role={isTravelerFlow ? "traveler" : "sender"} className="min-h-screen bg-surface-alt px-4 py-10 max-w-sm mx-auto">
       <div className="flex justify-center mb-8">
         <a href="/" aria-label="Accueil Coliz">
           <Logo variant="primary" size={40} />
@@ -57,10 +59,14 @@ function ConnexionForm() {
       </div>
       {tripId && <JourneySteps current={4} />}
       <h1 className="text-2xl font-semibold text-ink mb-1">
-        {tripId ? "Connectez-vous pour réserver" : "Se connecter"}
+        {tripId ? "Connectez-vous pour réserver" : isTravelerFlow ? "Connectez-vous pour publier votre trajet" : "Se connecter"}
       </h1>
       <p className="text-sm text-ink-muted mb-6">
-        {tripId ? "Vous reviendrez directement sur ce trajet." : "Accédez à votre espace Coliz."}
+        {tripId
+          ? "Vous reviendrez directement sur ce trajet."
+          : isTravelerFlow
+            ? "Vous reviendrez directement sur la publication de votre trajet."
+            : "Accédez à votre espace Coliz."}
       </p>
       {registered && (
         <p className="mb-5 rounded-control bg-success-light text-success text-sm px-4 py-3">

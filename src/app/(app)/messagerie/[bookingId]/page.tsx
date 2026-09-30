@@ -10,6 +10,7 @@ import { Avatar } from "@/components/avatar";
 import { StatusBadge } from "@/components/ui";
 import { RouteLine, formatTripMoment } from "@/components/trip-parts";
 import { bookingHref } from "@/lib/booking-status";
+import { useRoleOverride } from "@/components/role-scope";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -30,6 +31,7 @@ export default function ConversationPage() {
 
   const myId = (session?.user as any)?.id;
   const otherUser = booking && (booking.senderId === myId ? booking.traveler : booking.sender);
+  useRoleOverride(booking && !booking.error ? (booking.senderId === myId ? "sender" : booking.travelerId === myId ? "traveler" : null) : null);
 
   async function send() {
     if (!text.trim()) return;

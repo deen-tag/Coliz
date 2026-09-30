@@ -6,7 +6,9 @@ import { Card, PrimaryButton } from "@/components/ui";
 import { CityAutocomplete } from "@/components/city-autocomplete";
 import { DateField } from "@/components/date-field";
 import { IconField, IconSelect } from "@/components/form-field";
-import { CalendarIcon, CarIcon, TrainIcon, BusIcon, PlaneIcon, TruckIcon, FerryIcon, MotorcycleIcon, BicycleIcon, PackageIcon, ScaleIcon, EuroIcon } from "@/components/icons";
+import { CalendarIcon, CarIcon, TrainIcon, BusIcon, PlaneIcon, TruckIcon, FerryIcon, MotorcycleIcon, BicycleIcon, PackageIcon, ScaleIcon, EuroIcon, SuitcaseIcon } from "@/components/icons";
+import { formatPrice } from "@/components/trip-parts";
+import { PLATFORM_FEE_RATE, computeBookingAmounts } from "@/server/pricing";
 
 type Place = { label: string; lat: number; lng: number };
 
@@ -41,6 +43,11 @@ export default function NouveauTrajetPage() {
   const [destination, setDestination] = useState<Place | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Montant saisi : sert à montrer tout de suite ce que le voyageur reçoit et ce que paie l'expéditeur.
+  const [amount, setAmount] = useState("");
+  const parsedAmount = Number(amount.replace(",", "."));
+  const preview = parsedAmount > 0 ? computeBookingAmounts(parsedAmount) : null;
+  const feePercent = Math.round(PLATFORM_FEE_RATE * 100);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -84,7 +91,17 @@ export default function NouveauTrajetPage() {
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
-      <h1 className="text-xl font-semibold text-ink mb-6">Publier un trajet</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <span className="w-11 h-11 rounded-control bg-primary-light text-primary flex items-center justify-center shrink-0">
+          <SuitcaseIcon size={22} />
+        </span>
+        <div>
+          <h1 className="text-xl font-semibold text-ink leading-tight">Publier un trajet</h1>
+          <p className="text-sm text-ink-muted mt-0.5">
+            Transportez un colis sur un trajet que vous faites déjà et gagnez de l&apos;argent.
+          </p>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card className="space-y-4">
@@ -124,10 +141,33 @@ export default function NouveauTrajetPage() {
         <Card className="space-y-4">
           <IconField name="capacityWeightKg" label="Capacité disponible (kg)" type="number" required icon={<ScaleIcon size={18} />} />
           <IconField name="capacityParcels" label="Nombre de colis acceptés" type="number" defaultValue={1} icon={<PackageIcon size={18} />} />
-          <IconField name="contributionAmount" label="Ce que vous souhaitez recevoir (€)" type="number" step="0.01" required icon={<EuroIcon size={18} />} />
-          <p className="text-xs text-ink-muted -mt-2">
-            Coliz ajoute 15 % de frais de service : c&apos;est ce total que l&apos;expéditeur voit et paie.
-          </p>
+          <IconField
+            name="contributionAmount"
+            label="Ce que vous souhaitez recevoir (€)"
+            type="number"
+            step="0.01"
+            required
+            icon={<EuroIcon size={18} />}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <div className="rounded-control bg-primary-light px-4 py-3 text-sm -mt-1">
+            {preview ? (
+              <>
+                <p className="text-ink">
+                  Vous recevez <span className="font-semibold text-primary">{formatPrice(preview.contributionAmount)}</span>
+                </p>
+                <p className="text-xs text-ink-muted mt-0.5">
+                  L&apos;expéditeur paie {formatPrice(preview.totalAmount)}, frais de service Coliz de {feePercent} % inclus.
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-ink-muted">
+                Indiquez ce que vous souhaitez recevoir. Coliz ajoute {feePercent} % de frais de service : c&apos;est ce total que
+                l&apos;expéditeur voit et paie.
+              </p>
+            )}
+          </div>
         </Card>
 
         {mode === "CAR" && (
@@ -143,6 +183,25 @@ export default function NouveauTrajetPage() {
             </label>
           </Card>
         )}
+
+        {/* Ce qui se passe après : le voyageur sait où il va avant de s'engager */}
+        <Card>
+          <p className="font-semibold text-ink mb-4">Et ensuite ?</p>
+          <ol className="space-y-4">
+            {[
+              "Les expéditeurs compatibles vous envoient une demande.",
+              "Vous acceptez, refusez ou proposez un autre prix.",
+              "Un code confirme la remise du colis, et vous êtes payé une fois le colis livré.",
+            ].map((text, i) => (
+              <li key={i} className="flex gap-3">
+                <span className="w-6 h-6 rounded-full bg-primary-light text-primary text-xs font-semibold flex items-center justify-center shrink-0">
+                  {i + 1}
+                </span>
+                <span className="text-sm text-ink leading-snug pt-0.5">{text}</span>
+              </li>
+            ))}
+          </ol>
+        </Card>
 
         {error && <p className="text-sm text-error">{error}</p>}
 

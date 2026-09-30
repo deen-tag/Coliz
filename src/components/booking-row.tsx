@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, StatusBadge, TransportModeBadge } from "@/components/ui";
+import { Card, RolePill, StatusBadge, TransportModeBadge } from "@/components/ui";
 import { ChevronRightIcon } from "@/components/icons";
 import { RouteLine, formatPrice, formatTripMoment } from "@/components/trip-parts";
 import { bookingHref, bookingStatusInfo } from "@/lib/booking-status";
@@ -10,21 +10,28 @@ export function BookingRow({ b }: { b: any }) {
   const role = b.role === "sender" ? "sender" : "traveler";
   const info = bookingStatusInfo(b.status, role, b.counterpart);
   return (
-    <Link href={bookingHref(b)} className="block">
+    <Link href={bookingHref(b)} className="block" data-role={role}>
       <Card className="!p-4 active:bg-surface-alt transition-colors">
         <div className="flex items-start justify-between gap-3 mb-3">
           <RouteLine from={b.originLabel} to={b.destinationLabel} className="flex-1" />
           <StatusBadge status={b.status} />
         </div>
-        <p className="text-sm text-ink-muted">
-          {formatTripMoment(b.departureAt)}
-          {" · "}
-          {role === "sender" ? `avec ${b.counterpart}` : `pour ${b.counterpart}`}
+        <p className="text-sm text-ink-muted flex items-center flex-wrap gap-x-2 gap-y-1">
+          <RolePill role={role} />
+          <span>
+            {formatTripMoment(b.departureAt)}
+            {" · "}
+            {role === "sender" ? `avec ${b.counterpart}` : `pour ${b.counterpart}`}
+          </span>
         </p>
         <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-line">
           <div className="flex items-center gap-2 min-w-0">
             <TransportModeBadge mode={b.mode} />
-            <span className="font-semibold text-ink">{formatPrice(b.totalAmount)}</span>
+            {role === "sender" ? (
+              <span className="font-semibold text-ink">{formatPrice(b.totalAmount)}</span>
+            ) : (
+              <span className="font-semibold text-primary">+ {formatPrice(b.contributionAmount ?? b.totalAmount)}</span>
+            )}
           </div>
           <span
             className={`flex items-center gap-0.5 text-xs font-medium text-right ${info.actionNeeded ? "text-primary" : "text-ink-muted"}`}

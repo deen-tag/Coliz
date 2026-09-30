@@ -12,7 +12,7 @@ import { IconField } from "@/components/form-field";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-type NextAction = { key: string; text: string; href: string; cta: string };
+type NextAction = { key: string; text: string; href: string; cta: string; role: "sender" | "traveler" };
 
 // Ce qui demande une action de votre part, par ordre d'urgence — le reste
 // de l'écran n'est que du contexte.
@@ -20,7 +20,7 @@ function computeActions(bookings: any[] | undefined): NextAction[] {
   if (!Array.isArray(bookings)) return [];
   const actions: NextAction[] = [];
   const add = (b: any, text: string, href: string, cta: string) =>
-    actions.push({ key: `${b.id}-${b.status}`, text, href, cta });
+    actions.push({ key: `${b.id}-${b.status}`, text, href, cta, role: b.role === "traveler" ? "traveler" : "sender" });
 
   for (const b of bookings) {
     if (b.role === "traveler" && b.status === "REQUESTED")
@@ -74,7 +74,7 @@ export default function DashboardPage() {
           <h2 className="text-base font-semibold text-ink mb-3">À faire maintenant</h2>
           <div className="space-y-2">
             {actions.map((a) => (
-              <Link key={a.key} href={a.href} className="block">
+              <Link key={a.key} href={a.href} className="block" data-role={a.role}>
                 <Card className="flex items-center gap-3 !p-4 border-primary/30 bg-primary-light">
                   <p className="flex-1 text-sm text-ink leading-snug">{a.text}</p>
                   <span className="rounded-control bg-primary text-white text-sm font-medium px-3.5 py-2 whitespace-nowrap">
@@ -88,14 +88,14 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-2 gap-3 mb-8">
-        <Link href="/colis/nouveau" className="block rounded-card bg-primary-light p-4 active:opacity-90">
+        <Link href="/colis/nouveau" data-role="sender" className="block rounded-card bg-primary-light p-4 active:opacity-90">
           <span className="w-10 h-10 rounded-full bg-surface text-primary flex items-center justify-center mb-3">
             <PackageIcon size={20} />
           </span>
           <p className="font-semibold text-ink leading-tight">Envoyer un colis</p>
           <p className="text-xs text-ink-muted mt-1 leading-snug">Trouvez un voyageur qui fait déjà le trajet.</p>
         </Link>
-        <Link href="/trajets/nouveau" className="block rounded-card bg-primary-light p-4 active:opacity-90">
+        <Link href="/trajets/nouveau" data-role="traveler" className="block rounded-card bg-primary-light p-4 active:opacity-90">
           <span className="w-10 h-10 rounded-full bg-surface text-primary flex items-center justify-center mb-3">
             <SuitcaseIcon size={20} />
           </span>
@@ -114,7 +114,7 @@ export default function DashboardPage() {
         <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
       </form>
 
-      <Section title="Mes colis" href="/mes-colis">
+      <Section title="Mes colis" href="/mes-colis" role="sender">
         {data?.activeParcels?.length ? (
           <Card className="!p-0 divide-y divide-line overflow-hidden">
             {data.activeParcels.slice(0, 3).map((p: any) => (
@@ -132,7 +132,7 @@ export default function DashboardPage() {
         )}
       </Section>
 
-      <Section title="Mes voyages" href="/mes-voyages">
+      <Section title="Mes voyages" href="/mes-voyages" role="traveler">
         {data?.activeTrips?.length ? (
           <Card className="!p-0 divide-y divide-line overflow-hidden">
             {data.activeTrips.slice(0, 3).map((t: any) => (
@@ -153,9 +153,19 @@ export default function DashboardPage() {
   );
 }
 
-function Section({ title, href, children }: { title: string; href: string; children: React.ReactNode }) {
+function Section({
+  title,
+  href,
+  role,
+  children,
+}: {
+  title: string;
+  href: string;
+  role: "sender" | "traveler";
+  children: React.ReactNode;
+}) {
   return (
-    <section className="mb-8">
+    <section className="mb-8" data-role={role}>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-base font-semibold text-ink">{title}</h2>
         <Link href={href} className="text-sm text-primary font-medium flex items-center gap-0.5">

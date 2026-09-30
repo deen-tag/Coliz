@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Accent de la page : bleu Coliz pour l'expéditeur (par défaut), teal pour le voyageur.
+   Valeurs en "R G B" pour que les variantes d'opacité de Tailwind (bg-primary/40…) fonctionnent. */
+:root,
+[data-role="sender"] {
+  --accent: 36 87 255;
+  --accent-light: 234 240 255;
+}
+[data-role="traveler"] {
+  --accent: 10 123 113;
+  --accent-light: 227 245 242;
+}
+
 body {
   @apply bg-surface-alt text-ink antialiased;
 }

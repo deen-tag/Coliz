@@ -150,6 +150,21 @@ export function TransportModeBadge({
   );
 }
 
+// Pastille "Expéditeur" / "Voyageur" : dit de quel côté on se trouve, dans la couleur du rôle.
+export function RolePill({ role, className }: { role: "sender" | "traveler"; className?: string }) {
+  return (
+    <span
+      data-role={role}
+      className={clsx(
+        "inline-block rounded-full bg-primary-light text-primary text-[11px] font-semibold px-2 py-0.5 leading-tight",
+        className
+      )}
+    >
+      {role === "sender" ? "Expéditeur" : "Voyageur"}
+    </span>
+  );
+}
+
 // En-tête de section cohérent : titre fort + sous-texte discret + action optionnelle.
 export function SectionHeader({
   title,

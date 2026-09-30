@@ -11,6 +11,7 @@ import { Avatar } from "@/components/avatar";
 import { JourneySteps } from "@/components/journey-steps";
 import { TrustStrip, formatPrice, formatTripMoment, formatTripTime, formatTripDate, shortCity } from "@/components/trip-parts";
 import { authHref } from "@/lib/callback-url";
+import { useRoleOverride } from "@/components/role-scope";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -26,6 +27,9 @@ export default function TrajetDetailPage() {
 
   const { data: trip, isLoading } = useSWR(`/api/trips/${id}`, fetcher);
   const { data: session, status } = useSession();
+
+  // Mon propre trajet : je le regarde en tant que voyageur (teal). Sinon je suis expéditeur (bleu).
+  useRoleOverride(trip && !trip.error && trip.traveler && (session?.user as any)?.id === trip.traveler.id ? "traveler" : null);
 
   // Page à retrouver après connexion / inscription.
   const backHere = `/trajets/${id}${parcelId ? `?parcelId=${parcelId}` : ""}`;
@@ -76,7 +80,8 @@ export default function TrajetDetailPage() {
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
-      <JourneySteps current={3} />
+      {/* Le fil d'étapes est celui de l'expéditeur : inutile sur son propre trajet. */}
+      {!isOwner && <JourneySteps current={3} />}
 
       <div className="mb-5">
         <p className="text-sm text-ink-muted mb-1 capitalize">{formatTripDate(trip.departureAt, "long")}</p>
@@ -93,10 +98,21 @@ export default function TrajetDetailPage() {
       <Card className="mb-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-3xl font-semibold text-ink leading-none">
-              {formatPrice(trip.totalAmount ?? trip.contributionAmount)}
-            </p>
-            <p className="text-xs text-ink-muted mt-1.5">Tout compris, frais de service inclus</p>
+            {isOwner ? (
+              <>
+                <p className="text-3xl font-semibold text-primary leading-none">{formatPrice(trip.contributionAmount)}</p>
+                <p className="text-xs text-ink-muted mt-1.5">
+                  Ce que vous recevez · l&apos;expéditeur paie {formatPrice(trip.totalAmount ?? trip.contributionAmount)} frais inclus
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-3xl font-semibold text-ink leading-none">
+                  {formatPrice(trip.totalAmount ?? trip.contributionAmount)}
+                </p>
+                <p className="text-xs text-ink-muted mt-1.5">Tout compris, frais de service inclus</p>
+              </>
+            )}
           </div>
           <TransportModeBadge mode={trip.mode} />
         </div>
@@ -131,7 +147,8 @@ export default function TrajetDetailPage() {
         </dl>
       </Card>
 
-      {/* Qui transporte */}
+      {/* Qui transporte (inutile sur son propre trajet) */}
+      {!isOwner && (
       <Link href={`/voyageurs/${trip.traveler.id}`} className="block mb-4">
         <Card className="flex items-center gap-3.5">
           <Avatar name={trip.traveler.firstName} src={trip.traveler.avatarUrl} size={52} />
@@ -156,6 +173,7 @@ export default function TrajetDetailPage() {
           </span>
         </Card>
       </Link>
+      )}
 
       {/* Ce qui se passe après : l'utilisateur sait où il va avant de s'engager */}
       {bookable && !isOwner && (
@@ -182,9 +200,14 @@ export default function TrajetDetailPage() {
 
       {/* Action */}
       {isOwner ? (
-        <p className="text-sm text-ink-muted text-center py-3">
-          C&apos;est votre trajet. Les demandes apparaissent dans Réservations.
-        </p>
+        <div className="text-center py-3">
+          <p className="text-sm text-ink-muted mb-4">
+            C&apos;est votre trajet. Les demandes des expéditeurs apparaissent dans Réservations.
+          </p>
+          <Link href="/reservations">
+            <SecondaryButton className="w-auto px-6">Voir mes demandes</SecondaryButton>
+          </Link>
+        </div>
       ) : bookable ? (
         <div>
           <PrimaryButton onClick={reserve} disabled={status === "loading" || reserving}>

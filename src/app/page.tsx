@@ -6,10 +6,11 @@ import { authOptions } from "@/server/auth/options";
 import { Logo } from "@/components/logo";
 import { PrimaryButton, Card } from "@/components/ui";
 import { IconField } from "@/components/form-field";
-import { ShieldIcon, LockIcon, MapPinIcon, CheckBadgeIcon, SuitcaseIcon, CalendarIcon, ClockIcon, CarIcon, PlaneIcon, FerryIcon } from "@/components/icons";
+import { HowItWorks } from "@/components/how-it-works";
+import { ShieldIcon, LockIcon, MapPinIcon, CheckBadgeIcon, SuitcaseIcon, PackageIcon, CalendarIcon, ClockIcon, CarIcon, PlaneIcon, FerryIcon } from "@/components/icons";
 
 // Trajets réels les plus concernés par la diaspora maghrébine en France
-// (Paris, Marseille, Lyon, Lille) — à titre indicatif, non cliquables.
+// (Paris, Marseille, Lyon, Lille). Un appui lance directement la recherche.
 const FREQUENT_ROUTES: { route: string; mode: "PLANE" | "CAR" | "FERRY" }[] = [
   { route: "Paris → Marseille", mode: "CAR" },
   { route: "Paris → Lille", mode: "CAR" },
@@ -26,13 +27,6 @@ const TRUST_ITEMS = [
   { Icon: LockIcon, label: "Paiement sécurisé", text: "Votre paiement est protégé jusqu'à la remise." },
   { Icon: MapPinIcon, label: "Colis suivi", text: "Suivez son acheminement à chaque étape." },
   { Icon: CheckBadgeIcon, label: "Remise par code", text: "Un code confirme chaque remise." },
-];
-
-const STEPS = [
-  { n: 1, title: "Recherchez", text: "Départ, destination et période : Coliz trouve les trajets compatibles." },
-  { n: 2, title: "Comparez", text: "Plusieurs possibilités : prix, délai, mode de transport et transporteur." },
-  { n: 3, title: "Réservez", text: "Paiement sécurisé, commission Coliz incluse dans le prix." },
-  { n: 4, title: "Suivez", text: "Messagerie et suivi jusqu'à la remise du colis." },
 ];
 
 // Icônes en petit format pour la bande "Trajets fréquents" — indépendant de
@@ -69,38 +63,48 @@ export default async function HomePage() {
         </div>
       </header>
 
-      {/* Parcours expéditeur — recherche principale.
-          L'illustration (décorative, alt vide) sert de fond au titre : sa moitié
-          gauche est volontairement vide pour accueillir le texte. Elle est
-          affichée en entier, sans recadrage, à toutes les tailles. */}
+      {/* Accueil : deux portes d'entrée, une par acteur, chacune dans sa couleur.
+          Bleu = j'envoie un colis (recherche ouverte d'emblée), teal = je voyage.
+          L'illustration (décorative, alt vide) garde sa moitié gauche vide pour le titre :
+          sur ordinateur le titre s'y pose, sur téléphone il passe au-dessus. */}
       <section className="max-w-4xl mx-auto sm:px-4">
-        <div className="relative aspect-[3/2] w-full">
-          <Image
-            src="/brand/hero.webp"
-            alt=""
-            fill
-            priority
-            sizes="(min-width: 896px) 896px, 100vw"
-            className="object-cover pointer-events-none select-none"
-            aria-hidden="true"
-          />
-          <div className="absolute inset-y-0 left-0 w-[46%] flex flex-col justify-center pl-4 sm:pl-8 pr-1">
-            <h1 className="text-[21px] leading-[1.15] sm:text-3xl md:text-4xl font-semibold text-ink tracking-tight">
-              Envoyez votre colis avec quelqu&apos;un qui fait déjà le trajet.
+        <div className="relative">
+          <div className="relative z-10 px-4 pt-4 pb-4 sm:p-0 sm:absolute sm:inset-y-0 sm:left-0 sm:w-[48%] sm:flex sm:flex-col sm:justify-center sm:pl-8 sm:pr-1">
+            <h1 className="text-[28px] leading-[1.1] sm:text-3xl md:text-[40px] font-semibold text-ink tracking-tight">
+              Vos colis voyagent avec ceux qui voyagent.
             </h1>
-            <p className="hidden sm:block mt-3 text-ink-muted text-sm md:text-base">
-              Trouvez plusieurs possibilités, comparez le prix et le délai, puis échangez avec le voyageur.
+            <p className="mt-3 text-ink-muted text-base sm:text-sm md:text-base">
+              Envoyez un colis avec un voyageur, ou gagnez de l&apos;argent sur un trajet que vous faites déjà.
             </p>
+            <a href="#voyageur" className="sm:hidden mt-2 inline-block text-sm font-medium text-traveler">
+              Vous voyagez ? Gagnez de l&apos;argent ↓
+            </a>
+          </div>
+          <div className="relative h-44 sm:h-auto sm:aspect-[3/2] w-full">
+            <Image
+              src="/brand/hero.webp"
+              alt=""
+              fill
+              priority
+              sizes="(min-width: 896px) 896px, 100vw"
+              className="object-cover object-[70%_70%] sm:object-center pointer-events-none select-none"
+              aria-hidden="true"
+            />
           </div>
         </div>
 
-        {/* Le formulaire chevauche légèrement le bas de l'image (déjà fondu dans le crème) */}
-        <div className="relative z-10 px-4 sm:px-0 -mt-8 sm:-mt-14 max-w-2xl mx-auto pb-10">
-          <p className="sm:hidden text-ink-muted text-base mt-4 mb-4">
-            Trouvez plusieurs possibilités, comparez le prix et le délai, puis échangez avec le voyageur.
-          </p>
-
-          <Card>
+        <div className="relative z-10 px-4 sm:px-0 -mt-6 sm:-mt-14 pb-10 grid gap-4 md:grid-cols-5">
+          {/* Porte expéditeur : la recherche est directement là */}
+          <Card data-role="sender" className="md:col-span-3 border-t-4 border-t-primary">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-11 h-11 rounded-control bg-primary-light text-primary flex items-center justify-center shrink-0">
+                <PackageIcon size={22} />
+              </span>
+              <div>
+                <h2 className="text-lg font-semibold text-ink leading-tight">J&apos;envoie un colis</h2>
+                <p className="text-sm text-ink-muted mt-0.5">Trouvez un voyageur qui fait déjà le trajet.</p>
+              </div>
+            </div>
             <form action="/recherche" className="space-y-3">
               <div className="grid sm:grid-cols-2 gap-3">
                 <IconField name="from" label="Départ" placeholder="Ville de départ" icon={<MapPinIcon size={18} />} />
@@ -129,54 +133,65 @@ export default async function HomePage() {
             </form>
           </Card>
 
-          {/* Purement informatif (pas de lien/clic) : juste montrer la diversité
-              des trajets et des modes couverts par Coliz. */}
-          <div className="mt-8">
-            <h2 className="text-xl sm:text-2xl font-bold text-ink">Trajets fréquents</h2>
-            <p className="text-sm text-ink-muted mt-1 mb-4">
-              Ces trajets sont souvent recherchés par notre communauté.
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {FREQUENT_ROUTES.map(({ route, mode }) => {
-                const [from, to] = route.split(" → ");
-                return (
-                  <span
-                    key={route}
-                    className="flex items-center gap-1.5 rounded-2xl bg-primary-light/70 px-2.5 py-2.5 text-[12px] sm:text-sm font-semibold text-ink leading-tight"
-                  >
-                    <TransportModeIcon mode={mode} size={16} className="text-primary shrink-0" />
-                    <span className="min-w-0">
-                      {from}
-                      <br />
-                      {to}
-                    </span>
-                  </span>
-                );
-              })}
+          {/* Porte voyageur : son propre bloc, sa propre couleur */}
+          <Card
+            id="voyageur"
+            data-role="traveler"
+            className="md:col-span-2 flex flex-col bg-primary-light border-primary/20 scroll-mt-20"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-11 h-11 rounded-control bg-surface text-primary flex items-center justify-center shrink-0">
+                <SuitcaseIcon size={22} />
+              </span>
+              <div>
+                <h2 className="text-lg font-semibold text-ink leading-tight">Je voyage, je gagne de l&apos;argent</h2>
+                <p className="text-sm text-ink-muted mt-0.5">Vous avez déjà prévu un trajet ?</p>
+              </div>
             </div>
+            <ul className="space-y-2.5 text-sm text-ink">
+              {[
+                "Vous choisissez vos dates et ce que vous souhaitez recevoir.",
+                "Vous acceptez ou refusez chaque demande.",
+                "Paiement protégé, versé une fois le colis livré.",
+              ].map((text) => (
+                <li key={text} className="flex items-start gap-2.5">
+                  <CheckBadgeIcon size={18} className="text-primary shrink-0 mt-0.5" />
+                  <span className="leading-snug">{text}</span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/trajets/nouveau" className="block mt-auto pt-5">
+              <PrimaryButton>Proposer un trajet</PrimaryButton>
+            </Link>
+          </Card>
+        </div>
+
+        {/* Un appui sur un trajet lance directement la recherche correspondante. */}
+        <div className="px-4 sm:px-0 pb-14 max-w-2xl mx-auto">
+          <h2 className="text-xl sm:text-2xl font-bold text-ink">Trajets fréquents</h2>
+          <p className="text-sm text-ink-muted mt-1 mb-4">
+            Ces trajets sont souvent recherchés par notre communauté. Touchez-en un pour voir les voyageurs disponibles.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {FREQUENT_ROUTES.map(({ route, mode }) => {
+              const [from, to] = route.split(" → ");
+              return (
+                <Link
+                  key={route}
+                  href={`/recherche?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`}
+                  className="flex items-center gap-2 rounded-2xl bg-sender-light/70 px-3 py-2.5 text-[13px] sm:text-sm font-semibold text-ink leading-tight active:bg-sender-light hover:bg-sender-light transition-colors"
+                >
+                  <TransportModeIcon mode={mode} size={16} className="text-sender shrink-0" />
+                  <span className="min-w-0">
+                    {from}
+                    <br />
+                    {to}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
-      </section>
-
-      {/* Parcours transporteur — bloc secondaire distinct (brief §4/§7) */}
-      <section className="max-w-2xl mx-auto px-4 pb-14">
-        <Card className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6 text-center sm:text-left">
-          <div className="w-12 h-12 rounded-control bg-primary-light flex items-center justify-center text-primary shrink-0">
-            <SuitcaseIcon size={24} />
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-ink mb-1">Vous avez déjà prévu un trajet ?</p>
-            <p className="text-sm text-ink-muted">
-              Gagnez de l&apos;argent en transportant un colis sur votre route.
-            </p>
-            <p className="text-sm text-ink-muted/80 mt-1">
-              Vous choisissez vos dates et vos conditions.
-            </p>
-          </div>
-          <Link href="/trajets/nouveau" className="w-full sm:w-auto">
-            <PrimaryButton className="w-full sm:w-auto px-6">Proposer un trajet</PrimaryButton>
-          </Link>
-        </Card>
       </section>
 
       {/* Réassurance — la confiance est portée par Coliz, pas par une enquête utilisateur */}
@@ -197,18 +212,8 @@ export default async function HomePage() {
       </section>
 
       <section id="comment-ca-marche" className="max-w-3xl mx-auto px-4 py-14 scroll-mt-20">
-        <h2 className="text-xl font-semibold text-ink text-center mb-8">Comment ça marche ?</h2>
-        <div className="grid sm:grid-cols-4 gap-6">
-          {STEPS.map((s) => (
-            <div key={s.n} className="text-center">
-              <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-semibold mx-auto mb-3">
-                {s.n}
-              </div>
-              <p className="font-medium text-ink mb-1">{s.title}</p>
-              <p className="text-sm text-ink-muted">{s.text}</p>
-            </div>
-          ))}
-        </div>
+        <h2 className="text-xl font-semibold text-ink text-center mb-6">Comment ça marche ?</h2>
+        <HowItWorks />
       </section>
 
       <footer className="text-center text-xs text-ink-muted/70 pb-10">

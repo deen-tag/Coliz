@@ -14,11 +14,14 @@ import {
 } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { useMyAvatar } from "@/components/use-my-avatar";
+import { useRole } from "@/components/role-scope";
 
-const LINKS = [
-  { href: "/recherche", label: "Rechercher", Icon: SearchIcon },
-  { href: "/mes-colis", label: "Mes colis", Icon: PackageIcon },
-  { href: "/mes-voyages", label: "Mes voyages", Icon: SuitcaseIcon },
+// `role` : la couleur propre à chaque entrée (Mes colis en bleu, Mes voyages en teal).
+// Les autres entrées prennent la couleur du mode dans lequel on se trouve.
+const LINKS: { href: string; label: string; Icon: typeof SearchIcon; role?: "sender" | "traveler" }[] = [
+  { href: "/recherche", label: "Rechercher", Icon: SearchIcon, role: "sender" },
+  { href: "/mes-colis", label: "Mes colis", Icon: PackageIcon, role: "sender" },
+  { href: "/mes-voyages", label: "Mes voyages", Icon: SuitcaseIcon, role: "traveler" },
   { href: "/messagerie", label: "Messages", Icon: MessageIcon },
   { href: "/notifications", label: "Notifications", Icon: BellIcon },
 ];
@@ -29,10 +32,11 @@ export function HeaderNav() {
   const pathname = usePathname();
   const { avatarUrl, firstName } = useMyAvatar();
 
-  // CTA contextuel : "Proposer un trajet" dans l'espace transporteur,
-  // "Envoyer un colis" partout ailleurs (brief UI/UX §4).
-  const isTravelerContext = pathname?.startsWith("/mes-voyages") || pathname?.startsWith("/trajets");
-  const cta = isTravelerContext
+  // CTA contextuel : "Proposer un trajet" (teal) côté voyageur,
+  // "Envoyer un colis" (bleu) partout ailleurs (brief UI/UX §4).
+  // Le mode vient de la page (voir role-scope) : consulter un trajet pour y envoyer un colis reste côté expéditeur.
+  const role = useRole();
+  const cta = role === "traveler"
     ? { href: "/trajets/nouveau", label: "Proposer un trajet" }
     : { href: "/colis/nouveau", label: "Envoyer un colis" };
 
@@ -44,12 +48,13 @@ export function HeaderNav() {
         </Link>
 
         <nav className="flex items-center gap-1">
-          {LINKS.map(({ href, label, Icon }) => {
+          {LINKS.map(({ href, label, Icon, role: linkRole }) => {
             const active = pathname?.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
+                data-role={linkRole}
                 className={clsx(
                   "flex items-center gap-2 rounded-control px-3 py-2 text-sm font-medium transition-colors",
                   active ? "bg-primary-light text-primary" : "text-ink-muted hover:text-ink"

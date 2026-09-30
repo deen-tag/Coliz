@@ -14,6 +14,7 @@ import { Avatar } from "@/components/avatar";
 import { StatusBanner } from "@/components/status-banner";
 import { JourneySteps } from "@/components/journey-steps";
 import { formatPrice, formatTripDate, formatTripTime, shortCity } from "@/components/trip-parts";
+import { useRoleOverride } from "@/components/role-scope";
 import { PAID_STATUSES, bookingStatusInfo } from "@/lib/booking-status";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -34,6 +35,8 @@ export default function ReservationPage() {
   const isSender = booking && userId === booking.senderId;
   const isTraveler = booking && userId === booking.travelerId;
   const counterpart = isSender ? booking?.traveler : booking?.sender;
+  // La page prend la couleur du rôle que j'ai sur cette réservation (bleu expéditeur, teal voyageur).
+  useRoleOverride(isSender ? "sender" : isTraveler ? "traveler" : null);
 
   async function respond(action: "accept" | "refuse") {
     await fetch(`/api/bookings/${id}/${action}`, { method: "POST" });
@@ -128,7 +131,7 @@ export default function ReservationPage() {
       {/* Le prix : l'information centrale, directement sur le fond de page */}
       <div className="mt-6">
         <p className="text-sm text-ink-muted">{isSender ? "Total à payer" : "Vous recevez"}</p>
-        <p className="text-5xl font-semibold text-ink leading-none mt-2 tracking-tight">
+        <p className={`text-5xl font-semibold leading-none mt-2 tracking-tight ${isSender ? "text-ink" : "text-primary"}`}>
           {formatPrice(isSender ? booking.totalAmount : booking.contributionAmount)}
         </p>
         <p className="text-sm text-ink-muted mt-3">

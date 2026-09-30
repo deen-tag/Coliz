@@ -5,9 +5,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Coliz Blue — CTA, liens actifs, marque (DA §3)
-        primary: "#2457FF",
-        "primary-light": "#EAF0FF",
+        // Couleur d'accent de la page : suit le rôle de la personne (voir globals.css).
+        // Bleu Coliz = expéditeur (par défaut), teal = voyageur. Tous les composants
+        // qui utilisent primary / primary-light changent donc de couleur d'un seul coup.
+        primary: "rgb(var(--accent) / <alpha-value>)",
+        "primary-light": "rgb(var(--accent-light) / <alpha-value>)",
+        // Couleurs fixes des deux rôles, pour les écrans qui montrent les deux côte à côte
+        // (accueil, tableau de bord, raccourcis).
+        sender: "#2457FF",
+        "sender-light": "#EAF0FF",
+        traveler: "#0A7B71",
+        "traveler-light": "#E3F5F2",
         // Deep Ink — remplace le noir pur pour titres/texte fort (DA §3)
         ink: "#101828",
         // Slate — texte secondaire/métadonnées (DA §3)
@@ -18,9 +26,6 @@ const config: Config = {
         "surface-alt": "#F8F7F3",
         // Soft Gray — bordures discrètes (DA §3/§7)
         line: "#E4E7EC",
-        // Teal — accent secondaire à utiliser avec parcimonie (DA §3)
-        teal: "#12B8A6",
-        "teal-light": "#E4F8F6",
         success: "#16A34A",
         "success-light": "#E9F7EF",
         warning: "#D97706",

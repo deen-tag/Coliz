@@ -4,7 +4,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { Card, SectionHeader, StatusBadge, TransportModeBadge, EmptyState, PrimaryButton } from "@/components/ui";
 import { ChevronRightIcon } from "@/components/icons";
-import { RouteLine, formatTripMoment } from "@/components/trip-parts";
+import { RouteLine, formatPrice, formatTripMoment } from "@/components/trip-parts";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -56,14 +56,19 @@ export default function MesVoyagesPage() {
                 </p>
 
                 <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-line">
-                  <TransportModeBadge mode={t.mode} />
+                  <div className="flex items-center gap-2 min-w-0">
+                    <TransportModeBadge mode={t.mode} />
+                    {t.contributionAmount != null && (
+                      <span className="font-semibold text-primary">+ {formatPrice(t.contributionAmount)}</span>
+                    )}
+                  </div>
                   <span className="flex items-center gap-0.5 text-xs font-medium text-right">
                     {t.pendingRequests > 0 ? (
                       <span className="text-warning">
                         {t.pendingRequests} demande{t.pendingRequests > 1 ? "s" : ""} à traiter
                       </span>
                     ) : open ? (
-                      <span className={t.compatibleParcelsCount > 0 ? "text-teal" : "text-ink-muted"}>
+                      <span className={t.compatibleParcelsCount > 0 ? "text-primary" : "text-ink-muted"}>
                         {t.compatibleParcelsCount > 0
                           ? `${t.compatibleParcelsCount} opportunité${t.compatibleParcelsCount > 1 ? "s" : ""} compatible${t.compatibleParcelsCount > 1 ? "s" : ""}`
                           : "Aucune opportunité pour l'instant"}

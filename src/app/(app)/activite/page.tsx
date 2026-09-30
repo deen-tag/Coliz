@@ -10,11 +10,12 @@ import { isPastBooking } from "@/lib/booking-status";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-const SHORTCUTS = [
-  { href: "/mes-colis", label: "Mes colis", Icon: PackageIcon },
-  { href: "/mes-voyages", label: "Mes voyages", Icon: SuitcaseIcon },
-  { href: "/reservations", label: "Réservations", Icon: CardIcon },
-  { href: "/portefeuille", label: "Portefeuille", Icon: WalletIcon },
+// Chaque raccourci porte la couleur de son rôle : bleu côté expéditeur, teal côté voyageur.
+const SHORTCUTS: { href: string; label: string; Icon: typeof PackageIcon; role: "sender" | "traveler" }[] = [
+  { href: "/mes-colis", label: "Mes colis", Icon: PackageIcon, role: "sender" },
+  { href: "/mes-voyages", label: "Mes voyages", Icon: SuitcaseIcon, role: "traveler" },
+  { href: "/reservations", label: "Réservations", Icon: CardIcon, role: "sender" },
+  { href: "/portefeuille", label: "Portefeuille", Icon: WalletIcon, role: "traveler" },
 ];
 
 export default function ActivitePage() {
@@ -31,8 +32,8 @@ export default function ActivitePage() {
       <SectionHeader title="Activité" subtitle="Tout ce qui concerne vos colis et vos trajets" />
 
       <div className="grid grid-cols-4 gap-2 mb-6">
-        {SHORTCUTS.map(({ href, label, Icon }) => (
-          <Link key={href} href={href} className="block">
+        {SHORTCUTS.map(({ href, label, Icon, role }) => (
+          <Link key={href} href={href} className="block" data-role={role}>
             <Card className="!p-3 flex flex-col items-center gap-2 text-center active:bg-surface-alt">
               <span className="w-10 h-10 rounded-control bg-primary-light text-primary flex items-center justify-center">
                 <Icon size={20} />

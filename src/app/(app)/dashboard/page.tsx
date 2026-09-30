@@ -75,7 +75,7 @@ export default function DashboardPage() {
           <div className="space-y-2">
             {actions.map((a) => (
               <Link key={a.key} href={a.href} className="block" data-role={a.role}>
-                <Card className="flex items-center gap-3 !p-4 border-primary/30 bg-primary-light">
+                <Card className="flex items-center gap-3 !p-4 border-primary/30 !bg-primary-light">
                   <p className="flex-1 text-sm text-ink leading-snug">{a.text}</p>
                   <span className="rounded-control bg-primary text-white text-sm font-medium px-3.5 py-2 whitespace-nowrap">
                     {a.cta}

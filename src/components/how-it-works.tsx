@@ -52,14 +52,16 @@ export function HowItWorks() {
         ))}
       </div>
 
-      <div role="tabpanel" className="grid sm:grid-cols-4 gap-6">
+      <div role="tabpanel" className="grid sm:grid-cols-4 gap-5 sm:gap-6">
         {STEPS[role].map((s, i) => (
-          <div key={s.title} className="text-center">
-            <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-semibold mx-auto mb-3">
+          <div key={s.title} className="flex items-start gap-4 sm:flex-col sm:items-center sm:text-center">
+            <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-semibold shrink-0 sm:mb-1">
               {i + 1}
             </div>
-            <p className="font-medium text-ink mb-1">{s.title}</p>
-            <p className="text-sm text-ink-muted">{s.text}</p>
+            <div>
+              <p className="font-medium text-ink mb-0.5">{s.title}</p>
+              <p className="text-sm text-ink-muted leading-snug">{s.text}</p>
+            </div>
           </div>
         ))}
       </div>

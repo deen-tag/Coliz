@@ -22,7 +22,7 @@ export default function PortefeuillePage() {
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
       <SectionHeader title="Portefeuille" />
 
-      <Card className="mb-4 bg-primary text-white">
+      <Card className="mb-4 !bg-primary text-white">
         <p className="text-sm opacity-80">Solde disponible</p>
         <p className="text-3xl font-semibold mt-1">{Number(wallet?.availableAmount ?? 0).toFixed(2)} €</p>
         {Number(wallet?.pendingAmount ?? 0) > 0 && (

@@ -156,6 +156,27 @@ function slug(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
+// Photos de démonstration : portraits libres de randomuser.me (banque d'images prévue pour les maquettes).
+// Le genre suit le prénom, et chaque personne a un portrait différent.
+// À RETIRER avant l'ouverture au public : ce sont de vraies photos de personnes inconnues.
+const TRAVELER_GENDERS = "m f m f m f m f f m m f m m f".split(" ");
+const SENDER_GENDERS = "f m f m f m f m f m f m f f f".split(" ");
+const EXISTING_GENDERS = "m f m f m f".split(" "); // Karim, Sofia, Yanis, Nour, Amine, Lina
+
+export function demoAvatars(): Record<string, string> {
+  const next = { m: 7, f: 12 }; // point de départ, puis on saute de 3 en 3 pour varier les visages
+  const out: Record<string, string> = {};
+  const give = (email: string, g: string) => {
+    const key = g === "f" ? "f" : "m";
+    out[email] = `https://randomuser.me/api/portraits/${key === "f" ? "women" : "men"}/${next[key]}.jpg`;
+    next[key] += 3;
+  };
+  TRAVELERS.forEach((t, i) => give(`${slug(t.first)}.voyageur@demo.coliz`, TRAVELER_GENDERS[i]));
+  SENDERS.forEach((s, i) => give(`${slug(s.first)}.expediteur@demo.coliz`, SENDER_GENDERS[i]));
+  EXISTING_TRAVELERS.forEach((t, i) => give(t.email, EXISTING_GENDERS[i]));
+  return out;
+}
+
 export function demoUsers() {
   return {
     travelers: TRAVELERS.map((t, i) => ({

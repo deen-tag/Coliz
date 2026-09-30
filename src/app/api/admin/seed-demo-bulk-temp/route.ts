@@ -5,7 +5,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { buildParcels, buildTrips, demoUsers, EXISTING_TRAVELER_EMAILS } from "@/server/demo/bulk-data";
+import { buildParcels, buildTrips, demoAvatars, demoUsers, EXISTING_TRAVELER_EMAILS } from "@/server/demo/bulk-data";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -13,9 +13,24 @@ export const maxDuration = 60;
 const SECRET = "coliz-demo-v2-k4p8x";
 const DEMO_PASSWORD = "Demo1234!";
 
+// Donne un visage aux comptes de démo. Ne touche QUE les comptes qui n'ont pas déjà de photo :
+// une photo envoyée par une vraie personne (ou par toi en test) n'est jamais écrasée.
+async function applyAvatars() {
+  const entries = Object.entries(demoAvatars());
+  const results = await Promise.all(
+    entries.map(([email, avatarUrl]) => prisma.user.updateMany({ where: { email, avatarUrl: null }, data: { avatarUrl } }))
+  );
+  return { updated: results.reduce((n, r) => n + r.count, 0), total: entries.length };
+}
+
 export async function GET(req: Request) {
   const key = new URL(req.url).searchParams.get("key");
   if (key !== SECRET) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  // ?only=avatars : ajoute uniquement les visages, sans recréer les trajets ni les colis.
+  if (new URL(req.url).searchParams.get("only") === "avatars") {
+    return NextResponse.json({ ok: true, avatars: await applyAvatars() });
+  }
 
   const users = demoUsers();
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
@@ -84,8 +99,11 @@ export async function GET(req: Request) {
     })),
   });
 
+  const avatars = await applyAvatars();
+
   return NextResponse.json({
     ok: true,
+    avatars,
     travelersAvailable: travelerIds.length,
     sendersAvailable: senderIds.length,
     deleted: { trips: deletedTrips.count, parcels: deletedParcels.count },

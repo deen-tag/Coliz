@@ -12,6 +12,8 @@ import {
   BellIcon,
   UserIcon,
 } from "@/components/icons";
+import { Avatar } from "@/components/avatar";
+import { useMyAvatar } from "@/components/use-my-avatar";
 
 const LINKS = [
   { href: "/recherche", label: "Rechercher", Icon: SearchIcon },
@@ -25,6 +27,7 @@ const LINKS = [
 // Masquée sur mobile : la navigation mobile est gérée par <BottomNav />.
 export function HeaderNav() {
   const pathname = usePathname();
+  const { avatarUrl, firstName } = useMyAvatar();
 
   // CTA contextuel : "Proposer un trajet" dans l'espace transporteur,
   // "Envoyer un colis" partout ailleurs (brief UI/UX §4).
@@ -64,11 +67,15 @@ export function HeaderNav() {
             href="/parametres"
             className={clsx(
               "flex items-center justify-center w-9 h-9 rounded-full",
-              pathname?.startsWith("/parametres") ? "bg-primary-light text-primary" : "bg-black/[0.04] text-ink-muted"
+              avatarUrl
+                ? clsx("ring-2", pathname?.startsWith("/parametres") ? "ring-primary" : "ring-transparent")
+                : pathname?.startsWith("/parametres")
+                  ? "bg-primary-light text-primary"
+                  : "bg-black/[0.04] text-ink-muted"
             )}
             aria-label="Profil"
           >
-            <UserIcon size={17} />
+            {avatarUrl ? <Avatar name={firstName} src={avatarUrl} size={36} /> : <UserIcon size={17} />}
           </Link>
           <Link
             href={cta.href}

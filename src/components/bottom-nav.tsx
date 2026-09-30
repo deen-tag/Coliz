@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { HomeIcon, SearchIcon, MessageIcon, UserIcon, ActivityIcon } from "@/components/icons";
+import { Avatar } from "@/components/avatar";
+import { useMyAvatar } from "@/components/use-my-avatar";
 
 // Navigation mobile compacte (brief UI/UX §4) : Accueil / Rechercher / Activité / Messages / Profil.
 // "Activité" regroupe Mes colis, Mes voyages, Réservations et Portefeuille sur /activite.
@@ -17,6 +19,7 @@ const TABS = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { avatarUrl, firstName } = useMyAvatar();
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-surface border-t border-line pb-[env(safe-area-inset-bottom,0px)]">
       <div className="max-w-md mx-auto grid grid-cols-5">
@@ -31,7 +34,16 @@ export function BottomNav() {
                 active ? "text-primary font-medium" : "text-ink-muted"
               )}
             >
-              <Icon size={20} />
+              {href === "/parametres" && avatarUrl ? (
+                <Avatar
+                  name={firstName}
+                  src={avatarUrl}
+                  size={20}
+                  className={clsx("ring-2", active ? "ring-primary" : "ring-transparent")}
+                />
+              ) : (
+                <Icon size={20} />
+              )}
               {label}
             </Link>
           );

@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Card, SecondaryButton, SectionHeader, LoadingState } from "@/components/ui";
 import { IconField, IconSelect } from "@/components/form-field";
-import { UserIcon, MailIcon, PhoneIcon, GlobeIcon } from "@/components/icons";
+import { UserIcon, MailIcon, PhoneIcon, GlobeIcon, CameraIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -61,22 +61,24 @@ export default function ParametresPage() {
     setPhotoError(null);
     setPhotoBusy(true);
     try {
-      const small = await shrinkImage(file);
+      let small: Blob;
+      try {
+        small = await shrinkImage(file);
+      } catch {
+        // Format que le navigateur ne sait pas lire (ex. HEIC d'un iPhone).
+        throw new Error("Cette image n'a pas pu être lue. Essayez une photo JPG ou PNG.");
+      }
       const body = new FormData();
       body.append("file", small, "avatar.jpg");
       const res = await fetch("/api/avatar", { method: "POST", body });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error ?? "Envoi impossible");
+      if (!res.ok) throw new Error(json.error ?? "Envoi impossible, réessayez.");
       setForm((f: any) => ({ ...f, avatarUrl: json.avatarUrl }));
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
       mutate();
     } catch (err: any) {
-      setPhotoError(
-        err?.message && err.message !== "conversion"
-          ? err.message
-          : "Cette image n'a pas pu être lue. Essayez une photo JPG ou PNG."
-      );
+      setPhotoError(err?.message ?? "Envoi impossible, réessayez.");
     } finally {
       setPhotoBusy(false);
     }
@@ -126,7 +128,18 @@ export default function ParametresPage() {
       <h2 className="text-sm font-medium text-ink-muted mb-3">Profil</h2>
       <Card className="mb-6 space-y-4">
         <div className="flex items-center gap-4">
-          <Avatar name={form.firstName} src={form.avatarUrl} size={72} />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={photoBusy}
+            className="relative shrink-0 rounded-full active:opacity-80 disabled:opacity-60"
+            aria-label={form.avatarUrl ? "Changer ma photo" : "Ajouter une photo"}
+          >
+            <Avatar name={form.firstName} src={form.avatarUrl} size={72} />
+            <span className="absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full bg-primary text-white border-2 border-surface flex items-center justify-center">
+              <CameraIcon size={14} />
+            </span>
+          </button>
           <div className="min-w-0">
             <input
               ref={fileRef}

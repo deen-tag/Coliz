@@ -13,11 +13,9 @@ import { EuroIcon, LockIcon, ChevronRightIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { StatusBanner } from "@/components/status-banner";
 import { formatPrice, formatTripDate, formatTripTime, shortCity } from "@/components/trip-parts";
-import { bookingStatusInfo } from "@/lib/booking-status";
+import { PAID_STATUSES, bookingStatusInfo } from "@/lib/booking-status";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
-const PAID_STATUSES = ["CONFIRMED", "PICKED_UP", "IN_PROGRESS", "IN_TRANSIT", "ARRIVED", "DELIVERED", "DELIVERY_FAILED", "COMPLETED"];
 
 export default function ReservationPage() {
   const { id } = useParams<{ id: string }>();
@@ -107,8 +105,36 @@ export default function ReservationPage() {
       {/* Où j'en suis, ce qu'on attend de moi */}
       <StatusBanner title={info.title} hint={info.hint} tone={info.tone} />
 
+      {/* Le prix : l'information centrale, directement sur le fond de page */}
+      <div className="mt-6">
+        <p className="text-sm text-ink-muted">{isSender ? "Total à payer" : "Vous recevez"}</p>
+        <p className="text-5xl font-semibold text-ink leading-none mt-2 tracking-tight">
+          {formatPrice(isSender ? booking.totalAmount : booking.contributionAmount)}
+        </p>
+        <p className="text-sm text-ink-muted mt-3">
+          {formatPrice(booking.contributionAmount)} pour le voyageur + {formatPrice(booking.platformFeeAmount)} de frais de service Coliz
+        </p>
+        {isSender && (
+          <p className="flex items-center gap-1.5 text-sm text-ink-muted mt-2">
+            <LockIcon size={14} className="text-success shrink-0" />
+            Paiement protégé jusqu&apos;à la remise du colis.
+          </p>
+        )}
+        {canNegotiate && (
+          <div className="mt-3">
+            {negotiating ? (
+              <NegotiateForm bookingId={id} onDone={() => { setNegotiating(false); mutate(); }} />
+            ) : (
+              <button onClick={() => setNegotiating(true)} className="text-sm font-medium text-primary py-1">
+                Proposer un autre prix
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* L'action principale de cette étape, jamais noyée parmi les autres */}
-      <div className="mt-4 space-y-3">
+      <div className="mt-6 space-y-3">
         {isTraveler && booking.status === "REQUESTED" && (
           <div className="flex gap-2">
             <PrimaryButton onClick={() => respond("accept")}>Accepter la demande</PrimaryButton>
@@ -147,44 +173,41 @@ export default function ReservationPage() {
         )}
       </div>
 
-      {/* Avec qui */}
-      <Card className="mt-6 mb-4">
-        <div className="flex items-center gap-3.5">
-          <Avatar name={counterpart?.firstName} src={counterpart?.avatarUrl} size={48} />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-ink-muted">{isSender ? "Votre voyageur" : "L'expéditeur"}</p>
-            <p className="font-semibold text-ink">{counterpart?.firstName}</p>
-            <div className="mt-1.5">
-              <VerifiedBadge identity={Boolean(counterpart?.identityVerifiedAt)} email={true} />
+      {/* Détails : une seule carte, deux blocs (la personne, le colis) */}
+      <Card className="mt-8 !p-0 divide-y divide-line overflow-hidden">
+        <div className="p-4">
+          <div className="flex items-center gap-3.5">
+            <Avatar name={counterpart?.firstName} src={counterpart?.avatarUrl} size={48} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-ink-muted">{isSender ? "Votre voyageur" : "L'expéditeur"}</p>
+              <p className="font-semibold text-ink">{counterpart?.firstName}</p>
+              <div className="mt-1.5">
+                <VerifiedBadge identity={Boolean(counterpart?.identityVerifiedAt)} email={true} />
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex gap-2 mt-4 pt-4 border-t border-line">
-          <Link
-            href={`/messagerie/${id}`}
-            className="flex-1 text-center rounded-control bg-primary-light text-primary text-sm font-medium py-2.5"
-          >
-            Écrire à {counterpart?.firstName}
-          </Link>
-          {isSender && counterpart?.id && (
+          <div className="flex gap-2 mt-4">
             <Link
-              href={`/voyageurs/${counterpart.id}`}
-              className="flex items-center justify-center gap-0.5 rounded-control border border-line text-ink text-sm font-medium px-4 py-2.5"
+              href={`/messagerie/${id}`}
+              className="flex-1 text-center rounded-control bg-primary-light text-primary text-sm font-medium py-2.5"
             >
-              Profil
-              <ChevronRightIcon size={14} />
+              Écrire à {counterpart?.firstName}
             </Link>
-          )}
+            {isSender && counterpart?.id && (
+              <Link
+                href={`/voyageurs/${counterpart.id}`}
+                className="flex items-center justify-center gap-0.5 rounded-control border border-line text-ink text-sm font-medium px-4 py-2.5"
+              >
+                Profil
+                <ChevronRightIcon size={14} />
+              </Link>
+            )}
+          </div>
         </div>
-      </Card>
-
-      {/* Le colis */}
-      {booking.parcel && (
-        <Card className="mb-4">
-          <p className="font-semibold text-ink mb-3">Le colis</p>
-          <dl className="grid grid-cols-2 gap-4 text-sm">
+        {booking.parcel && (
+          <dl className="grid grid-cols-2 gap-4 p-4 text-sm">
             <div>
-              <dt className="text-ink-muted">Poids</dt>
+              <dt className="text-ink-muted">Poids du colis</dt>
               <dd className="font-semibold text-ink mt-0.5">{booking.parcel.weightKg} kg</dd>
             </div>
             <div>
@@ -194,39 +217,8 @@ export default function ReservationPage() {
               </dd>
             </div>
           </dl>
-        </Card>
-      )}
-
-      {/* Le prix : ce que je paie, ou ce que je reçois */}
-      <Card className="mb-4">
-        <p className="text-sm text-ink-muted">{isSender ? "Total à payer" : "Vous recevez"}</p>
-        <p className="text-3xl font-semibold text-ink leading-none mt-1.5">
-          {formatPrice(isSender ? booking.totalAmount : booking.contributionAmount)}
-        </p>
-        <div className="space-y-2 text-sm mt-5 pt-5 border-t border-line">
-          <Row label="Contribution du voyageur" value={booking.contributionAmount} />
-          <Row label="Frais de service Coliz" value={booking.platformFeeAmount} />
-        </div>
-        {isSender && (
-          <p className="flex items-start gap-2 text-xs text-ink-muted mt-4">
-            <LockIcon size={14} className="text-success shrink-0 mt-0.5" />
-            Votre paiement est protégé jusqu&apos;à la remise du colis.
-          </p>
         )}
       </Card>
-
-      {/* Négociation — un montant convenu s'applique directement */}
-      {canNegotiate && (
-        <div className="mb-4">
-          {negotiating ? (
-            <NegotiateForm bookingId={id} onDone={() => { setNegotiating(false); mutate(); }} />
-          ) : (
-            <button onClick={() => setNegotiating(true)} className="text-sm font-medium text-primary py-1">
-              Proposer un autre prix
-            </button>
-          )}
-        </div>
-      )}
 
       {cancelMsg && <p className="text-sm text-ink text-center my-4">{cancelMsg}</p>}
       {["REQUESTED", "ACCEPTED", "PAYMENT_PENDING", "CONFIRMED"].includes(booking.status) && (
@@ -235,15 +227,6 @@ export default function ReservationPage() {
         </button>
       )}
     </main>
-  );
-}
-
-function Row({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-ink-muted">{label}</span>
-      <span className="text-ink">{formatPrice(value)}</span>
-    </div>
   );
 }
 

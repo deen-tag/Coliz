@@ -87,49 +87,46 @@ export default function DashboardPage() {
         </section>
       )}
 
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <Link href="/colis/nouveau" className="block">
-          <Card className="h-full !p-4">
-            <span className="w-10 h-10 rounded-control bg-primary-light text-primary flex items-center justify-center mb-3">
-              <PackageIcon size={20} />
-            </span>
-            <p className="font-semibold text-ink leading-tight">Envoyer un colis</p>
-            <p className="text-xs text-ink-muted mt-1 leading-snug">Trouvez un voyageur qui fait déjà le trajet.</p>
-          </Card>
+      <div className="grid grid-cols-2 gap-3 mb-8">
+        <Link href="/colis/nouveau" className="block rounded-card bg-primary-light p-4 active:opacity-90">
+          <span className="w-10 h-10 rounded-full bg-surface text-primary flex items-center justify-center mb-3">
+            <PackageIcon size={20} />
+          </span>
+          <p className="font-semibold text-ink leading-tight">Envoyer un colis</p>
+          <p className="text-xs text-ink-muted mt-1 leading-snug">Trouvez un voyageur qui fait déjà le trajet.</p>
         </Link>
-        <Link href="/trajets/nouveau" className="block">
-          <Card className="h-full !p-4">
-            <span className="w-10 h-10 rounded-control bg-primary-light text-primary flex items-center justify-center mb-3">
-              <SuitcaseIcon size={20} />
-            </span>
-            <p className="font-semibold text-ink leading-tight">Proposer un trajet</p>
-            <p className="text-xs text-ink-muted mt-1 leading-snug">Gagnez de l&apos;argent en transportant un colis.</p>
-          </Card>
+        <Link href="/trajets/nouveau" className="block rounded-card bg-primary-light p-4 active:opacity-90">
+          <span className="w-10 h-10 rounded-full bg-surface text-primary flex items-center justify-center mb-3">
+            <SuitcaseIcon size={20} />
+          </span>
+          <p className="font-semibold text-ink leading-tight">Proposer un trajet</p>
+          <p className="text-xs text-ink-muted mt-1 leading-snug">Gagnez de l&apos;argent en transportant un colis.</p>
         </Link>
       </div>
 
-      <Card as="form" onSubmit={search} className="mb-8 space-y-3">
-        <p className="font-semibold text-ink">Chercher un trajet</p>
+      {/* Recherche : directement sur le fond, pas dans une carte de plus */}
+      <form onSubmit={search} className="mb-10 space-y-3">
+        <h2 className="text-base font-semibold text-ink">Chercher un trajet</h2>
         <div className="grid grid-cols-2 gap-3">
           <IconField icon={<MapPinIcon size={18} />} placeholder="Départ" value={q.from} onChange={(e) => setQ({ ...q, from: e.target.value })} />
           <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} />
         </div>
         <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
-      </Card>
+      </form>
 
       <Section title="Mes colis" href="/mes-colis">
         {data?.activeParcels?.length ? (
-          data.activeParcels.slice(0, 3).map((p: any) => (
-            <Link key={p.id} href="/mes-colis" className="block mb-3">
-              <Card className="!p-4">
+          <Card className="!p-0 divide-y divide-line overflow-hidden">
+            {data.activeParcels.slice(0, 3).map((p: any) => (
+              <Link key={p.id} href="/mes-colis" className="block p-4 active:bg-surface-alt">
                 <div className="flex items-start justify-between gap-3">
                   <RouteLine from={p.originLabel} to={p.destinationLabel} className="flex-1" />
                   <StatusBadge status={p.status} />
                 </div>
                 <p className="text-sm text-ink-muted mt-1.5">{formatTripDate(p.desiredDate)}</p>
-              </Card>
-            </Link>
-          ))
+              </Link>
+            ))}
+          </Card>
         ) : (
           <EmptyState text="Aucun colis en cours." />
         )}
@@ -137,17 +134,17 @@ export default function DashboardPage() {
 
       <Section title="Mes voyages" href="/mes-voyages">
         {data?.activeTrips?.length ? (
-          data.activeTrips.slice(0, 3).map((t: any) => (
-            <Link key={t.id} href={`/trajets/${t.id}`} className="block mb-3">
-              <Card className="!p-4">
+          <Card className="!p-0 divide-y divide-line overflow-hidden">
+            {data.activeTrips.slice(0, 3).map((t: any) => (
+              <Link key={t.id} href={`/trajets/${t.id}`} className="block p-4 active:bg-surface-alt">
                 <div className="flex items-start justify-between gap-3">
                   <RouteLine from={t.originLabel} to={t.destinationLabel} className="flex-1" />
                   <StatusBadge status={t.status} />
                 </div>
                 <p className="text-sm text-ink-muted mt-1.5">{formatTripDate(t.departureAt)}</p>
-              </Card>
-            </Link>
-          ))
+              </Link>
+            ))}
+          </Card>
         ) : (
           <EmptyState text="Aucun trajet publié." />
         )}

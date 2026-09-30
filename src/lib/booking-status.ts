@@ -30,15 +30,12 @@ export function bookingStatusInfo(status: string, role: BookingRole, name = "l'a
         ? { title: "Réservation confirmée", hint: `Au moment de remettre le colis, donnez votre code de remise à ${name}.`, tone: "success", actionNeeded: true }
         : { title: "Réservation confirmée", hint: `Récupérez le colis auprès de ${name} et saisissez le code de remise qu'il vous donne.`, tone: "success", actionNeeded: true };
     case "PICKED_UP":
-    case "IN_PROGRESS":
-    case "IN_TRANSIT":
       return sender
         ? { title: "Colis pris en charge", hint: `${name} transporte votre colis.`, tone: "info", actionNeeded: false }
         : { title: "Colis en votre possession", hint: "À l'arrivée, demandez le code de réception à la personne qui reçoit le colis et saisissez-le.", tone: "info", actionNeeded: true };
-    case "ARRIVED":
-      return sender
-        ? { title: "Colis arrivé à destination", hint: "Le colis va être remis à son destinataire.", tone: "info", actionNeeded: false }
-        : { title: "Vous êtes arrivé", hint: "Saisissez le code de réception pour finaliser la livraison.", tone: "info", actionNeeded: true };
+    // Anciennes réservations, créées avant les codes : pas de code à saisir.
+    case "IN_PROGRESS":
+      return { title: "Colis en cours de transport", hint: sender ? `${name} transporte votre colis.` : "Le colis est en cours de transport.", tone: "info", actionNeeded: false };
     case "DELIVERED":
       return { title: "Colis livré", hint: sender ? "La livraison est confirmée." : "La livraison est confirmée. Votre rémunération sera versée à la finalisation.", tone: "success", actionNeeded: false };
     case "DELIVERY_FAILED":
@@ -54,7 +51,9 @@ export function bookingStatusInfo(status: string, role: BookingRole, name = "l'a
   }
 }
 
-const PAID_STATUSES = ["CONFIRMED", "PICKED_UP", "IN_PROGRESS", "IN_TRANSIT", "ARRIVED", "DELIVERED", "DELIVERY_FAILED", "COMPLETED"];
+// Statuts de réservation à partir du paiement (ParcelStatus a IN_TRANSIT / ARRIVED,
+// mais une réservation passe directement de PICKED_UP à DELIVERED).
+export const PAID_STATUSES = ["CONFIRMED", "PICKED_UP", "IN_PROGRESS", "DELIVERED", "DELIVERY_FAILED", "COMPLETED"];
 
 // Où mène une réservation : le suivi une fois payée, la page de réservation avant.
 export function bookingHref(b: { id: string; status: string }) {
@@ -66,36 +65,60 @@ export function isPastBooking(status: string) {
   return status === "COMPLETED" || status === "CANCELLED";
 }
 
-// Étapes du suivi, dans l'ordre. Chaque statut correspond à une étape.
-export const TRACKING_STEPS = [
-  { key: "requested", label: "Demande envoyée", done: "Le voyageur a reçu votre demande." },
-  { key: "accepted", label: "Demande acceptée", done: "Le prix est convenu." },
-  { key: "paid", label: "Payé", done: "L'argent est bloqué jusqu'à la remise." },
-  { key: "picked", label: "Colis pris en charge", done: "Le voyageur a le colis." },
-  { key: "delivered", label: "Livré", done: "Le code de réception est validé." },
-  { key: "completed", label: "Terminé", done: "Le voyageur est rémunéré." },
-] as const;
+// Étapes du suivi. Chaque étape correspond à un vrai statut de réservation :
+// REQUESTED → ACCEPTED / PAYMENT_PENDING → CONFIRMED → PICKED_UP → DELIVERED → COMPLETED.
+const MAIN_STEPS = [
+  { label: "Demande envoyée", note: "Le voyageur a reçu la demande." },
+  { label: "Demande acceptée", note: "Le prix est convenu." },
+  { label: "Payé", note: "L'argent est bloqué jusqu'à la remise." },
+  { label: "Colis pris en charge", note: "Le voyageur a le colis." },
+  { label: "Livré", note: "Le code de réception est validé." },
+  { label: "Terminé", note: "Le voyageur est rémunéré." },
+];
 
-export function trackingStepIndex(status: string): number {
+export type TrackingTimeline = {
+  steps: { label: string; note?: string }[];
+  // Index de l'étape en cours ; égal à steps.length quand tout est terminé.
+  current: number;
+  warning: boolean;
+};
+
+// Renvoie null quand la progression n'est pas connue (annulation, incident signalé
+// à n'importe quel moment) : le bandeau de statut explique alors la situation.
+export function trackingTimeline(status: string): TrackingTimeline | null {
+  const steps = MAIN_STEPS;
   switch (status) {
     case "REQUESTED":
-      return 0;
+      return { steps, current: 0, warning: false };
     case "ACCEPTED":
     case "PAYMENT_PENDING":
-      return 1;
+      return { steps, current: 1, warning: false };
     case "CONFIRMED":
-      return 2;
+      return { steps, current: 2, warning: false };
     case "PICKED_UP":
+      return { steps, current: 3, warning: false };
+    // Anciennes réservations : on sait que le colis circule, pas si la prise en charge a été validée.
     case "IN_PROGRESS":
-    case "IN_TRANSIT":
-    case "ARRIVED":
-    case "DELIVERY_FAILED":
-      return 3;
+      return {
+        steps: steps.map((st, i) => (i === 3 ? { label: "Colis en transport", note: "Le colis est en route." } : st)),
+        current: 3,
+        warning: false,
+      };
     case "DELIVERED":
-      return 4;
+      return { steps, current: 4, warning: false };
     case "COMPLETED":
-      return 5;
+      return { steps, current: steps.length, warning: false };
+    // Branche à part : la livraison n'a pas abouti, il n'y a ni "Livré" ni "Terminé".
+    case "DELIVERY_FAILED":
+      return {
+        steps: [
+          ...steps.slice(0, 4),
+          { label: "Livraison non finalisée", note: "Le colis reste avec le voyageur. Un incident a été ouvert." },
+        ],
+        current: 4,
+        warning: true,
+      };
     default:
-      return 0;
+      return null;
   }
 }

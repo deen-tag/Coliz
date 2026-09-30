@@ -11,7 +11,7 @@ import { Avatar } from "@/components/avatar";
 import { StatusBanner } from "@/components/status-banner";
 import { VerticalTimeline } from "@/components/vertical-timeline";
 import { RouteLine, formatTripMoment } from "@/components/trip-parts";
-import { TRACKING_STEPS, bookingStatusInfo, trackingStepIndex } from "@/lib/booking-status";
+import { bookingStatusInfo, trackingTimeline } from "@/lib/booking-status";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -52,22 +52,84 @@ export default function SuiviPage() {
   const role = isSender ? "sender" : "traveler";
   const counterpart = isSender ? booking.traveler : booking.sender;
   const info = bookingStatusInfo(booking.status, role, counterpart?.firstName);
-  const currentIndex = trackingStepIndex(booking.status);
-  // À la fin, l'étape "Terminé" est atteinte : elle apparaît cochée plutôt qu'en cours.
-  const timelinePosition = booking.status === "COMPLETED" ? TRACKING_STEPS.length : currentIndex;
+  const timeline = trackingTimeline(booking.status);
+
+  // Le code qui compte maintenant est mis en avant, l'autre reste discret.
+  const pickupIsNow = booking.status === "CONFIRMED";
+  const deliveryIsNow = ["PICKED_UP", "DELIVERY_FAILED"].includes(booking.status);
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-lg">
-      {/* De quel colis s'agit-il, avec qui */}
-      <div className="mb-4">
+      {/* De quel colis s'agit-il */}
+      <div className="mb-5">
         <p className="text-sm text-ink-muted mb-1.5">Suivi du colis</p>
-        <RouteLine from={booking.parcel.originLabel} to={booking.parcel.destinationLabel} className="text-xl" />
-        <p className="text-sm text-ink-muted mt-1.5">{formatTripMoment(booking.trip.departureAt)}</p>
+        <RouteLine from={booking.parcel.originLabel} to={booking.parcel.destinationLabel} className="text-2xl" />
+        <p className="text-sm text-ink-muted mt-2">{formatTripMoment(booking.trip.departureAt)}</p>
       </div>
 
       <StatusBanner title={info.title} hint={info.hint} tone={info.tone} />
 
-      <Card className="mt-4 mb-4 flex items-center gap-3">
+      {/* Ce qu'il y a à faire maintenant passe avant tout le reste */}
+      <div className="mt-4 space-y-3">
+        {/* Expéditeur : détient les deux codes du début à la fin. Il transmet
+            le code de remise au voyageur en personne au départ, et gère lui-même
+            — hors app — la transmission du code de réception au réceptionniste. */}
+        {isSender && booking.status !== "CANCELLED" && (
+          <Card className="!p-0 divide-y divide-line overflow-hidden">
+            <CodeRow
+              bookingId={id}
+              purpose="pickup"
+              title="Code de remise"
+              hint="À donner au voyageur au départ"
+              emphasis={pickupIsNow}
+            />
+            <CodeRow
+              bookingId={id}
+              purpose="delivery"
+              title="Code de réception"
+              hint="À transmettre vous-même au réceptionniste avant l'arrivée"
+              emphasis={deliveryIsNow}
+            />
+          </Card>
+        )}
+
+        {/* Voyageur : ne détient jamais un code à l'avance, il ne peut que le
+            saisir une fois qu'on le lui a communiqué en personne. */}
+        {isTraveler && booking.status === "CONFIRMED" && (
+          <CodeEntry
+            bookingId={id}
+            endpoint="pickup-code"
+            label="Code de remise"
+            helper="Demandez ce code à l'expéditeur au moment où il vous confie le colis."
+            onSuccess={mutate}
+          />
+        )}
+        {isTraveler && booking.status === "PICKED_UP" && (
+          <>
+            <CodeEntry
+              bookingId={id}
+              endpoint="delivery-code"
+              label="Code de réception"
+              helper="Demandez ce code à la personne qui réceptionne le colis à l'arrivée."
+              onSuccess={mutate}
+            />
+            <SecondaryButton onClick={() => setReport("delivery")}>Le réceptionniste est injoignable</SecondaryButton>
+          </>
+        )}
+
+        {booking.status === "COMPLETED" && <ReviewForm bookingId={id} />}
+      </div>
+
+      {/* Avancement : directement sur le fond de page, sans carte */}
+      {timeline && (
+        <section className="mt-8">
+          <h2 className="font-semibold text-ink mb-4">Où en est le colis</h2>
+          <VerticalTimeline steps={timeline.steps} current={timeline.current} warning={timeline.warning} />
+        </section>
+      )}
+
+      {/* Interlocuteur : une simple ligne, pas une carte de plus */}
+      <div className="mt-8 pt-6 border-t border-line flex items-center gap-3">
         <Avatar name={counterpart?.firstName} src={counterpart?.avatarUrl} size={40} />
         <div className="flex-1 min-w-0">
           <p className="text-xs text-ink-muted">{isSender ? "Votre voyageur" : "L'expéditeur"}</p>
@@ -79,59 +141,7 @@ export default function SuiviPage() {
         >
           Message
         </Link>
-      </Card>
-
-      <Card className="mb-6">
-        <p className="font-semibold text-ink mb-4">Où en est le colis</p>
-        <VerticalTimeline
-          steps={TRACKING_STEPS.map((step) => ({ label: step.label, note: step.done }))}
-          current={timelinePosition}
-          warning={booking.status === "DELIVERY_FAILED"}
-        />
-      </Card>
-
-      {/* Expéditeur : détient les deux codes du début à la fin. Il transmet
-          le code de remise au voyageur en personne au départ, et gère lui-même
-          — hors app — la transmission du code de réception au réceptionniste. */}
-      {isSender && booking.status !== "CANCELLED" && (
-        <div className="space-y-3 mb-6">
-          <CodeCard bookingId={id} purpose="pickup" title="Code de remise" hint="À donner au voyageur au départ" />
-          <CodeCard
-            bookingId={id}
-            purpose="delivery"
-            title="Code de réception"
-            hint="À transmettre vous-même au réceptionniste avant l'arrivée"
-          />
-        </div>
-      )}
-
-      {/* Voyageur : ne détient jamais un code à l'avance, il ne peut que le
-          saisir une fois qu'on le lui a communiqué en personne. */}
-      {isTraveler && booking.status === "CONFIRMED" && (
-        <CodeEntry
-          bookingId={id}
-          endpoint="pickup-code"
-          label="Code de remise"
-          helper="Demandez ce code à l'expéditeur au moment où il vous confie le colis."
-          onSuccess={mutate}
-        />
-      )}
-      {isTraveler && booking.status === "PICKED_UP" && (
-        <>
-          <CodeEntry
-            bookingId={id}
-            endpoint="delivery-code"
-            label="Code de réception"
-            helper="Demandez ce code à la personne qui réceptionne le colis à l'arrivée."
-            onSuccess={mutate}
-          />
-          <SecondaryButton className="mt-3" onClick={() => setReport("delivery")}>
-            Le réceptionniste est injoignable
-          </SecondaryButton>
-        </>
-      )}
-
-      {booking.status === "COMPLETED" && <ReviewForm bookingId={id} />}
+      </div>
 
       {report ? (
         <ReportForm
@@ -153,26 +163,35 @@ export default function SuiviPage() {
   );
 }
 
-// Carte de consultation d'un code, côté expéditeur.
-function CodeCard({
+// Ligne de consultation d'un code, côté expéditeur. Le code "du moment" est
+// grand et sur fond bleu clair ; l'autre reste une simple ligne.
+function CodeRow({
   bookingId,
   purpose,
   title,
   hint,
+  emphasis,
 }: {
   bookingId: string;
   purpose: "pickup" | "delivery";
   title: string;
   hint: string;
+  emphasis: boolean;
 }) {
   const { data, mutate } = useSWR(`/api/bookings/${bookingId}/${purpose}-code`, fetcher);
 
   return (
-    <Card>
-      <p className="text-sm font-medium text-ink mb-1">{title}</p>
-      <p className="text-xs text-ink-muted mb-3">{hint}</p>
+    <div className="p-4">
+      <p className={emphasis ? "font-semibold text-ink" : "text-sm font-medium text-ink"}>{title}</p>
+      <p className="text-xs text-ink-muted mt-0.5 mb-3">{hint}</p>
       {data?.code ? (
-        <p className="text-3xl font-semibold tracking-widest text-primary text-center bg-primary-light rounded-control py-3">{data.code}</p>
+        emphasis ? (
+          <p className="text-4xl font-semibold tracking-widest text-primary text-center bg-primary-light rounded-control py-4">
+            {data.code}
+          </p>
+        ) : (
+          <p className="text-xl font-semibold tracking-widest text-ink">{data.code}</p>
+        )
       ) : (
         <div>
           <p className="text-sm text-ink-muted mb-2">Ce code n'est plus disponible (expiré ou déjà utilisé).</p>
@@ -186,7 +205,7 @@ function CodeCard({
           </SecondaryButton>
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 

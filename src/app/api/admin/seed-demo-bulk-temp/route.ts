@@ -45,9 +45,10 @@ export async function GET(req: Request) {
       },
     });
 
-  const newTravelers = [];
+  // Un par un (pas en parallèle) pour ne pas saturer la base.
+  const newTravelers: Awaited<ReturnType<typeof upsertUser>>[] = [];
   for (const t of users.travelers) newTravelers.push(await upsertUser(t));
-  const senders = [];
+  const senders: Awaited<ReturnType<typeof upsertUser>>[] = [];
   for (const s of users.senders) senders.push(await upsertUser(s));
 
   // Voyageurs déjà en base (Karim, Sofia, Yanis, Nour, Amine, Lina) + les nouveaux.

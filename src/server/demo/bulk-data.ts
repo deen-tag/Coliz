@@ -234,6 +234,7 @@ export type BulkTrip = {
   pickupPointLabel: string | null; dropoffPointLabel: string | null;
   contributionAmount: number;
   status: "PUBLISHED";
+  createdAt: Date; // date de mise en ligne (étalée sur ~12 jours, mélangée entre les pays)
 };
 
 // Pays « étrangers » d'une liaison (ceux qui comptent pour choisir une personne) ; ["France"] si la liaison est 100 % française.
@@ -270,7 +271,10 @@ export function buildTrips(now: Date, travelerCount: number): BulkTrip[] {
     const [h, m] = hours[Math.floor(rnd() * hours.length)];
     // Départs répartis sur les 45 prochains jours (toujours dans le futur pour apparaître en recherche).
     const dep = new Date(now);
-    dep.setUTCDate(dep.getUTCDate() + 2 + Math.floor((i * 45) / ROUTES.length) + Math.floor(rnd() * 3));
+    // Le créneau de date est mélangé (17 est premier avec 50) : sans ça, la liste triée par date montrerait
+    // d'abord tous les trajets Algérie, puis tous ceux du Maroc, etc. (les routes sont rangées par pays).
+    const slot = (i * 17) % ROUTES.length;
+    dep.setUTCDate(dep.getUTCDate() + 2 + Math.floor((slot * 45) / ROUTES.length) + Math.floor(rnd() * 3));
     dep.setUTCHours(h, m, 0, 0);
     const durationH = km / SPEED_KMH[mode] + (mode === "PLANE" ? 1.5 : 0.3);
     const arr = new Date(dep.getTime() + durationH * 3600 * 1000);
@@ -290,6 +294,9 @@ export function buildTrips(now: Date, travelerCount: number): BulkTrip[] {
       pickupPointLabel: pickupLabel(mode, a), dropoffPointLabel: pickupLabel(mode, b),
       contributionAmount: price,
       status: "PUBLISHED",
+      // Mise en ligne il y a 6 h à 12 jours : (i * 29) % 50 est un mélange (29 est premier avec 50),
+      // donc deux trajets publiés à la suite ne vont pas vers le même pays.
+      createdAt: new Date(now.getTime() - (((i * 29) % ROUTES.length) + 1) * 6 * 3600 * 1000),
     };
   });
 }

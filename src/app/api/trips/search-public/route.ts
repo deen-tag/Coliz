@@ -12,6 +12,9 @@ export async function GET(req: Request) {
   // Période flexible autour de la date (brief §5) — ± jours, 3 par défaut,
   // réglable depuis le sélecteur "Période flexible" de la homepage.
   const flexDays = Math.max(0, Math.min(30, Number(searchParams.get("flex") ?? 3) || 0));
+  // Pagination "Voir plus" : 15 trajets par paquet, offset = nombre déjà affichés.
+  const limit = Math.max(1, Math.min(30, Number(searchParams.get("limit") ?? 15) || 15));
+  const offset = Math.max(0, Number(searchParams.get("offset") ?? 0) || 0);
 
   // Uniquement des trajets encore réservables : places libres, pas déjà partis.
   const where: any = {
@@ -29,15 +32,19 @@ export async function GET(req: Request) {
     where.departureAt = { gte: from_ > now ? from_ : now, lte: to_ };
   }
 
-  const trips = await prisma.trip.findMany({
-    where,
-    orderBy: { departureAt: "asc" },
-    take: 20,
-    include: { traveler: { select: { firstName: true, avatarUrl: true, ratingAverage: true, ratingCount: true, identityVerifiedAt: true } } },
-  });
+  const [trips, total] = await Promise.all([
+    prisma.trip.findMany({
+      where,
+      // Les derniers trajets mis en ligne d'abord (à égalité : départ le plus proche, puis id pour un ordre stable).
+      orderBy: [{ createdAt: "desc" }, { departureAt: "asc" }, { id: "asc" }],
+      skip: offset,
+      take: limit,
+      include: { traveler: { select: { firstName: true, avatarUrl: true, ratingAverage: true, ratingCount: true, identityVerifiedAt: true } } },
+    }),
+    prisma.trip.count({ where }),
+  ]);
 
-  return NextResponse.json(
-    trips.map((t) => ({
+  const items = trips.map((t) => ({
       tripId: t.id,
       traveler: {
         firstName: t.traveler.firstName,
@@ -58,6 +65,7 @@ export async function GET(req: Request) {
       contributionAmount: t.contributionAmount,
       totalAmount: displayPrice(t.contributionAmount),
       remainingParcels: t.remainingParcels,
-    }))
-  );
+    }));
+
+  return NextResponse.json({ trips: items, total, hasMore: offset + items.length < total });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -49,7 +49,33 @@ function RechercheContent() {
       })}`;
 
   const { data, isLoading } = useSWR(endpoint, fetcher);
-  const results: any[] | undefined = Array.isArray(data) ? data : undefined;
+
+  // Recherche libre : l'API renvoie { trips, total } par paquets de 15, le bouton "Voir plus" ajoute la suite.
+  // Recherche pour un colis : l'API renvoie directement la liste complète (pas de pagination).
+  const [more, setMore] = useState<any[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  useEffect(() => {
+    setMore([]);
+  }, [endpoint]);
+
+  const firstPage: any[] | undefined = Array.isArray(data) ? data : Array.isArray(data?.trips) ? data.trips : undefined;
+  const total: number = Array.isArray(data) ? data.length : typeof data?.total === "number" ? data.total : firstPage?.length ?? 0;
+  const results: any[] | undefined = firstPage
+    ? [...firstPage, ...more.filter((m) => !firstPage.some((f) => f.tripId === m.tripId))]
+    : undefined;
+  const hasMore = !parcelId && Boolean(results) && (results?.length ?? 0) < total;
+
+  async function loadMore() {
+    if (!results || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`${endpoint}&offset=${results.length}`);
+      const next = await res.json();
+      if (Array.isArray(next?.trips)) setMore((m) => [...m, ...next.trips]);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   const routeLabel = from && to ? `${from} → ${to}` : from ? `Depuis ${from}` : to ? `Vers ${to}` : "Tous les trajets";
   const periodLabel = date
@@ -58,7 +84,7 @@ function RechercheContent() {
       : `Départ le ${addDays(date, 0)}`
     : "Toutes les dates";
 
-  const count = results?.length ?? 0;
+  const count = parcelId ? (results?.length ?? 0) : total;
   const title = isLoading
     ? "Recherche des trajets…"
     : parcelId
@@ -133,6 +159,14 @@ function RechercheContent() {
           <TripResultCard key={r.tripId} r={r} parcelId={parcelId} />
         ))}
       </div>
+
+      {hasMore && (
+        <div className="mt-4">
+          <SecondaryButton onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? "Chargement…" : `Voir plus de trajets (${Math.max(0, total - (results?.length ?? 0))} restants)`}
+          </SecondaryButton>
+        </div>
+      )}
 
       {results && results.length > 0 && (
         <div className="mt-8">

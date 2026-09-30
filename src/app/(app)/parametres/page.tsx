@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -9,8 +9,23 @@ import { useSession } from "next-auth/react";
 import { Card, SecondaryButton, SectionHeader, LoadingState } from "@/components/ui";
 import { IconField, IconSelect } from "@/components/form-field";
 import { UserIcon, MailIcon, PhoneIcon, GlobeIcon } from "@/components/icons";
+import { Avatar } from "@/components/avatar";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+// Les photos de téléphone font souvent 5 à 12 Mo : on les réduit avant l'envoi
+// (512 px suffisent largement pour un avatar) — plus rapide et sous la limite serveur.
+async function shrinkImage(file: File, max = 512): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("conversion"))), "image/jpeg", 0.85)
+  );
+}
 
 export default function ParametresPage() {
   const router = useRouter();
@@ -19,6 +34,9 @@ export default function ParametresPage() {
   const { data, mutate } = useSWR("/api/settings", fetcher);
   const [form, setForm] = useState<any>(null);
   const [saved, setSaved] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   useEffect(() => {
     if (data) setForm(data);
@@ -34,6 +52,49 @@ export default function ParametresPage() {
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
     mutate();
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permet de rechoisir la même photo ensuite
+    if (!file) return;
+    setPhotoError(null);
+    setPhotoBusy(true);
+    try {
+      const small = await shrinkImage(file);
+      const body = new FormData();
+      body.append("file", small, "avatar.jpg");
+      const res = await fetch("/api/avatar", { method: "POST", body });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Envoi impossible");
+      setForm((f: any) => ({ ...f, avatarUrl: json.avatarUrl }));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+      mutate();
+    } catch (err: any) {
+      setPhotoError(
+        err?.message && err.message !== "conversion"
+          ? err.message
+          : "Cette image n'a pas pu être lue. Essayez une photo JPG ou PNG."
+      );
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function handlePhotoRemove() {
+    setPhotoError(null);
+    setPhotoBusy(true);
+    try {
+      const res = await fetch("/api/avatar", { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setForm((f: any) => ({ ...f, avatarUrl: null }));
+      mutate();
+    } catch {
+      setPhotoError("Suppression impossible, réessayez.");
+    } finally {
+      setPhotoBusy(false);
+    }
   }
 
   async function handleDeleteAccount() {
@@ -64,6 +125,32 @@ export default function ParametresPage() {
 
       <h2 className="text-sm font-medium text-ink-muted mb-3">Profil</h2>
       <Card className="mb-6 space-y-4">
+        <div className="flex items-center gap-4">
+          <Avatar name={form.firstName} src={form.avatarUrl} size={72} />
+          <div className="min-w-0">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={photoBusy}
+              className="text-sm font-medium text-primary disabled:opacity-40"
+            >
+              {photoBusy ? "Envoi en cours…" : form.avatarUrl ? "Changer ma photo" : "Ajouter une photo"}
+            </button>
+            {form.avatarUrl && !photoBusy && (
+              <button type="button" onClick={handlePhotoRemove} className="block text-xs text-ink-muted mt-1">
+                Supprimer la photo
+              </button>
+            )}
+            {photoError && <p className="text-xs text-error mt-1">{photoError}</p>}
+          </div>
+        </div>
         <IconField
           icon={<UserIcon size={18} />}
           label="Prénom"

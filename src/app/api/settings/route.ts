@@ -14,6 +14,7 @@ export async function GET() {
     email: dbUser.email,
     phone: dbUser.phone,
     bio: dbUser.bio,
+    avatarUrl: dbUser.avatarUrl,
     notifyEmail: dbUser.notifyEmail,
     notifyPush: dbUser.notifyPush,
     language: dbUser.language,

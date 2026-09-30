@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/server/auth/session";
+import { deleteAvatarBlob } from "@/server/avatar";
 
 /**
  * On ne fait pas de suppression physique immédiate : les réservations, transactions
@@ -11,6 +12,7 @@ import { requireUser } from "@/server/auth/session";
  */
 export async function POST() {
   const user = await requireUser();
+  const current = await prisma.user.findUnique({ where: { id: user.id }, select: { avatarUrl: true } });
 
   await prisma.user.update({
     where: { id: user.id },
@@ -21,6 +23,9 @@ export async function POST() {
       phone: null,
     },
   });
+
+  // La photo est aussi supprimée du stockage (pas seulement détachée du compte).
+  await deleteAvatarBlob(current?.avatarUrl);
 
   return NextResponse.json({ ok: true });
 }

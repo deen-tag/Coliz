@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
@@ -21,6 +21,12 @@ export default function ConversationPage() {
     refreshInterval: 4000,
   });
   const [text, setText] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Toujours afficher le dernier message.
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: "end" });
+  }, [Array.isArray(messages) ? messages.length : 0]);
 
   const myId = (session?.user as any)?.id;
   const otherUser = booking && (booking.senderId === myId ? booking.traveler : booking.sender);
@@ -37,7 +43,9 @@ export default function ConversationPage() {
   }
 
   return (
-    <main className="min-h-screen bg-surface-alt flex flex-col max-w-md mx-auto md:max-w-2xl">
+    // Hauteur = écran moins ce qui l'entoure (barre du bas sur mobile, en-tête sur ordinateur) :
+    // le champ de saisie est ainsi toujours visible, sans avoir à faire défiler la page.
+    <main className="h-[calc(100dvh-5rem-env(safe-area-inset-bottom,0px))] md:h-[calc(100dvh-4rem)] bg-surface-alt flex flex-col max-w-md mx-auto md:max-w-2xl">
       <div className="flex items-center gap-3 px-4 py-3 bg-surface border-b border-line">
         <Link href="/messagerie" className="text-ink-muted">
           <ChevronRightIcon size={20} className="rotate-180" />
@@ -64,7 +72,7 @@ export default function ConversationPage() {
         </Link>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-3">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-6 space-y-3">
         {Array.isArray(messages) && messages.length === 0 && (
           <p className="text-sm text-ink-muted text-center py-10">
             Aucun message pour le moment. Dites bonjour à {otherUser?.firstName ?? "votre interlocuteur"} pour organiser la remise du colis.
@@ -84,9 +92,10 @@ export default function ConversationPage() {
             </div>
           );
         })}
+        <div ref={bottomRef} />
       </div>
 
-      <div className="p-4 bg-surface border-t border-line flex gap-2 pb-[calc(env(safe-area-inset-bottom,0px)+16px)]">
+      <div className="shrink-0 p-3 bg-surface border-t border-line flex gap-2">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}

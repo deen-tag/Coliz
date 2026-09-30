@@ -12,6 +12,7 @@ import { IconField } from "@/components/form-field";
 import { EuroIcon, LockIcon, ChevronRightIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { StatusBanner } from "@/components/status-banner";
+import { JourneySteps } from "@/components/journey-steps";
 import { formatPrice, formatTripDate, formatTripTime, shortCity } from "@/components/trip-parts";
 import { PAID_STATUSES, bookingStatusInfo } from "@/lib/booking-status";
 
@@ -74,9 +75,20 @@ export default function ReservationPage() {
   const name = counterpart?.firstName ?? "l'autre personne";
   const canNegotiate = ["REQUESTED", "ACCEPTED"].includes(booking.status);
   const awaitingConfirmation = paid && ["ACCEPTED", "PAYMENT_PENDING"].includes(booking.status);
-  const info = awaitingConfirmation
+  const baseInfo = awaitingConfirmation
     ? { title: "Paiement reçu", hint: "Nous confirmons votre réservation, cela ne prend que quelques secondes.", tone: "info" as const, actionNeeded: false }
     : bookingStatusInfo(booking.status, role, name);
+  // Côté expéditeur, juste après l'envoi : dire ce qui vient de se passer, pas seulement "en attente".
+  const info =
+    isSender && booking.status === "REQUESTED"
+      ? {
+          ...baseInfo,
+          title: `Demande envoyée à ${name}`,
+          hint: `${name} doit maintenant accepter. Vous ne payez que si la demande est acceptée, et vous serez prévenu dès sa réponse.`,
+        }
+      : baseInfo;
+  // Qui doit agir maintenant (avant le paiement) : lisible d'un coup d'œil.
+  const showWhoActs = ["REQUESTED", "ACCEPTED", "PAYMENT_PENDING"].includes(booking.status) && !awaitingConfirmation;
   const departureTime = formatTripTime(booking.trip.departureAt);
   const trackingLabel =
     booking.status === "CONFIRMED"
@@ -87,6 +99,9 @@ export default function ReservationPage() {
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-lg">
+      {/* Étape 4 du parcours de l'expéditeur : la barre globale reste présente jusqu'au bout. */}
+      {isSender && <JourneySteps current={4} />}
+
       {/* De quel envoi parle-t-on ? */}
       <div className="mb-4">
         <p className="text-sm text-ink-muted mb-1 capitalize">
@@ -104,6 +119,11 @@ export default function ReservationPage() {
 
       {/* Où j'en suis, ce qu'on attend de moi */}
       <StatusBanner title={info.title} hint={info.hint} tone={info.tone} />
+      {showWhoActs && (
+        <p className="text-xs font-medium text-ink-muted mt-2 px-1">
+          {info.actionNeeded ? "À vous d'agir" : "Rien à faire de votre côté pour le moment"}
+        </p>
+      )}
 
       {/* Le prix : l'information centrale, directement sur le fond de page */}
       <div className="mt-6">

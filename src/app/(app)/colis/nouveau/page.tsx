@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
@@ -34,7 +34,17 @@ function toDateInput(iso: string) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
+// useSearchParams doit être sous <Suspense> (comme recherche, connexion, inscription),
+// sinon le build Next.js échoue sur cette page statique.
 export default function NouveauColisPage() {
+  return (
+    <Suspense fallback={null}>
+      <NouveauColisContent />
+    </Suspense>
+  );
+}
+
+function NouveauColisContent() {
   const router = useRouter();
   const params = useSearchParams();
   // Venu d'un trajet précis : ses infos (départ, arrivée, date) sont déjà connues.

@@ -6,6 +6,10 @@ import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
 import { ChevronRightIcon } from "@/components/icons";
+import { Avatar } from "@/components/avatar";
+import { StatusBadge } from "@/components/ui";
+import { RouteLine, formatTripMoment } from "@/components/trip-parts";
+import { bookingHref } from "@/lib/booking-status";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -38,13 +42,34 @@ export default function ConversationPage() {
         <Link href="/messagerie" className="text-ink-muted">
           <ChevronRightIcon size={20} className="rotate-180" />
         </Link>
-        <div className="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary text-xs font-medium">
-          {otherUser?.firstName?.[0]}
-        </div>
-        <p className="text-sm font-medium text-ink">{otherUser?.firstName ?? "..."}</p>
+        <Avatar name={otherUser?.firstName} src={otherUser?.avatarUrl} size={36} />
+        <p className="text-sm font-semibold text-ink">{otherUser?.firstName ?? "..."}</p>
       </div>
 
+      {/* De quel envoi parle-t-on : le contexte reste visible pendant toute la conversation */}
+      {booking && !booking.error && (
+        <Link href={bookingHref(booking)} className="block bg-surface border-b border-line px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <RouteLine from={booking.trip.originLabel} to={booking.trip.destinationLabel} className="text-sm" />
+              <p className="text-xs text-ink-muted mt-1">
+                {formatTripMoment(booking.trip.departureAt)}
+                {" · "}
+                {booking.parcel.weightKg} kg
+              </p>
+            </div>
+            <StatusBadge status={booking.status} />
+            <ChevronRightIcon size={16} className="text-ink-muted shrink-0" />
+          </div>
+        </Link>
+      )}
+
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-3">
+        {Array.isArray(messages) && messages.length === 0 && (
+          <p className="text-sm text-ink-muted text-center py-10">
+            Aucun message pour le moment. Dites bonjour à {otherUser?.firstName ?? "votre interlocuteur"} pour organiser la remise du colis.
+          </p>
+        )}
         {messages?.map((m: any) => {
           const mine = m.authorId === myId;
           return (

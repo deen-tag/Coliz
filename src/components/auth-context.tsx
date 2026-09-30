@@ -12,13 +12,13 @@ export function tripIdFromCallback(callbackUrl: string | null): string | null {
   return callbackUrl?.match(/^\/trajets\/([^/?#]+)/)?.[1] ?? null;
 }
 
-export function AuthTripContext({ tripId }: { tripId: string }) {
+export function AuthTripContext({ tripId, label = "Le trajet que vous avez choisi" }: { tripId: string; label?: string }) {
   const { data: trip } = useSWR(`/api/trips/${tripId}`, fetcher);
   if (!trip || trip.error) return null;
 
   return (
     <Card className="mb-5 !p-4">
-      <p className="text-xs font-medium text-ink-muted mb-2.5">Le trajet que vous avez choisi</p>
+      <p className="text-xs font-medium text-ink-muted mb-2.5">{label}</p>
       <RouteLine from={trip.originLabel} to={trip.destinationLabel} className="text-[15px]" />
       <div className="flex items-center justify-between mt-2.5 text-sm">
         <span className="text-ink-muted">{formatTripMoment(trip.departureAt)}</span>

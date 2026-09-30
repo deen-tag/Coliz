@@ -3,13 +3,16 @@
 import Link from "next/link";
 import useSWR from "swr";
 import { Card, SectionHeader, StatusBadge, TransportModeBadge, EmptyState, PrimaryButton } from "@/components/ui";
+import { ChevronRightIcon } from "@/components/icons";
+import { RouteLine, formatPrice, formatTripDate } from "@/components/trip-parts";
+import { bookingHref } from "@/lib/booking-status";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 // Prochaine étape lisible pour l'expéditeur — jamais un simple statut technique (DA §21/§25).
 const NEXT_STEP: Record<string, string> = {
   DRAFT: "Finaliser la publication",
-  SEARCHING: "Recherche de trajet en cours",
+  SEARCHING: "Choisir un trajet",
   MATCHED: "Choisir une proposition",
   BOOKED: "En attente de paiement",
   PAID: "En attente de remise au voyageur",
@@ -31,8 +34,8 @@ export default function MesColisPage() {
         subtitle="Suivez vos envois en cours"
         action={
           parcels?.length > 0 ? (
-          <Link href="/colis/nouveau">
-            <PrimaryButton className="w-auto px-4 py-2.5 text-sm">Envoyer un colis</PrimaryButton>
+            <Link href="/colis/nouveau">
+              <PrimaryButton className="w-auto px-4 py-2.5 text-sm">Envoyer un colis</PrimaryButton>
             </Link>
           ) : undefined
         }
@@ -55,29 +58,26 @@ export default function MesColisPage() {
       <div className="space-y-3">
         {parcels?.map((p: any) => (
           <Link key={p.id} href={parcelHref(p)} className="block">
-          <Card className="hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-ink">
-                {p.originLabel} → {p.destinationLabel}
+            <Card className="!p-4 active:bg-surface-alt transition-colors">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <RouteLine from={p.originLabel} to={p.destinationLabel} className="flex-1" />
+                <StatusBadge status={p.status} />
+              </div>
+              <p className="text-sm text-ink-muted">
+                {formatTripDate(p.desiredDate)}
+                {p.booking && ` · avec ${p.booking.travelerFirstName}`}
               </p>
-              <StatusBadge status={p.status} />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {p.booking && <TransportModeBadge mode={p.booking.mode} />}
-                <span className="text-xs text-ink-muted">
-                  {new Date(p.desiredDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                  {p.booking && ` · avec ${p.booking.travelerFirstName}`}
+              <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-line">
+                <div className="flex items-center gap-2 min-w-0">
+                  {p.booking && <TransportModeBadge mode={p.booking.mode} />}
+                  {p.booking && <span className="font-semibold text-ink">{formatPrice(p.booking.totalAmount)}</span>}
+                </div>
+                <span className="flex items-center gap-0.5 text-xs font-medium text-primary">
+                  {NEXT_STEP[p.status] ?? p.status}
+                  <ChevronRightIcon size={14} />
                 </span>
               </div>
-              {p.booking && <span className="text-sm font-semibold text-ink">{Number(p.booking.totalAmount).toFixed(2)} €</span>}
-            </div>
-
-            <p className="text-xs text-primary font-medium mt-3">
-              {NEXT_STEP[p.status] ?? p.status}
-            </p>
-          </Card>
+            </Card>
           </Link>
         ))}
       </div>
@@ -88,9 +88,6 @@ export default function MesColisPage() {
 // Où mène la carte : le suivi une fois le colis payé, la réservation tant
 // qu'elle se négocie, la recherche de trajets tant qu'aucun n'est choisi.
 function parcelHref(p: any) {
-  if (p.booking) {
-    const paid = ["CONFIRMED", "PICKED_UP", "IN_TRANSIT", "ARRIVED", "DELIVERED", "COMPLETED"].includes(p.booking.status);
-    return paid ? `/suivi/${p.booking.id}` : `/reservations/${p.booking.id}`;
-  }
+  if (p.booking) return bookingHref(p.booking);
   return `/recherche?parcelId=${p.id}`;
 }

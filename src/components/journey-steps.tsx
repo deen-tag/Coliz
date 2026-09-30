@@ -3,16 +3,24 @@ import { clsx } from "clsx";
 const STEPS = ["Recherche", "Résultats", "Trajet", "Réservation"];
 
 // Fil d'Ariane du parcours : on voit d'où on vient et ce qui reste à faire.
-export function JourneySteps({ current, className }: { current: 1 | 2 | 3 | 4; className?: string }) {
+export function JourneySteps({
+  current,
+  className,
+  steps = STEPS,
+}: {
+  current: number;
+  className?: string;
+  steps?: readonly string[];
+}) {
   return (
-    <ol className={clsx("flex mb-6", className)} aria-label={`Étape ${current} sur ${STEPS.length}`}>
-      {STEPS.map((label, i) => {
+    <ol className={clsx("flex mb-6", className)} aria-label={`Étape ${current} sur ${steps.length}`}>
+      {steps.map((label, i) => {
         const n = i + 1;
         const done = n < current;
         const active = n === current;
         return (
           <li key={label} className="flex-1 relative flex flex-col items-center" aria-current={active ? "step" : undefined}>
-            {i < STEPS.length - 1 && (
+            {i < steps.length - 1 && (
               <span
                 aria-hidden
                 className={clsx("absolute top-3 left-1/2 w-full h-0.5", done ? "bg-primary" : "bg-line")}

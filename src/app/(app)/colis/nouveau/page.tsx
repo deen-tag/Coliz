@@ -1,17 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, PrimaryButton } from "@/components/ui";
+import { Card, PrimaryButton, SecondaryButton } from "@/components/ui";
 import { CityAutocomplete } from "@/components/city-autocomplete";
 import { DateField } from "@/components/date-field";
 import { IconField } from "@/components/form-field";
 import { CalendarIcon, ScaleIcon, EuroIcon } from "@/components/icons";
+import { JourneySteps } from "@/components/journey-steps";
+import { AuthTripContext } from "@/components/auth-context";
+import { formatTripDate, shortCity } from "@/components/trip-parts";
 
 type Place = { label: string; lat: number; lng: number };
 
+const FORM_STEPS = ["Trajet", "Colis", "Confirmation"];
+
+const STEP_TEXT: Record<1 | 2 | 3, { title: string; subtitle: string }> = {
+  1: { title: "Où part votre colis ?", subtitle: "Indiquez le trajet et la date à laquelle vous souhaitez l'envoyer." },
+  2: { title: "Que voulez-vous envoyer ?", subtitle: "Le poids et les dimensions permettent de trouver les voyageurs compatibles." },
+  3: { title: "Vérifiez et confirmez", subtitle: "Dernière étape avant de voir les trajets disponibles." },
+};
+
 export default function NouveauColisPage() {
   const router = useRouter();
+  // Venu d'un trajet précis : on le rappelle en haut pour ne pas perdre le contexte.
+  const [tripId, setTripId] = useState<string | null>(null);
+  useEffect(() => {
+    setTripId(new URLSearchParams(window.location.search).get("tripId"));
+  }, []);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [origin, setOrigin] = useState<Place | null>(null);
   const [destination, setDestination] = useState<Place | null>(null);
@@ -65,14 +81,30 @@ export default function NouveauColisPage() {
     }
     const parcel = await res.json();
     // Venu d'un trajet précis : on y retourne avec le colis, prêt à réserver.
-    const tripId = new URLSearchParams(window.location.search).get("tripId");
     router.push(tripId ? `/trajets/${tripId}?parcelId=${parcel.id}` : `/recherche?parcelId=${parcel.id}`);
   }
 
+  const canContinue =
+    step === 1
+      ? Boolean(origin && destination && form.desiredDate)
+      : step === 2
+        ? Number(form.weightKg) > 0 &&
+          Number(form.lengthCm) > 0 &&
+          Number(form.widthCm) > 0 &&
+          Number(form.heightCm) > 0 &&
+          form.declaredValue !== ""
+        : accepted;
+
+  const publishLabel = tripId ? "Publier et revenir au trajet" : "Publier et voir les trajets";
+
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
-      <h1 className="text-xl font-semibold text-ink mb-1">Envoyer un colis</h1>
-      <p className="text-sm text-ink-muted mb-6">Étape {step} sur 3</p>
+      <JourneySteps current={step} steps={FORM_STEPS} />
+
+      {tripId && <AuthTripContext tripId={tripId} label="Vous envoyez ce colis sur ce trajet" />}
+
+      <h1 className="text-xl font-semibold text-ink mb-1">{STEP_TEXT[step].title}</h1>
+      <p className="text-sm text-ink-muted mb-5">{STEP_TEXT[step].subtitle}</p>
 
       <Card className="mb-6">
         {step === 1 && (
@@ -99,28 +131,49 @@ export default function NouveauColisPage() {
           </div>
         )}
         {step === 3 && (
-          <div className="space-y-4">
-            <label className="flex items-start gap-3 text-sm text-ink">
+          <div className="space-y-5">
+            <dl className="space-y-3 text-sm">
+              <SummaryRow label="Trajet" value={`${shortCity(origin?.label ?? "")} → ${shortCity(destination?.label ?? "")}`} />
+              <SummaryRow label="Date souhaitée" value={form.desiredDate ? formatTripDate(form.desiredDate) : "—"} />
+              <SummaryRow label="Poids" value={`${form.weightKg} kg`} />
+              <SummaryRow label="Dimensions" value={`${form.lengthCm}×${form.widthCm}×${form.heightCm} cm`} />
+              <SummaryRow label="Valeur déclarée" value={`${form.declaredValue} €`} />
+            </dl>
+            <label className="flex items-start gap-3 text-sm text-ink pt-4 border-t border-line">
               <input
                 type="checkbox"
                 checked={accepted}
                 onChange={(e) => setAccepted(e.target.checked)}
                 className="mt-1"
               />
-              Je confirme avoir lu la liste des objets interdits et que mon colis n'en contient aucun.
+              Je confirme avoir lu la liste des objets interdits et que mon colis n&apos;en contient aucun.
             </label>
             {error && <p className="text-sm text-error">{error}</p>}
           </div>
         )}
       </Card>
 
-      <PrimaryButton
-        disabled={loading || (step === 3 && !accepted)}
-        onClick={() => (step < 3 ? setStep((s) => (s + 1) as any) : handlePublish())}
-      >
-        {step < 3 ? "Continuer" : loading ? "Publication..." : "Publier mon colis"}
-      </PrimaryButton>
+      <div className="space-y-3">
+        <PrimaryButton
+          disabled={loading || !canContinue}
+          onClick={() => (step < 3 ? setStep((s) => (s + 1) as 1 | 2 | 3) : handlePublish())}
+        >
+          {step === 1 ? "Continuer : les détails du colis" : step === 2 ? "Continuer : vérifier" : loading ? "Publication..." : publishLabel}
+        </PrimaryButton>
+        {step > 1 && (
+          <SecondaryButton onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}>Retour</SecondaryButton>
+        )}
+      </div>
     </main>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <dt className="text-ink-muted">{label}</dt>
+      <dd className="font-medium text-ink text-right">{value}</dd>
+    </div>
   );
 }
 

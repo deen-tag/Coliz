@@ -2,12 +2,25 @@
 
 import Link from "next/link";
 import useSWR from "swr";
-import { Card, SectionHeader, StatusBadge, TransportModeBadge, EmptyState, PrimaryButton } from "@/components/ui";
+import { SectionHeader, EmptyState, PrimaryButton } from "@/components/ui";
+import { BookingRow } from "@/components/booking-row";
+import { bookingStatusInfo, isPastBooking } from "@/lib/booking-status";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function ReservationsPage() {
-  const { data: bookings, isLoading } = useSWR("/api/bookings", fetcher);
+  const { data, isLoading } = useSWR("/api/bookings", fetcher);
+  const bookings: any[] | undefined = Array.isArray(data) ? data : undefined;
+
+  const needsAction = (b: any) =>
+    bookingStatusInfo(b.status, b.role === "sender" ? "sender" : "traveler", b.counterpart).actionNeeded;
+
+  // Ce qui attend une action passe en premier, l'historique en dernier.
+  const groups = [
+    { title: "À faire", items: bookings?.filter((b) => needsAction(b)) ?? [] },
+    { title: "En cours", items: bookings?.filter((b) => !needsAction(b) && !isPastBooking(b.status)) ?? [] },
+    { title: "Terminées", items: bookings?.filter((b) => isPastBooking(b.status)) ?? [] },
+  ].filter((g) => g.items.length > 0);
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
@@ -27,29 +40,18 @@ export default function ReservationsPage() {
         />
       )}
 
-      <div className="space-y-3">
-        {bookings?.map((b: any) => (
-          <Link key={b.id} href={`/reservations/${b.id}`}>
-            <Card className="hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-ink">
-                  {b.originLabel} → {b.destinationLabel}
-                </p>
-                <StatusBadge status={b.status} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TransportModeBadge mode={b.mode} />
-                  <span className="text-xs text-ink-muted">
-                    {new Date(b.departureAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                    {" · "}
-                    {b.role === "sender" ? `avec ${b.counterpart}` : `pour ${b.counterpart}`}
-                  </span>
-                </div>
-                <span className="text-sm font-semibold text-ink">{Number(b.totalAmount).toFixed(2)} €</span>
-              </div>
-            </Card>
-          </Link>
+      <div className="space-y-6">
+        {groups.map((g) => (
+          <section key={g.title}>
+            <h2 className="text-sm font-medium text-ink-muted mb-3">
+              {g.title} ({g.items.length})
+            </h2>
+            <div className="space-y-3">
+              {g.items.map((b) => (
+                <BookingRow key={b.id} b={b} />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     </main>

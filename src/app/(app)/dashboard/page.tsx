@@ -5,8 +5,9 @@ import useSWR from "swr";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Card, PrimaryButton, SecondaryButton, StatusBadge } from "@/components/ui";
-import { BellIcon, ChevronRightIcon, MapPinIcon } from "@/components/icons";
+import { Card, PrimaryButton, StatusBadge } from "@/components/ui";
+import { BellIcon, ChevronRightIcon, MapPinIcon, PackageIcon, SuitcaseIcon } from "@/components/icons";
+import { RouteLine, formatTripDate } from "@/components/trip-parts";
 import { IconField } from "@/components/form-field";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -57,7 +58,7 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-ink">{firstName ? `Bonjour ${firstName}` : "Bonjour"}</h1>
+        <h1 className="text-2xl font-semibold text-ink">{firstName ? `Bonjour ${firstName}` : "Bonjour"}</h1>
         <Link href="/notifications" className="relative text-ink-muted p-1" aria-label="Notifications">
           <BellIcon size={24} />
           {data?.unreadNotifications > 0 && (
@@ -70,13 +71,15 @@ export default function DashboardPage() {
 
       {actions.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-sm font-medium text-ink mb-3">À faire maintenant</h2>
+          <h2 className="text-base font-semibold text-ink mb-3">À faire maintenant</h2>
           <div className="space-y-2">
             {actions.map((a) => (
               <Link key={a.key} href={a.href} className="block">
-                <Card className="flex items-center gap-3 border-primary/30 bg-primary-light">
-                  <p className="flex-1 text-sm text-ink">{a.text}</p>
-                  <span className="text-sm font-medium text-primary whitespace-nowrap">{a.cta}</span>
+                <Card className="flex items-center gap-3 !p-4 border-primary/30 bg-primary-light">
+                  <p className="flex-1 text-sm text-ink leading-snug">{a.text}</p>
+                  <span className="rounded-control bg-primary text-white text-sm font-medium px-3.5 py-2 whitespace-nowrap">
+                    {a.cta}
+                  </span>
                 </Card>
               </Link>
             ))}
@@ -84,34 +87,46 @@ export default function DashboardPage() {
         </section>
       )}
 
-      <Card as="form" onSubmit={search} className="mb-6 space-y-3">
-        <p className="text-sm font-medium text-ink">Trouver un trajet</p>
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <Link href="/colis/nouveau" className="block">
+          <Card className="h-full !p-4">
+            <span className="w-10 h-10 rounded-control bg-primary-light text-primary flex items-center justify-center mb-3">
+              <PackageIcon size={20} />
+            </span>
+            <p className="font-semibold text-ink leading-tight">Envoyer un colis</p>
+            <p className="text-xs text-ink-muted mt-1 leading-snug">Trouvez un voyageur qui fait déjà le trajet.</p>
+          </Card>
+        </Link>
+        <Link href="/trajets/nouveau" className="block">
+          <Card className="h-full !p-4">
+            <span className="w-10 h-10 rounded-control bg-primary-light text-primary flex items-center justify-center mb-3">
+              <SuitcaseIcon size={20} />
+            </span>
+            <p className="font-semibold text-ink leading-tight">Proposer un trajet</p>
+            <p className="text-xs text-ink-muted mt-1 leading-snug">Gagnez de l&apos;argent en transportant un colis.</p>
+          </Card>
+        </Link>
+      </div>
+
+      <Card as="form" onSubmit={search} className="mb-8 space-y-3">
+        <p className="font-semibold text-ink">Chercher un trajet</p>
         <div className="grid grid-cols-2 gap-3">
           <IconField icon={<MapPinIcon size={18} />} placeholder="Départ" value={q.from} onChange={(e) => setQ({ ...q, from: e.target.value })} />
           <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} />
         </div>
-        <PrimaryButton type="submit">Rechercher</PrimaryButton>
+        <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
       </Card>
-
-      <div className="grid grid-cols-2 gap-3 mb-8">
-        <Link href="/colis/nouveau">
-          <SecondaryButton>Envoyer un colis</SecondaryButton>
-        </Link>
-        <Link href="/trajets/nouveau">
-          <SecondaryButton>Proposer un trajet</SecondaryButton>
-        </Link>
-      </div>
 
       <Section title="Mes colis" href="/mes-colis">
         {data?.activeParcels?.length ? (
           data.activeParcels.slice(0, 3).map((p: any) => (
             <Link key={p.id} href="/mes-colis" className="block mb-3">
-              <Card className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">{p.originLabel} → {p.destinationLabel}</p>
-                  <p className="text-xs text-ink-muted mt-0.5">{new Date(p.desiredDate).toLocaleDateString("fr-FR")}</p>
+              <Card className="!p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <RouteLine from={p.originLabel} to={p.destinationLabel} className="flex-1" />
+                  <StatusBadge status={p.status} />
                 </div>
-                <StatusBadge status={p.status} />
+                <p className="text-sm text-ink-muted mt-1.5">{formatTripDate(p.desiredDate)}</p>
               </Card>
             </Link>
           ))
@@ -124,12 +139,12 @@ export default function DashboardPage() {
         {data?.activeTrips?.length ? (
           data.activeTrips.slice(0, 3).map((t: any) => (
             <Link key={t.id} href={`/trajets/${t.id}`} className="block mb-3">
-              <Card className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">{t.originLabel} → {t.destinationLabel}</p>
-                  <p className="text-xs text-ink-muted mt-0.5">{new Date(t.departureAt).toLocaleDateString("fr-FR")}</p>
+              <Card className="!p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <RouteLine from={t.originLabel} to={t.destinationLabel} className="flex-1" />
+                  <StatusBadge status={t.status} />
                 </div>
-                <StatusBadge status={t.status} />
+                <p className="text-sm text-ink-muted mt-1.5">{formatTripDate(t.departureAt)}</p>
               </Card>
             </Link>
           ))
@@ -145,7 +160,7 @@ function Section({ title, href, children }: { title: string; href: string; child
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-medium text-ink">{title}</h2>
+        <h2 className="text-base font-semibold text-ink">{title}</h2>
         <Link href={href} className="text-sm text-primary font-medium flex items-center gap-0.5">
           Voir tout <ChevronRightIcon size={14} />
         </Link>

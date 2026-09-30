@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import Link from "next/link";
 import { Card, SectionHeader, EmptyState } from "@/components/ui";
+import { Avatar } from "@/components/avatar";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -24,12 +25,11 @@ export default function MessagerieIndexPage() {
         {conversations?.map((c: any) => (
           <Link key={c.bookingId} href={`/messagerie/${c.bookingId}`}>
             <Card className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center text-primary font-medium">
-                {c.otherUser?.firstName?.[0]}
-              </div>
+              <Avatar name={c.otherUser?.firstName} src={c.otherUser?.avatarUrl} size={44} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-ink">{c.otherUser?.firstName}</p>
-                <p className="text-xs text-ink-muted truncate">{c.lastMessage ?? c.route}</p>
+                <p className="font-semibold text-ink">{c.otherUser?.firstName}</p>
+                {c.route && c.lastMessage && <p className="text-xs text-ink-muted truncate">{c.route}</p>}
+                <p className="text-sm text-ink-muted truncate">{c.lastMessage ?? c.route}</p>
               </div>
             </Card>
           </Link>

@@ -5,17 +5,15 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { useSession } from "next-auth/react";
-import { Card, PrimaryButton, SecondaryButton, SectionHeader, LoadingState } from "@/components/ui";
+import { Card, PrimaryButton, SecondaryButton, LoadingState } from "@/components/ui";
 import { StarIcon } from "@/components/icons";
+import { Avatar } from "@/components/avatar";
+import { StatusBanner } from "@/components/status-banner";
+import { VerticalTimeline } from "@/components/vertical-timeline";
+import { RouteLine, formatTripMoment } from "@/components/trip-parts";
+import { TRACKING_STEPS, bookingStatusInfo, trackingStepIndex } from "@/lib/booking-status";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
-const STEPS = [
-  { status: "CONFIRMED", label: "Payé" },
-  { status: "PICKED_UP", label: "Pris en charge" },
-  { status: "DELIVERED", label: "Livré" },
-  { status: "COMPLETED", label: "Voyageur payé" },
-];
 
 export default function SuiviPage() {
   const { id } = useParams<{ id: string }>();
@@ -51,35 +49,45 @@ export default function SuiviPage() {
   if (!booking) return <LoadingState />;
   if (booking.error) return <LoadingState text="Ce suivi est introuvable ou ne vous est pas accessible." />;
 
-  const currentIndex = STEPS.findIndex((s) => s.status === booking.status);
+  const role = isSender ? "sender" : "traveler";
+  const counterpart = isSender ? booking.traveler : booking.sender;
+  const info = bookingStatusInfo(booking.status, role, counterpart?.firstName);
+  const currentIndex = trackingStepIndex(booking.status);
+  // À la fin, l'étape "Terminé" est atteinte : elle apparaît cochée plutôt qu'en cours.
+  const timelinePosition = booking.status === "COMPLETED" ? TRACKING_STEPS.length : currentIndex;
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-lg">
-      <SectionHeader
-        title="Suivi du colis"
-        subtitle={`${booking.parcel.originLabel} → ${booking.parcel.destinationLabel}`}
-        action={
-          <Link href={`/messagerie/${id}`} className="text-sm font-medium text-primary whitespace-nowrap">
-            Message
-          </Link>
-        }
-      />
+      {/* De quel colis s'agit-il, avec qui */}
+      <div className="mb-4">
+        <p className="text-sm text-ink-muted mb-1.5">Suivi du colis</p>
+        <RouteLine from={booking.parcel.originLabel} to={booking.parcel.destinationLabel} className="text-xl" />
+        <p className="text-sm text-ink-muted mt-1.5">{formatTripMoment(booking.trip.departureAt)}</p>
+      </div>
+
+      <StatusBanner title={info.title} hint={info.hint} tone={info.tone} />
+
+      <Card className="mt-4 mb-4 flex items-center gap-3">
+        <Avatar name={counterpart?.firstName} src={counterpart?.avatarUrl} size={40} />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-ink-muted">{isSender ? "Votre voyageur" : "L'expéditeur"}</p>
+          <p className="font-semibold text-ink">{counterpart?.firstName}</p>
+        </div>
+        <Link
+          href={`/messagerie/${id}`}
+          className="rounded-control bg-primary-light text-primary text-sm font-medium px-4 py-2 shrink-0"
+        >
+          Message
+        </Link>
+      </Card>
 
       <Card className="mb-6">
-        <div className="space-y-4">
-          {STEPS.map((step, i) => (
-            <div key={step.status} className="flex items-center gap-3">
-              <div
-                className={`w-3 h-3 rounded-full ${
-                  i <= currentIndex ? "bg-primary" : "bg-line"
-                }`}
-              />
-              <span className={`text-sm ${i <= currentIndex ? "text-ink font-medium" : "text-ink-muted"}`}>
-                {step.label}
-              </span>
-            </div>
-          ))}
-        </div>
+        <p className="font-semibold text-ink mb-4">Où en est le colis</p>
+        <VerticalTimeline
+          steps={TRACKING_STEPS.map((step) => ({ label: step.label, note: step.done }))}
+          current={timelinePosition}
+          warning={booking.status === "DELIVERY_FAILED"}
+        />
       </Card>
 
       {/* Expéditeur : détient les deux codes du début à la fin. Il transmet
@@ -123,12 +131,6 @@ export default function SuiviPage() {
         </>
       )}
 
-      {booking.status === "DELIVERY_FAILED" && (
-        <p className="text-sm text-error text-center mb-4">
-          Livraison non finalisée — un incident a été ouvert, le colis reste avec le voyageur.
-        </p>
-      )}
-
       {booking.status === "COMPLETED" && <ReviewForm bookingId={id} />}
 
       {report ? (
@@ -170,7 +172,7 @@ function CodeCard({
       <p className="text-sm font-medium text-ink mb-1">{title}</p>
       <p className="text-xs text-ink-muted mb-3">{hint}</p>
       {data?.code ? (
-        <p className="text-3xl font-semibold tracking-widest text-primary">{data.code}</p>
+        <p className="text-3xl font-semibold tracking-widest text-primary text-center bg-primary-light rounded-control py-3">{data.code}</p>
       ) : (
         <div>
           <p className="text-sm text-ink-muted mb-2">Ce code n'est plus disponible (expiré ou déjà utilisé).</p>

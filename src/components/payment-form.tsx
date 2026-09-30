@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { PrimaryButton } from "@/components/ui";
 
-export function PaymentForm({ onSuccess }: { onSuccess: () => void }) {
+export function PaymentForm({ onSuccess, amountLabel }: { onSuccess: () => void; amountLabel?: string }) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -36,7 +36,7 @@ export function PaymentForm({ onSuccess }: { onSuccess: () => void }) {
       <PaymentElement />
       {error && <p className="text-sm text-error">{error}</p>}
       <PrimaryButton type="submit" disabled={!stripe || loading}>
-        {loading ? "Traitement..." : "Payer maintenant"}
+        {loading ? "Traitement..." : amountLabel ? `Payer ${amountLabel}` : "Payer maintenant"}
       </PrimaryButton>
     </form>
   );

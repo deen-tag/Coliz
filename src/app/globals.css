@@ -5,3 +5,19 @@
 body {
   @apply bg-surface-alt text-ink antialiased;
 }
+
+/* Champs date : on cache l'icône calendrier native (doublon avec la nôtre, et elle chevauche le texte)
+   mais on l'étire sur tout le champ, pour qu'un appui n'importe où ouvre le calendrier. */
+.date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}

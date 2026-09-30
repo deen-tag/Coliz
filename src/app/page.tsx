@@ -106,7 +106,7 @@ export default async function HomePage() {
                 <IconField name="from" label="Départ" placeholder="Ville de départ" icon={<MapPinIcon size={18} />} />
                 <IconField name="to" label="Destination" placeholder="Ville d'arrivée" icon={<MapPinIcon size={18} />} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <DateField name="date" label="Date de départ" placeholder="Toutes les dates" icon={<CalendarIcon size={18} />} />
                 <label className="block">
                   <span className="block text-sm text-ink-muted mb-1.5 whitespace-nowrap">Période flexible</span>

@@ -254,7 +254,7 @@ function SearchForm({ from, to, date, flex }: { from: string; to: string; date: 
         <IconField icon={<MapPinIcon size={18} />} placeholder="Départ" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
         <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <DateField label="Date de départ" value={f.date} onChange={(v) => setF({ ...f, date: v })} placeholder="Toutes les dates" icon={<CalendarIcon size={18} />} />
         <IconSelect label="Période flexible" icon={<ClockIcon size={18} />} value={f.flex} onChange={(e) => setF({ ...f, flex: e.target.value })}>
           <option value="0">Date exacte</option>

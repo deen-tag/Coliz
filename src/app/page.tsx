@@ -4,9 +4,55 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/options";
 import { Logo } from "@/components/logo";
 import { HeroChoice } from "@/components/hero-choice";
-import { CarIcon, PlaneIcon, FerryIcon, TrainIcon } from "@/components/icons";
+import { CarIcon, PlaneIcon, FerryIcon, TrainIcon, type IconProps } from "@/components/icons";
 
 
+
+const svgProps = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
+
+function IdIcon({ size = 23 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...svgProps}>
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <circle cx="9" cy="11" r="2" />
+      <path d="M6.3 16c.6-1.5 1.6-2.2 2.7-2.2s2.1.7 2.7 2.2M14 10h4M14 13.5h3" />
+    </svg>
+  );
+}
+function CodeIcon({ size = 23 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...svgProps}>
+      <rect x="3" y="7" width="18" height="10" rx="2.5" />
+      <circle cx="8" cy="12" r=".6" fill="currentColor" />
+      <circle cx="12" cy="12" r=".6" fill="currentColor" />
+      <circle cx="16" cy="12" r=".6" fill="currentColor" />
+    </svg>
+  );
+}
+function PayIcon({ size = 23 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...svgProps}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M15.5 8.8a4.2 4.2 0 1 0 0 6.4M7.5 11h5.5M7.5 13h5.5" />
+    </svg>
+  );
+}
+function LeafIcon({ size = 23 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...svgProps}>
+      <path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14" />
+      <path d="M5 19c3-5 6-8 10-10" />
+    </svg>
+  );
+}
+
+// Ce que Coliz garantit, en quatre points (textes validés).
+const TRUST: { Icon: (p: IconProps) => JSX.Element; title: string; text: string; teal?: boolean }[] = [
+  { Icon: IdIcon, title: "Identités vérifiées", text: "Chaque membre est vérifié." },
+  { Icon: CodeIcon, title: "Remise par code", text: "Le colis est remis avec le bon code." },
+  { Icon: PayIcon, title: "Payé à la livraison", text: "Versé une fois le colis livré." },
+  { Icon: LeafIcon, title: "Bon pour la planète", text: "Un trajet partagé, c'est écologique.", teal: true },
+];
 
 const FREQUENT_ROUTES: { from: string; to: string; mode: "PLANE" | "CAR" | "FERRY" | "TRAIN" }[] = [
   { from: "Paris", to: "Londres", mode: "TRAIN" },
@@ -78,20 +124,23 @@ export default async function HomePage() {
         </div>
         <div className="relative z-10 px-5 -mt-2 sm:-mt-6 max-w-2xl mx-auto">
           <HeroChoice />
-          <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[13.5px] font-semibold text-ink-muted sm:justify-center">
-            {["Identités vérifiées", "Codes de remise et de réception", "Payé une fois livré"].map((t) => (
-              <li key={t} className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-gradient-to-br from-sender to-traveler" />
-                {t}
-              </li>
+          <div className="mt-6 grid grid-cols-2 gap-x-[18px] gap-y-6">
+            {TRUST.map(({ Icon, title, text, teal }) => (
+              <div key={title}>
+                <span className={`w-10 h-10 rounded-control flex items-center justify-center mb-2.5 ${teal ? "bg-traveler-light text-traveler" : "bg-sender-light text-sender"}`}>
+                  <Icon size={22} />
+                </span>
+                <p className="text-[14.5px] font-bold leading-tight text-ink">{title}</p>
+                <p className="text-[12.5px] leading-snug text-ink-muted mt-1">{text}</p>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       </section>
 
       {/* Exemples de trajets : un appui lance la recherche. */}
       <section className="max-w-2xl mx-auto px-5 pt-14">
-        <h2 className="text-[28px] font-extrabold tracking-tight text-ink">Des trajets dans toute la France et le monde</h2>
+        <h2 className="text-[28px] leading-[1.1] font-extrabold tracking-tight text-ink">Des trajets dans toute la France et le monde</h2>
         <p className="text-ink-muted mt-2 mb-5">Quelques exemples de routes. Touchez-en une pour voir les voyageurs qui la font.</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {FREQUENT_ROUTES.map(({ from, to, mode }) => (
@@ -109,7 +158,7 @@ export default async function HomePage() {
       {/* Le voyage du colis : la ligne passe du bleu (expéditeur) au teal (voyageur). */}
       <section id="comment-ca-marche" className="mt-16 bg-ink text-white rounded-t-[32px] py-16 px-5 scroll-mt-16">
         <div className="max-w-xl mx-auto">
-          <h2 className="text-[28px] font-extrabold tracking-tight">Le voyage de votre colis, étape par étape</h2>
+          <h2 className="text-[28px] leading-[1.1] font-extrabold tracking-tight">Le voyage de votre colis, étape par étape</h2>
           <p className="mt-2 text-white/70">De la rencontre à la livraison, chaque moment important est protégé.</p>
           <ol className="relative mt-9 pl-16">
             <span aria-hidden className="absolute left-[21px] top-2 bottom-2 w-[3px] rounded bg-gradient-to-b from-[#5B7CFF] to-[#2FBDAE]" />
@@ -131,7 +180,7 @@ export default async function HomePage() {
       </section>
 
       <section className="px-5 py-14 text-center">
-        <h2 className="text-[28px] font-extrabold tracking-tight text-ink mb-5">Prêt à faire voyager votre colis ?</h2>
+        <h2 className="text-[28px] leading-[1.1] font-extrabold tracking-tight text-ink mb-5">Prêt à faire voyager votre colis ?</h2>
         <div className="grid sm:grid-cols-2 gap-3 max-w-lg mx-auto">
           <Link href="/colis/nouveau" className="rounded-2xl bg-sender text-white font-bold py-4">Envoyer un colis</Link>
           <Link href="/trajets/nouveau" className="rounded-2xl bg-traveler text-white font-bold py-4">Proposer un trajet</Link>

@@ -37,13 +37,13 @@ export function formatTripMoment(iso: string | Date, style: "short" | "long" = "
 export function RouteLine({ from, to, className }: { from: string; to: string; className?: string }) {
   return (
     <div className={clsx("flex items-center gap-2.5 min-w-0", className)}>
-      <span className="font-semibold text-ink truncate max-w-[38%]">{shortCity(from)}</span>
+      <span className="font-bold text-ink truncate max-w-[38%]">{shortCity(from)}</span>
       <span className="flex-1 flex items-center min-w-[20px]" aria-hidden>
-        <span className="w-2.5 h-2.5 rounded-full border-2 border-primary bg-surface shrink-0" />
-        <span className="flex-1 border-t-2 border-dashed border-line" />
-        <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
+        <span className="w-3 h-3 rounded-full border-[3px] border-sender bg-surface shrink-0" />
+        <span className="flex-1 h-[3px] rounded-full bg-gradient-to-r from-sender to-traveler opacity-70" />
+        <span className="w-3 h-3 rounded-full bg-traveler shrink-0" />
       </span>
-      <span className="font-semibold text-ink truncate max-w-[38%] text-right">{shortCity(to)}</span>
+      <span className="font-bold text-ink truncate max-w-[38%] text-right">{shortCity(to)}</span>
     </div>
   );
 }

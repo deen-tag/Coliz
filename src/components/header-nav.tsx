@@ -42,6 +42,7 @@ export function HeaderNav() {
 
   return (
     <header className="hidden md:block sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-line">
+      <div className="h-[3px] bg-gradient-to-r from-sender to-traveler" aria-hidden />
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
         <Link href="/dashboard" className="shrink-0">
           <Logo variant="primary" size={28} />

@@ -178,7 +178,8 @@ export function SectionHeader({
   return (
     <div className="flex items-start justify-between gap-3 mb-5">
       <div>
-        <h1 className="text-xl font-extrabold tracking-tight text-ink leading-tight">{title}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink leading-tight">{title}</h1>
+        <span className="block h-1 w-10 rounded-full bg-primary mt-2" aria-hidden />
         {subtitle && <p className="text-sm text-ink-muted mt-1">{subtitle}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}

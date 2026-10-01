@@ -3,12 +3,12 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react
 // Champs de formulaire avec icône à gauche, partagés par tous les écrans.
 // Le libellé est optionnel (recherche compacte, champ inline).
 const BASE =
-  "w-full rounded-control border border-line bg-surface py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:bg-surface-alt disabled:text-ink-muted";
+  "w-full rounded-[14px] border border-line bg-surface py-3.5 text-[15.5px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:bg-surface-alt disabled:text-ink-muted";
 
 function Shell({ label, icon, children }: { label?: string; icon?: ReactNode; children: ReactNode }) {
   return (
     <label className="block">
-      {label && <span className="block text-sm text-ink-muted mb-1.5">{label}</span>}
+      {label && <span className="block text-sm font-semibold text-ink mb-1.5">{label}</span>}
       <span className="relative block">
         {icon && (
           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink">{icon}</span>

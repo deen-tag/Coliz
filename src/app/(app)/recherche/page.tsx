@@ -185,7 +185,7 @@ function TripResultCard({ r, parcelId }: { r: any; parcelId: string | null }) {
   return (
     <Link href={href} className="block">
       <Card className="!p-4 active:bg-surface-alt transition-colors">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4" data-role="traveler">
           <Avatar name={r.traveler.firstName} src={r.traveler.avatarUrl} size={40} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-ink truncate">{r.traveler.firstName}</p>
@@ -212,7 +212,7 @@ function TripResultCard({ r, parcelId }: { r: any; parcelId: string | null }) {
             </p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-semibold text-ink leading-none">
+            <p className="text-[28px] font-extrabold tracking-tight text-ink leading-none">
               {formatPrice(r.totalAmount ?? r.contributionAmount)}
             </p>
             <p className="text-xs text-ink-muted mt-1 flex items-center justify-end gap-0.5">

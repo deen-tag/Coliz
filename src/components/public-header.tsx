@@ -6,6 +6,7 @@ import { Logo } from "@/components/logo";
 export function PublicHeader() {
   return (
     <header className="sticky top-0 z-30 bg-warm/95 backdrop-blur border-b border-line">
+      <div className="h-[3px] bg-gradient-to-r from-sender to-traveler" aria-hidden />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <Link href="/" className="shrink-0" aria-label="Accueil Coliz">
           <Logo variant="primary" size={24} />

@@ -106,7 +106,7 @@ export default async function HomePage() {
       </section>
 
       {/* Le voyage du colis : la ligne passe du bleu (expéditeur) au teal (voyageur). */}
-      <section className="mt-16 bg-ink text-white rounded-t-[32px] py-16 px-5">
+      <section id="comment-ca-marche" className="mt-16 bg-ink text-white rounded-t-[32px] py-16 px-5 scroll-mt-16">
         <div className="max-w-xl mx-auto">
           <h2 className="text-[28px] font-extrabold tracking-tight">Le voyage de votre colis, étape par étape</h2>
           <p className="mt-2 text-white/70">De la rencontre à la livraison, chaque moment important est protégé.</p>

@@ -66,7 +66,7 @@ function InscriptionForm() {
         </a>
       </div>
       {tripId && <JourneySteps current={4} />}
-      <h1 className="text-2xl font-semibold text-ink mb-1">
+      <h1 className="text-2xl font-extrabold tracking-tight text-ink mb-1">
         {tripId ? "Créez votre compte pour réserver" : isTravelerFlow ? "Créez votre compte pour publier votre trajet" : "Créer un compte"}
       </h1>
       <p className="text-sm text-ink-muted mb-6">

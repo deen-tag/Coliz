@@ -34,7 +34,7 @@ export default function ProfilVoyageurPage() {
       {/* Qui est cette personne : le cœur de la confiance */}
       <Card className="text-center mb-4">
         <Avatar name={profile.firstName} src={profile.avatarUrl} size={88} className="mx-auto mb-3" />
-        <h1 className="text-xl font-semibold text-ink">{profile.firstName}</h1>
+        <h1 className="text-xl font-extrabold tracking-tight text-ink">{profile.firstName}</h1>
         {hasRating ? (
           <p className="text-sm text-ink-muted mt-1 flex items-center justify-center gap-1">
             <StarIcon size={15} className="text-primary" />

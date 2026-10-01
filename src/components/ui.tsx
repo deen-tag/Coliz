@@ -21,7 +21,7 @@ export function Card({
 }: HTMLAttributes<HTMLElement> & { as?: keyof JSX.IntrinsicElements }) {
   return (
     <Tag
-      className={clsx("bg-surface rounded-card border border-line p-5 shadow-sm", className)}
+      className={clsx("bg-surface rounded-card border border-line p-5 shadow-card", className)}
       {...(props as any)}
     />
   );
@@ -31,7 +31,7 @@ export function PrimaryButton({ className, ...props }: ButtonHTMLAttributes<HTML
   return (
     <button
       className={clsx(
-        "w-full rounded-control bg-primary text-white font-medium py-3.5 text-[15px]",
+        "w-full rounded-[14px] bg-primary text-white font-bold py-3.5 text-[15.5px]",
         "active:opacity-90 disabled:opacity-40 disabled:pointer-events-none transition-opacity",
         className
       )}
@@ -44,7 +44,7 @@ export function SecondaryButton({ className, ...props }: ButtonHTMLAttributes<HT
   return (
     <button
       className={clsx(
-        "w-full rounded-control bg-primary-light text-primary font-medium py-3.5 text-[15px]",
+        "w-full rounded-[14px] bg-primary-light text-primary font-bold py-3.5 text-[15.5px]",
         "active:opacity-80 transition-opacity",
         className
       )}
@@ -178,7 +178,7 @@ export function SectionHeader({
   return (
     <div className="flex items-start justify-between gap-3 mb-5">
       <div>
-        <h1 className="text-xl font-semibold text-ink leading-tight">{title}</h1>
+        <h1 className="text-xl font-extrabold tracking-tight text-ink leading-tight">{title}</h1>
         {subtitle && <p className="text-sm text-ink-muted mt-1">{subtitle}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}

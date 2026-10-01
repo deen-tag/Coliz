@@ -18,7 +18,7 @@ const TABS = [
 const TRAVELER_POINTS = [
   "Vous choisissez vos dates et ce que vous souhaitez recevoir.",
   "Vous acceptez ou refusez chaque demande.",
-  "Paiement protégé, versé une fois le colis livré.",
+  "Vous êtes payé une fois le colis livré.",
 ];
 
 // Le choix de l'accueil : deux grandes entrées toujours visibles, chacune dans sa couleur.
@@ -42,9 +42,9 @@ export function HeroChoice() {
               data-role={r}
               onClick={() => setRole(r)}
               className={clsx(
-                "flex flex-col items-start gap-2.5 rounded-card border p-3.5 text-left transition-colors",
+                "relative flex flex-col items-start gap-3 rounded-card border-2 p-4 text-left transition-colors shadow-card",
                 "sm:flex-row sm:items-center sm:gap-3",
-                active ? "bg-primary text-white border-primary shadow-sm" : "bg-surface text-ink border-line"
+                active ? "bg-primary text-white border-primary" : "bg-surface text-ink border-primary"
               )}
             >
               <span
@@ -56,7 +56,7 @@ export function HeroChoice() {
                 <Icon size={22} />
               </span>
               <span className="min-w-0">
-                <span className="block text-[15px] font-semibold leading-tight">{label}</span>
+                <span className="block text-base font-bold leading-tight">{label}</span>
                 <span className={clsx("block text-xs mt-1 leading-tight", active ? "text-white/90" : "text-ink-muted")}>
                   {hint}
                 </span>

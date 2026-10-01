@@ -26,7 +26,7 @@ export function PublicHeader() {
           </Link>
           <Link
             href="/inscription"
-            className="rounded-control bg-primary text-white text-sm font-medium px-3.5 py-2.5 whitespace-nowrap"
+            className="rounded-[14px] bg-primary text-white text-sm font-bold px-3.5 py-2.5 whitespace-nowrap"
           >
             Créer un compte
           </Link>

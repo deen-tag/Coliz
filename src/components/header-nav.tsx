@@ -84,7 +84,7 @@ export function HeaderNav() {
           </Link>
           <Link
             href={cta.href}
-            className="rounded-control bg-primary text-white text-sm font-medium px-4 py-2.5 whitespace-nowrap"
+            className="rounded-[14px] bg-primary text-white text-sm font-bold px-4 py-2.5 whitespace-nowrap"
           >
             {cta.label}
           </Link>

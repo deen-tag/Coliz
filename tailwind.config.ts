@@ -17,7 +17,7 @@ const config: Config = {
         traveler: "#0A7B71",
         "traveler-light": "#E3F5F2",
         // Deep Ink — remplace le noir pur pour titres/texte fort (DA §3)
-        ink: "#101828",
+        ink: "#0E1A3A",
         // Slate — texte secondaire/métadonnées (DA §3)
         "ink-muted": "#667085",
         // Warm White — fond principal éditorial (homepage, sections) (DA §3)
@@ -33,6 +33,7 @@ const config: Config = {
         error: "#DC2626",
         "error-light": "#FCEAEA",
       },
+      boxShadow: { card: "0 12px 30px -20px rgba(14,26,58,0.45)" },
       borderRadius: {
         card: "20px",
         control: "12px",

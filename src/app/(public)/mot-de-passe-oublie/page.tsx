@@ -29,7 +29,7 @@ export default function MotDePasseOubliePage() {
       <div className="flex justify-center mb-8">
         <Logo variant="primary" size={40} />
       </div>
-      <h1 className="text-2xl font-semibold text-ink mb-1">Mot de passe oublié</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-ink mb-1">Mot de passe oublié</h1>
       <p className="text-sm text-ink-muted mb-6">Saisissez votre email, nous vous envoyons un lien pour en choisir un nouveau.</p>
 
       {sent ? (

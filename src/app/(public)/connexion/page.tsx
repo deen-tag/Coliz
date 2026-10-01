@@ -58,7 +58,7 @@ function ConnexionForm() {
         </a>
       </div>
       {tripId && <JourneySteps current={4} />}
-      <h1 className="text-2xl font-semibold text-ink mb-1">
+      <h1 className="text-2xl font-extrabold tracking-tight text-ink mb-1">
         {tripId ? "Connectez-vous pour réserver" : isTravelerFlow ? "Connectez-vous pour publier votre trajet" : "Se connecter"}
       </h1>
       <p className="text-sm text-ink-muted mb-6">

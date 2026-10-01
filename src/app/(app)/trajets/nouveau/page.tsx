@@ -96,7 +96,7 @@ export default function NouveauTrajetPage() {
           <SuitcaseIcon size={22} />
         </span>
         <div>
-          <h1 className="text-xl font-semibold text-ink leading-tight">Publier un trajet</h1>
+          <h1 className="text-xl font-extrabold tracking-tight text-ink leading-tight">Publier un trajet</h1>
           <p className="text-sm text-ink-muted mt-0.5">
             Transportez un colis sur un trajet que vous faites déjà et gagnez de l&apos;argent.
           </p>

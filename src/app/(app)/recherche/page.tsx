@@ -117,7 +117,7 @@ function RechercheContent() {
 
       <div className="flex items-end justify-between gap-3 mb-4">
         <div>
-          <h1 className="text-xl font-semibold text-ink leading-tight">{title}</h1>
+          <h1 className="text-xl font-extrabold tracking-tight text-ink leading-tight">{title}</h1>
           {parcelId && <p className="text-sm text-ink-muted mt-1">Compatibles avec le poids et les dimensions de votre colis.</p>}
         </div>
         {count > 0 && (
@@ -247,7 +247,7 @@ function SearchForm({ from, to, date, flex }: { from: string; to: string; date: 
   return (
     <Card as="form" onSubmit={submit} className="mb-6 space-y-3">
       <div>
-        <h1 className="text-lg font-semibold text-ink">Où voulez-vous envoyer votre colis ?</h1>
+        <h1 className="text-lg font-extrabold tracking-tight text-ink">Où voulez-vous envoyer votre colis ?</h1>
         <p className="text-sm text-ink-muted mt-0.5">Coliz trouve les voyageurs qui font déjà ce trajet.</p>
       </div>
       <div className="grid grid-cols-2 gap-3">

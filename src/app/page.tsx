@@ -4,34 +4,34 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/options";
 import { Logo } from "@/components/logo";
 import { HeroChoice } from "@/components/hero-choice";
-import { HowItWorks } from "@/components/how-it-works";
-import { ShieldIcon, LockIcon, MapPinIcon, CheckBadgeIcon, CarIcon, PlaneIcon, FerryIcon } from "@/components/icons";
+import { CarIcon, PlaneIcon, FerryIcon, TrainIcon } from "@/components/icons";
 
-// Trajets réels les plus concernés par la diaspora maghrébine en France
-// (Paris, Marseille, Lyon, Lille). Un appui lance directement la recherche.
-const FREQUENT_ROUTES: { route: string; mode: "PLANE" | "CAR" | "FERRY" }[] = [
-  { route: "Paris → Marseille", mode: "CAR" },
-  { route: "Paris → Lille", mode: "CAR" },
-  { route: "Paris → Alger", mode: "PLANE" },
-  { route: "Marseille → Alger", mode: "FERRY" },
-  { route: "Lyon → Casablanca", mode: "PLANE" },
-  { route: "Marseille → Tunis", mode: "PLANE" },
+
+
+const FREQUENT_ROUTES: { from: string; to: string; mode: "PLANE" | "CAR" | "FERRY" | "TRAIN" }[] = [
+  { from: "Paris", to: "Londres", mode: "TRAIN" },
+  { from: "Paris", to: "Madrid", mode: "PLANE" },
+  { from: "Paris", to: "New York", mode: "PLANE" },
+  { from: "Paris", to: "Marseille", mode: "CAR" },
+  { from: "Marseille", to: "Alger", mode: "FERRY" },
+  { from: "Paris", to: "Casablanca", mode: "PLANE" },
 ];
 
-// Réassurance portée par Coliz plutôt que par une enquête de l'utilisateur
-// sur chaque transporteur (cahier des charges §3, brief UI/UX §7).
-const TRUST_ITEMS = [
-  { Icon: ShieldIcon, label: "Identité vérifiée", text: "Des utilisateurs vérifiés et fiables." },
-  { Icon: LockIcon, label: "Paiement sécurisé", text: "Votre paiement est protégé jusqu'à la remise." },
-  { Icon: MapPinIcon, label: "Colis suivi", text: "Suivez son acheminement à chaque étape." },
-  { Icon: CheckBadgeIcon, label: "Remise par code", text: "Un code confirme chaque remise." },
+// Le voyage du colis : ce que Coliz fait réellement, dans l'ordre.
+const JOURNEY: { color: string; title: string; text: string; code?: string }[] = [
+  { color: "#5B7CFF", title: "Des identités vérifiées", text: "Expéditeurs et voyageurs sont vérifiés par document d'identité." },
+  { color: "#5289EF", title: "Une mise en relation directe", text: "Coliz vous met en contact avec un voyageur qui fait déjà le trajet." },
+  { color: "#4A96DF", title: "Un code à la remise", text: "Quand vous lui confiez le colis, vous lui donnez un code : la prise en charge est confirmée.", code: "Code de remise" },
+  { color: "#41A3CE", title: "Un colis suivi", text: "Chaque étape du trajet est tracée dans l'application, jusqu'à l'arrivée." },
+  { color: "#38B0BE", title: "Un code unique à la réception", text: "À la livraison, un second code est demandé pour s'assurer que le colis est remis à la bonne personne.", code: "Code de réception" },
+  { color: "#2FBDAE", title: "Un paiement une fois livré", text: "Le voyageur n'est payé qu'une fois le colis livré, jamais avant." },
 ];
 
 // Icônes en petit format pour la bande "Trajets fréquents" — indépendant de
 // TransportModeBadge, dont les tailles/paddings sont pensés pour les cartes
 // de résultats, pas pour un si petit format.
-function TransportModeIcon({ mode, size, className }: { mode: "PLANE" | "CAR" | "FERRY"; size: number; className?: string }) {
-  const Icon = { CAR: CarIcon, PLANE: PlaneIcon, FERRY: FerryIcon }[mode];
+function TransportModeIcon({ mode, size, className }: { mode: "PLANE" | "CAR" | "FERRY" | "TRAIN"; size: number; className?: string }) {
+  const Icon = { CAR: CarIcon, PLANE: PlaneIcon, FERRY: FerryIcon, TRAIN: TrainIcon }[mode];
   return <Icon size={size} className={className} />;
 }
 
@@ -45,7 +45,7 @@ export default async function HomePage() {
         <Logo variant="primary" size={28} />
         <div className="flex gap-2">
           {session ? (
-            <Link href="/dashboard" className="text-sm font-medium bg-primary text-white rounded-control px-4 py-2.5">
+            <Link href="/dashboard" className="text-sm font-bold bg-primary text-white rounded-[14px] px-4 py-2.5">
               Mon espace
             </Link>
           ) : (
@@ -53,7 +53,7 @@ export default async function HomePage() {
               <Link href="/connexion" className="text-sm font-medium text-ink-muted px-3 py-2">
                 Se connecter
               </Link>
-              <Link href="/inscription" className="text-sm font-medium bg-primary text-white rounded-control px-4 py-2.5">
+              <Link href="/inscription" className="text-sm font-bold bg-primary text-white rounded-[14px] px-4 py-2.5">
                 Créer un compte
               </Link>
             </>
@@ -61,84 +61,80 @@ export default async function HomePage() {
         </div>
       </header>
 
-      {/* Accueil : deux grandes entrées toujours visibles (bleu = j'envoie, teal = je voyage).
-          Sur ordinateur, le titre se pose sur la moitié vide de l'illustration ; sur téléphone
-          l'illustration est retirée pour que le choix soit visible sans défiler. */}
-      <section className="max-w-4xl mx-auto sm:px-4">
-        <div className="relative">
-          <div className="relative z-10 px-4 pt-2 pb-5 sm:p-0 sm:absolute sm:inset-y-0 sm:left-0 sm:w-[48%] sm:flex sm:flex-col sm:justify-center sm:pl-8 sm:pr-1">
-            <h1 className="text-[30px] leading-[1.1] sm:text-3xl md:text-[40px] font-semibold text-ink tracking-tight">
-              Vos colis voyagent avec ceux qui voyagent.
+      {/* HERO : l'illustration est le fond du bloc titre, sa partie neutre porte le texte. */}
+      <section className="max-w-5xl mx-auto">
+        <div className="relative min-h-[410px] sm:min-h-0 sm:aspect-[3/2] sm:max-h-[580px] overflow-hidden">
+          <Image src="/brand/hero.webp" alt="" fill priority sizes="(min-width: 1024px) 1024px, 100vw" className="object-cover object-[75%_100%] sm:object-center select-none pointer-events-none" aria-hidden="true" />
+          <div className="absolute inset-0 sm:hidden" style={{ background: "linear-gradient(to bottom, #F8F7F3 0, #F8F7F3 36%, transparent 70%)" }} />
+          <div className="relative z-10 px-5 pt-5 sm:px-10 sm:pt-0 sm:w-[52%] sm:h-full sm:flex sm:flex-col sm:justify-center">
+            <h1 className="text-[38px] sm:text-6xl font-extrabold leading-[1.02] tracking-tight text-ink max-w-[11em]">
+              Vos colis <span className="text-route">voyagent</span> avec ceux qui voyagent.
             </h1>
-            <p className="mt-3 text-ink-muted text-base sm:text-sm md:text-base">
+            <p className="mt-4 text-ink-muted text-[17px] sm:text-lg max-w-[21em]">
               Envoyez un colis avec un voyageur, ou gagnez de l&apos;argent sur un trajet que vous faites déjà.
             </p>
           </div>
-          <div className="hidden sm:block relative aspect-[3/2] w-full">
-            <Image
-              src="/brand/hero.webp"
-              alt=""
-              fill
-              priority
-              sizes="896px"
-              className="object-cover pointer-events-none select-none"
-              aria-hidden="true"
-            />
-          </div>
         </div>
-
-        <div className="relative z-10 px-4 sm:px-0 sm:-mt-14 max-w-2xl mx-auto pb-10">
+        <div className="relative z-10 px-5 -mt-8 sm:-mt-16 max-w-2xl mx-auto">
           <HeroChoice />
-
-          {/* Un appui sur un trajet lance directement la recherche correspondante. */}
-          <div className="mt-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-ink">Trajets fréquents</h2>
-            <p className="text-sm text-ink-muted mt-1 mb-4">
-              Ces trajets sont souvent recherchés par notre communauté. Touchez-en un pour voir les voyageurs disponibles.
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {FREQUENT_ROUTES.map(({ route, mode }) => {
-                const [from, to] = route.split(" → ");
-                return (
-                  <Link
-                    key={route}
-                    href={`/recherche?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`}
-                    className="flex items-center gap-2 rounded-2xl bg-surface border border-line px-3 py-2.5 text-[13px] sm:text-sm font-semibold text-ink leading-tight active:bg-sender-light hover:border-sender/40 transition-colors"
-                  >
-                    <TransportModeIcon mode={mode} size={16} className="text-sender shrink-0" />
-                    <span className="min-w-0">
-                      {from}
-                      <br />
-                      {to}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[13.5px] font-semibold text-ink-muted sm:justify-center">
+            {["Identités vérifiées", "Codes de remise et de réception", "Payé une fois livré"].map((t) => (
+              <li key={t} className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-gradient-to-br from-sender to-traveler" />
+                {t}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
-      {/* Réassurance — la confiance est portée par Coliz, pas par une enquête utilisateur */}
-      <section className="bg-surface border-y border-line py-10">
-        <div className="max-w-3xl mx-auto px-4 text-center mb-8">
-          <h2 className="text-xl font-semibold text-ink mb-1">Transportez en toute confiance</h2>
-          <p className="text-sm text-ink-muted">Votre colis est entre de bonnes mains.</p>
-        </div>
-        <div className="max-w-3xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-          {TRUST_ITEMS.map(({ Icon, label, text }) => (
-            <div key={label}>
-              <Icon size={26} className="text-primary mx-auto mb-2" />
-              <p className="text-sm font-medium text-ink">{label}</p>
-              <p className="text-xs text-ink-muted mt-1">{text}</p>
-            </div>
+      {/* Exemples de trajets : un appui lance la recherche. */}
+      <section className="max-w-2xl mx-auto px-5 pt-14">
+        <h2 className="text-[28px] font-extrabold tracking-tight text-ink">Des trajets dans toute la France et le monde</h2>
+        <p className="text-ink-muted mt-2 mb-5">Quelques exemples de routes. Touchez-en une pour voir les voyageurs qui la font.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {FREQUENT_ROUTES.map(({ from, to, mode }) => (
+            <Link key={from + to} href={`/recherche?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`} className="flex items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card active:bg-sender-light">
+              <span className="min-w-0 text-[15px] font-bold leading-snug text-ink">
+                <span className="flex items-center gap-2"><i className="w-2 h-2 rounded-full bg-sender shrink-0" /><span className="truncate">{from}</span></span>
+                <span className="flex items-center gap-2"><i className="w-2 h-2 rounded-full border-2 border-sender shrink-0" /><span className="truncate">{to}</span></span>
+              </span>
+              <span className="w-9 h-9 shrink-0 rounded-full bg-sender-light text-sender flex items-center justify-center"><TransportModeIcon mode={mode} size={18} /></span>
+            </Link>
           ))}
         </div>
       </section>
 
-      <section id="comment-ca-marche" className="max-w-3xl mx-auto px-4 py-14 scroll-mt-20">
-        <h2 className="text-xl font-semibold text-ink text-center mb-6">Comment ça marche ?</h2>
-        <HowItWorks />
+      {/* Le voyage du colis : la ligne passe du bleu (expéditeur) au teal (voyageur). */}
+      <section className="mt-16 bg-ink text-white rounded-t-[32px] py-16 px-5">
+        <div className="max-w-xl mx-auto">
+          <h2 className="text-[28px] font-extrabold tracking-tight">Le voyage de votre colis, étape par étape</h2>
+          <p className="mt-2 text-white/70">De la rencontre à la livraison, chaque moment important est protégé.</p>
+          <ol className="relative mt-9 pl-16">
+            <span aria-hidden className="absolute left-[21px] top-2 bottom-2 w-[3px] rounded bg-gradient-to-b from-[#5B7CFF] to-[#2FBDAE]" />
+            <span aria-hidden className="coliz-run absolute left-[14px] top-2 w-[17px] h-[17px] rounded-[5px] bg-white ring-[5px] ring-white/20" />
+            {JOURNEY.map((j, i) => (
+              <li key={j.title} className="relative mb-8 last:mb-0">
+                <span className="absolute -left-16 -top-0.5 w-11 h-11 rounded-full flex items-center justify-center font-extrabold ring-[6px] ring-ink" style={{ backgroundColor: j.color }}>{i + 1}</span>
+                <p className="text-lg font-bold leading-snug">{j.title}</p>
+                <p className="text-[15px] text-white/70 mt-1 leading-relaxed">{j.text}</p>
+                {j.code && (
+                  <span className="inline-flex items-center gap-2 mt-3 rounded-xl border-2 border-dashed px-3 py-1.5 text-xs font-bold uppercase tracking-wider" style={{ borderColor: j.color, color: j.color }}>
+                    {j.code} <span className="opacity-70 tracking-[0.25em]">••••</span>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="px-5 py-14 text-center">
+        <h2 className="text-[28px] font-extrabold tracking-tight text-ink mb-5">Prêt à faire voyager votre colis ?</h2>
+        <div className="grid sm:grid-cols-2 gap-3 max-w-lg mx-auto">
+          <Link href="/colis/nouveau" className="rounded-2xl bg-sender text-white font-bold py-4">Envoyer un colis</Link>
+          <Link href="/trajets/nouveau" className="rounded-2xl bg-traveler text-white font-bold py-4">Proposer un trajet</Link>
+        </div>
       </section>
 
       <footer className="text-center text-xs text-ink-muted/70 pb-10">

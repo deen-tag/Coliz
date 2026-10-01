@@ -58,7 +58,7 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-ink">{firstName ? `Bonjour ${firstName}` : "Bonjour"}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{firstName ? `Bonjour ${firstName}` : "Bonjour"}</h1>
         <Link href="/notifications" className="relative text-ink-muted p-1" aria-label="Notifications">
           <BellIcon size={24} />
           {data?.unreadNotifications > 0 && (
@@ -71,13 +71,13 @@ export default function DashboardPage() {
 
       {actions.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-base font-semibold text-ink mb-3">À faire maintenant</h2>
+          <h2 className="text-base font-bold tracking-tight text-ink mb-3">À faire maintenant</h2>
           <div className="space-y-2">
             {actions.map((a) => (
               <Link key={a.key} href={a.href} className="block" data-role={a.role}>
                 <Card className="flex items-center gap-3 !p-4 border-primary/30 !bg-primary-light">
                   <p className="flex-1 text-sm text-ink leading-snug">{a.text}</p>
-                  <span className="rounded-control bg-primary text-white text-sm font-medium px-3.5 py-2 whitespace-nowrap">
+                  <span className="rounded-[14px] bg-primary text-white text-sm font-bold px-3.5 py-2 whitespace-nowrap">
                     {a.cta}
                   </span>
                 </Card>
@@ -106,7 +106,7 @@ export default function DashboardPage() {
 
       {/* Recherche : directement sur le fond, pas dans une carte de plus */}
       <form onSubmit={search} className="mb-10 space-y-3">
-        <h2 className="text-base font-semibold text-ink">Chercher un trajet</h2>
+        <h2 className="text-base font-bold tracking-tight text-ink">Chercher un trajet</h2>
         <div className="grid grid-cols-2 gap-3">
           <IconField icon={<MapPinIcon size={18} />} placeholder="Départ" value={q.from} onChange={(e) => setQ({ ...q, from: e.target.value })} />
           <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} />
@@ -167,7 +167,7 @@ function Section({
   return (
     <section className="mb-8" data-role={role}>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-semibold text-ink">{title}</h2>
+        <h2 className="text-base font-bold tracking-tight text-ink">{title}</h2>
         <Link href={href} className="text-sm text-primary font-medium flex items-center gap-0.5">
           Voir tout <ChevronRightIcon size={14} />
         </Link>

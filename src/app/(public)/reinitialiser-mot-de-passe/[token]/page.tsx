@@ -38,7 +38,7 @@ export default function ReinitialiserMotDePassePage() {
       <div className="flex justify-center mb-8">
         <Logo variant="primary" size={40} />
       </div>
-      <h1 className="text-2xl font-semibold text-ink mb-1">Nouveau mot de passe</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-ink mb-1">Nouveau mot de passe</h1>
       <p className="text-sm text-ink-muted mb-6">Choisissez un mot de passe d&apos;au moins 8 caractères.</p>
 
       {done ? (

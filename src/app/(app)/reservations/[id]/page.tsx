@@ -112,7 +112,7 @@ export default function ReservationPage() {
           {departureTime ? ` · ${departureTime}` : ""}
         </p>
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-ink leading-tight">
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink leading-tight">
             {shortCity(booking.trip.originLabel)} <span className="text-ink-muted font-normal">→</span>{" "}
             {shortCity(booking.trip.destinationLabel)}
           </h1>
@@ -286,7 +286,7 @@ function NegotiateForm({ bookingId, onDone }: { bookingId: string; onDone: () =>
             placeholder="Montant en €"
           />
         </div>
-        <button onClick={submit} className="rounded-control bg-primary text-white px-4 text-sm font-medium">
+        <button onClick={submit} className="rounded-[14px] bg-primary text-white px-4 text-sm font-bold">
           Envoyer
         </button>
       </div>

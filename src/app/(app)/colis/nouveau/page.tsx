@@ -206,7 +206,7 @@ function NouveauColisContent() {
 
         <AuthTripContext tripId={tripId} label="Votre trajet" />
 
-        <h1 className="text-xl font-semibold text-ink mb-1">{text.title}</h1>
+        <h1 className="text-xl font-extrabold tracking-tight text-ink mb-1">{text.title}</h1>
         <p className="text-sm text-ink-muted mb-5">{text.subtitle}</p>
 
         <Card className="mb-6">
@@ -268,7 +268,7 @@ function NouveauColisContent() {
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
       <JourneySteps current={step} steps={FORM_STEPS} />
 
-      <h1 className="text-xl font-semibold text-ink mb-1">{STEP_TEXT[step].title}</h1>
+      <h1 className="text-xl font-extrabold tracking-tight text-ink mb-1">{STEP_TEXT[step].title}</h1>
       <p className="text-sm text-ink-muted mb-5">{STEP_TEXT[step].subtitle}</p>
 
       <Card className="mb-6">

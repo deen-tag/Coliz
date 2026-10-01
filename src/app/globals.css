@@ -33,3 +33,10 @@ body {
   opacity: 0;
   cursor: pointer;
 }
+
+/* Identité Coliz : le dégradé bleu -> teal figure la remise de l'expéditeur au voyageur. */
+.text-route{background:linear-gradient(90deg,rgb(36 87 255),rgb(10 123 113));-webkit-background-clip:text;background-clip:text;color:transparent}
+h1,h2,h3{letter-spacing:-0.02em}
+@keyframes coliz-run{to{top:calc(100% - 26px)}}
+.coliz-run{animation:coliz-run 7s ease-in-out infinite alternate}
+@media (prefers-reduced-motion:reduce){.coliz-run{animation:none}}

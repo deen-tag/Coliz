@@ -105,7 +105,7 @@ export default function ConversationPage() {
           placeholder="Écrire un message..."
           className="flex-1 rounded-control border border-line px-4 py-2.5 text-[15px]"
         />
-        <button onClick={send} className="rounded-control bg-primary text-white px-4 font-medium text-sm">
+        <button onClick={send} className="rounded-[14px] bg-primary text-white px-4 font-bold text-sm">
           Envoyer
         </button>
       </div>

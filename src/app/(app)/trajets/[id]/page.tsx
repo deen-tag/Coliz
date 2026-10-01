@@ -86,7 +86,7 @@ export default function TrajetDetailPage() {
       <div className="mb-5">
         <p className="text-sm text-ink-muted mb-1 capitalize">{formatTripDate(trip.departureAt, "long")}</p>
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-ink leading-tight">
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink leading-tight">
             {shortCity(trip.originLabel)} <span className="text-ink-muted font-normal">→</span> {shortCity(trip.destinationLabel)}
           </h1>
           {/* Le statut n'apporte rien à un expéditeur tant que le trajet est réservable. */}

@@ -10,8 +10,10 @@ type Point = { label: string; lat: number; lng: number };
 const shortLabel = (label: string) => label.split(",")[0].trim();
 const round = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d;
 
-// Routes du globe d'accueil : uniquement des paires de villes (nom + coordonnées)
-// pour les trajets encore réservables. Aucune donnée de voyageur ni de date.
+// Routes du globe d'accueil : des paires de villes (nom + coordonnées) pour les trajets
+// encore réservables, avec le nombre de trajets par route (sert seulement à choisir les
+// routes principales et l'épaisseur des arcs : il n'est jamais affiché). Aucune donnée de
+// voyageur ni de date.
 export async function GET() {
   try {
     const rows = await prisma.trip.groupBy({
@@ -23,22 +25,31 @@ export async function GET() {
       },
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
-      take: 120,
+      take: 200,
     });
 
     // Deux libellés très proches (« Paris » / « Paris, France ») = une seule route.
-    const seen = new Map<string, { from: Point; to: Point }>();
+    const merged = new Map<string, { from: Point; to: Point; count: number }>();
     for (const r of rows) {
       const key = [round(r.originLat, 1), round(r.originLng, 1), round(r.destinationLat, 1), round(r.destinationLng, 1)].join("|");
-      if (seen.has(key)) continue;
-      seen.set(key, {
+      const found = merged.get(key);
+      if (found) {
+        found.count += r._count.id;
+        continue;
+      }
+      merged.set(key, {
         from: { label: shortLabel(r.originLabel), lat: round(r.originLat, 2), lng: round(r.originLng, 2) },
         to: { label: shortLabel(r.destinationLabel), lat: round(r.destinationLat, 2), lng: round(r.destinationLng, 2) },
+        count: r._count.id,
       });
     }
 
+    const routes = Array.from(merged.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 120);
+
     return NextResponse.json(
-      { routes: Array.from(seen.values()).slice(0, 80) },
+      { routes },
       { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } }
     );
   } catch {

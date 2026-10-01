@@ -115,13 +115,15 @@ export default function ParametresPage() {
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
       <SectionHeader
         title="Profil et paramètres"
-        subtitle={saved ? "Modifications enregistrées" : "Vos informations et préférences"}
-        action={
-          userId ? (
-            <Link href={`/voyageurs/${userId}`} className="text-sm font-medium text-primary whitespace-nowrap">
-              Voir mon profil public
-            </Link>
-          ) : undefined
+        subtitle={
+          <>
+            {saved ? "Modifications enregistrées" : "Vos informations et préférences"}
+            {userId && (
+              <Link href={`/voyageurs/${userId}`} className="block mt-1.5 font-medium text-primary">
+                Voir mon profil public
+              </Link>
+            )}
+          </>
         }
       />
 

@@ -15,7 +15,7 @@ export default function MesVoyagesPage() {
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
       <SectionHeader
         title="Mes voyages"
-        subtitle="Vos trajets publiés et leurs opportunités"
+        subtitle="Vos trajets publiés et les colis compatibles"
         action={
           trips?.length > 0 ? (
             <Link href="/trajets/nouveau">
@@ -56,11 +56,11 @@ export default function MesVoyagesPage() {
                 </p>
 
                 <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-line">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <TransportModeBadge mode={t.mode} />
+                  <div className="flex items-center gap-2.5 shrink-0">
                     {t.contributionAmount != null && (
-                      <span className="font-semibold text-primary">+ {formatPrice(t.contributionAmount)}</span>
+                      <span className="font-semibold text-primary whitespace-nowrap">+ {formatPrice(t.contributionAmount)}</span>
                     )}
+                    <TransportModeBadge mode={t.mode} />
                   </div>
                   <span className="flex items-center gap-0.5 text-xs font-medium text-right">
                     {t.pendingRequests > 0 ? (
@@ -70,8 +70,8 @@ export default function MesVoyagesPage() {
                     ) : open ? (
                       <span className={t.compatibleParcelsCount > 0 ? "text-primary" : "text-ink-muted"}>
                         {t.compatibleParcelsCount > 0
-                          ? `${t.compatibleParcelsCount} opportunité${t.compatibleParcelsCount > 1 ? "s" : ""} compatible${t.compatibleParcelsCount > 1 ? "s" : ""}`
-                          : "Aucune opportunité pour l'instant"}
+                          ? `${t.compatibleParcelsCount} colis compatible${t.compatibleParcelsCount > 1 ? "s" : ""}`
+                          : "Aucun colis compatible"}
                       </span>
                     ) : null}
                     <ChevronRightIcon size={14} className="text-ink-muted" />

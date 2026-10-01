@@ -23,6 +23,7 @@ export async function GET() {
       bookingId: b.id,
       otherUser: other,
       route: `${b.parcel.originLabel} → ${b.parcel.destinationLabel}`,
+      status: b.status,
       lastMessage: b.messages[0]?.content ?? null,
       lastMessageAt: b.messages[0]?.createdAt ?? null,
     };

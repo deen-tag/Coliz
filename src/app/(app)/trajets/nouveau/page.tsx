@@ -154,10 +154,11 @@ export default function NouveauTrajetPage() {
           <div className="rounded-control bg-primary-light px-4 py-3 text-sm -mt-1">
             {preview ? (
               <>
-                <p className="text-ink">
-                  Vous recevez <span className="font-semibold text-primary">{formatPrice(preview.contributionAmount)}</span>
+                <p className="text-xs text-ink-muted">Vous recevez</p>
+                <p className="text-3xl font-extrabold tracking-tight text-primary leading-tight">
+                  {formatPrice(preview.contributionAmount)}
                 </p>
-                <p className="text-xs text-ink-muted mt-0.5">
+                <p className="text-xs text-ink-muted mt-1">
                   L&apos;expéditeur paie {formatPrice(preview.totalAmount)}, frais de service Coliz de {feePercent} % inclus.
                 </p>
               </>
@@ -168,11 +169,8 @@ export default function NouveauTrajetPage() {
               </p>
             )}
           </div>
-        </Card>
-
-        {mode === "CAR" && (
-          <Card>
-            <label className="flex items-start gap-3 text-sm text-ink">
+          {mode === "CAR" && (
+            <label className="flex items-start gap-3 text-sm text-ink border-t border-line pt-4">
               <input
                 type="checkbox"
                 checked={confirmed}
@@ -181,27 +179,27 @@ export default function NouveauTrajetPage() {
               />
               Je confirme que ce trajet est prévu indépendamment du transport de colis (motif personnel, professionnel, etc.).
             </label>
-          </Card>
-        )}
+          )}
+        </Card>
 
         {/* Ce qui se passe après : le voyageur sait où il va avant de s'engager */}
-        <Card>
-          <p className="font-semibold text-ink mb-4">Et ensuite ?</p>
-          <ol className="space-y-4">
+        <div className="px-1">
+          <p className="text-sm font-semibold text-ink mb-2.5">Et ensuite ?</p>
+          <ol className="space-y-2">
             {[
               "Les expéditeurs compatibles vous envoient une demande.",
               "Vous acceptez, refusez ou proposez un autre prix.",
               "Un code confirme la remise du colis, et vous êtes payé une fois le colis livré.",
             ].map((text, i) => (
-              <li key={i} className="flex gap-3">
-                <span className="w-6 h-6 rounded-full bg-primary-light text-primary text-xs font-semibold flex items-center justify-center shrink-0">
+              <li key={i} className="flex gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-primary-light text-primary text-[11px] font-semibold flex items-center justify-center shrink-0">
                   {i + 1}
                 </span>
-                <span className="text-sm text-ink leading-snug pt-0.5">{text}</span>
+                <span className="text-[13.5px] text-ink-muted leading-snug">{text}</span>
               </li>
             ))}
           </ol>
-        </Card>
+        </div>
 
         {error && <p className="text-sm text-error">{error}</p>}
 

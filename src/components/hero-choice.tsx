@@ -12,13 +12,13 @@ type Role = "sender" | "traveler";
 
 const TABS = [
   { role: "sender", label: "J'envoie un colis", hint: "Trouver un voyageur", Icon: PackageIcon },
-  { role: "traveler", label: "Je voyage", hint: "Gagner de l'argent", Icon: SuitcaseIcon },
+  { role: "traveler", label: "Je voyage", hint: "J'emporte un colis", Icon: SuitcaseIcon },
 ] as const;
 
 const TRAVELER_POINTS = [
-  "Vous choisissez vos dates et ce que vous souhaitez recevoir.",
-  "Vous acceptez ou refusez chaque demande.",
-  "Vous êtes payé une fois le colis livré.",
+  "Vous choisissez votre trajet",
+  "Vous acceptez uniquement les demandes qui vous conviennent",
+  "Vous êtes payé après la remise du colis",
 ];
 
 // Le choix de l'accueil : deux grandes entrées toujours visibles, chacune dans sa couleur.
@@ -99,7 +99,10 @@ export function HeroChoice() {
           </Card>
         ) : (
           <Card className="!bg-primary-light !border-primary/20">
-            <p className="font-semibold text-ink mb-4">Gagnez de l&apos;argent en transportant un colis sur votre route</p>
+            <p className="font-semibold text-ink">Votre trajet peut vous rapporter.</p>
+            <p className="text-sm text-ink-muted mt-1 mb-4">
+              Profitez d&apos;un déplacement que vous faites déjà pour transporter un colis.
+            </p>
             <ul className="space-y-3 text-sm text-ink">
               {TRAVELER_POINTS.map((text) => (
                 <li key={text} className="flex items-start gap-2.5">

@@ -99,8 +99,8 @@ export default function DashboardPage() {
           <span className="w-11 h-11 rounded-xl bg-white/20 text-white flex items-center justify-center mb-3">
             <SuitcaseIcon size={20} />
           </span>
-          <p className="font-bold leading-tight">Proposer un trajet</p>
-          <p className="text-xs text-white/85 mt-1 leading-snug">Gagnez de l&apos;argent en transportant un colis.</p>
+          <p className="font-bold leading-tight">Je voyage</p>
+          <p className="text-xs text-white/85 mt-1 leading-snug">Votre trajet peut vous rapporter.</p>
         </Link>
       </div>
 

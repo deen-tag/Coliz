@@ -94,15 +94,12 @@ export function HeroChoice() {
                   </span>
                 </label>
               </div>
-              <PrimaryButton type="submit">Voir les possibilités</PrimaryButton>
+              <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
             </form>
           </Card>
         ) : (
           <Card className="!bg-primary-light !border-primary/20">
-            <p className="font-semibold text-ink">Vous avez déjà prévu un trajet ?</p>
-            <p className="text-sm text-ink-muted mt-1 mb-4">
-              Transportez un colis sur votre route et recevez une contribution.
-            </p>
+            <p className="font-semibold text-ink mb-4">Gagnez de l&apos;argent en transportant un colis sur votre route</p>
             <ul className="space-y-3 text-sm text-ink">
               {TRAVELER_POINTS.map((text) => (
                 <li key={text} className="flex items-start gap-2.5">

@@ -98,7 +98,7 @@ export default function NouveauTrajetPage() {
         <div>
           <h1 className="text-xl font-extrabold tracking-tight text-ink leading-tight">Publier un trajet</h1>
           <p className="text-sm text-ink-muted mt-0.5">
-            Transportez un colis sur un trajet que vous faites déjà et gagnez de l&apos;argent.
+            Votre trajet peut vous rapporter. Profitez d&apos;un déplacement que vous faites déjà pour transporter un colis.
           </p>
         </div>
       </div>

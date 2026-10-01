@@ -63,19 +63,20 @@ export default async function HomePage() {
 
       {/* HERO : l'illustration est le fond du bloc titre, sa partie neutre porte le texte. */}
       <section className="max-w-5xl mx-auto">
-        <div className="relative aspect-[3/2] sm:max-h-[580px] overflow-hidden">
+        <div className="relative aspect-[3/2] overflow-hidden">
           <Image src="/brand/hero.webp" alt="" fill priority sizes="(min-width: 1024px) 1024px, 100vw" className="object-cover object-center select-none pointer-events-none" aria-hidden="true" />
           <div className="absolute inset-0 sm:hidden" style={{ background: "linear-gradient(to bottom, #F8F7F3 0, transparent 5%)" }} />
+          <div className="hidden sm:block absolute inset-y-0 right-0 w-20" style={{ background: "linear-gradient(to left, #F8F7F3, transparent)" }} />
           <div className="relative z-10 px-4 pt-4 sm:px-10 sm:pt-0 sm:w-[52%] sm:h-full sm:flex sm:flex-col sm:justify-center">
-            <h1 className="text-[22px] sm:text-6xl font-extrabold leading-[1.08] sm:leading-[1.02] tracking-tight text-ink max-w-[8.5em] sm:max-w-[11em]">
+            <h1 className="text-[23px] sm:text-6xl font-extrabold leading-[1.08] sm:leading-[1.02] tracking-tight text-ink max-w-[190px] sm:max-w-[11em]">
               Vos colis <span className="text-route">voyagent</span> avec ceux qui voyagent.
             </h1>
-            <p className="mt-2 sm:mt-4 text-ink-muted text-[11.5px] leading-snug sm:leading-normal sm:text-lg max-w-[13em] sm:max-w-[21em]">
+            <p className="mt-2 sm:mt-4 text-ink-muted text-[12px] leading-snug sm:leading-normal sm:text-lg max-w-[150px] sm:max-w-[21em]">
               Envoyez un colis avec un voyageur, ou gagnez de l&apos;argent sur un trajet que vous faites déjà.
             </p>
           </div>
         </div>
-        <div className="relative z-10 px-5 -mt-2 sm:-mt-16 max-w-2xl mx-auto">
+        <div className="relative z-10 px-5 -mt-2 sm:-mt-6 max-w-2xl mx-auto">
           <HeroChoice />
           <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[13.5px] font-semibold text-ink-muted sm:justify-center">
             {["Identités vérifiées", "Codes de remise et de réception", "Payé une fois livré"].map((t) => (

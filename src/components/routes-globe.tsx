@@ -7,6 +7,10 @@ type Route = { from: { label: string; lat: number; lng: number }; to: { label: s
 
 const BLUE = "#2457FF";
 const WARM = "#F8F7F3";
+const LAND = "#FBFAF6";
+const WATER = "#CFE0FF";
+const BORDER = "#C5D2EE";
+const INK = "#0E1A3A";
 
 // Grandes routes de fond (France, Maghreb, Europe, New York) : affichées en bleu très pâle
 // tant qu'il y a peu de vrais trajets, pour que le globe ne soit jamais vide. Aucun chiffre.
@@ -101,6 +105,29 @@ function pointsOf(routes: Route[]) {
   };
 }
 
+// Noms des villes où passent les arcs : les vrais trajets sont prioritaires, et Mapbox
+// masque tout seul les noms qui se chevauchent.
+function labelsOf(real: Route[], backdrop: Route[]) {
+  const seen = new Map<string, { label: string; c: LngLat; rank: number }>();
+  const add = (routes: Route[], rank: number) =>
+    routes.forEach((r) =>
+      [r.from, r.to].forEach((p) => {
+        const key = `${p.lat.toFixed(1)}|${p.lng.toFixed(1)}`;
+        if (!seen.has(key)) seen.set(key, { label: p.label, c: [p.lng, p.lat], rank });
+      })
+    );
+  add(real, 0);
+  add(backdrop, 1);
+  return {
+    type: "FeatureCollection" as const,
+    features: Array.from(seen.values()).map((v) => ({
+      type: "Feature" as const,
+      properties: { label: v.label, rank: v.rank },
+      geometry: { type: "Point" as const, coordinates: v.c },
+    })),
+  };
+}
+
 // Globe d'accueil : chaque trajet réservable ajoute un arc. Mapbox n'est chargé que
 // lorsque la section arrive à l'écran (un visiteur qui ne descend pas ne coûte rien).
 export function RoutesGlobe() {
@@ -176,9 +203,23 @@ export function RoutesGlobe() {
 
         map.on("style.load", () => {
           map.setFog({ color: "#EAF0FF", "high-color": "#EAF0FF", "space-color": WARM, "horizon-blend": 0.04, "star-intensity": 0 });
-          // Fond épuré : aucun nom de pays, de ville ou de route, seulement la terre et les arcs.
+          // Aux couleurs de Coliz : terres blanc chaud, océans bleu clair, frontières très
+          // discrètes. Les noms du fond de carte sont masqués (les nôtres sont ajoutés plus bas).
           map.getStyle().layers?.forEach((l: any) => {
-            if (l.type === "symbol") map.setLayoutProperty(l.id, "visibility", "none");
+            try {
+              if (l.type === "background") {
+                map.setPaintProperty(l.id, "background-color", LAND);
+              } else if (l.id === "water") {
+                map.setPaintProperty(l.id, "fill-color", WATER);
+              } else if (l.type === "line" && /admin/.test(l.id)) {
+                map.setPaintProperty(l.id, "line-color", BORDER);
+                map.setPaintProperty(l.id, "line-opacity", 0.8);
+              } else {
+                map.setLayoutProperty(l.id, "visibility", "none");
+              }
+            } catch {
+              // Un calque que le style ne laisse pas modifier : on l'ignore.
+            }
           });
 
           if (backdrop.length > 0) {
@@ -193,6 +234,27 @@ export function RoutesGlobe() {
             map.addSource("real-points", { type: "geojson", data: pointsOf(real) });
             map.addLayer({ id: "real-points", type: "circle", source: "real-points", paint: { "circle-radius": 3.5, "circle-color": BLUE, "circle-stroke-color": "#fff", "circle-stroke-width": 1.5 } });
           }
+
+          map.addSource("city-labels", { type: "geojson", data: labelsOf(real, backdrop) });
+          map.addLayer({
+            id: "city-labels",
+            type: "symbol",
+            source: "city-labels",
+            layout: {
+              "text-field": ["get", "label"],
+              "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"],
+              "text-size": 11,
+              "text-anchor": "top",
+              "text-offset": [0, 0.7],
+              "symbol-sort-key": ["get", "rank"],
+            },
+            paint: {
+              "text-color": INK,
+              "text-halo-color": "#FFFFFF",
+              "text-halo-width": 1.5,
+              "text-opacity": ["case", ["==", ["get", "rank"], 0], 1, 0.75],
+            },
+          });
         });
 
         // Rotation lente, mise en pause quand la section n'est pas à l'écran, pendant un

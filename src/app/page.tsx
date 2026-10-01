@@ -4,7 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/options";
 import { Logo } from "@/components/logo";
 import { HeroChoice } from "@/components/hero-choice";
-import { CarIcon, PlaneIcon, FerryIcon, TrainIcon, type IconProps } from "@/components/icons";
+import { RoutesGlobe } from "@/components/routes-globe";
+import { type IconProps } from "@/components/icons";
 
 
 
@@ -54,15 +55,6 @@ const TRUST: { Icon: (p: IconProps) => JSX.Element; title: string; text: string;
   { Icon: LeafIcon, title: "Bon pour la planète", text: "Un trajet partagé, c'est écologique.", teal: true },
 ];
 
-const FREQUENT_ROUTES: { from: string; to: string; mode: "PLANE" | "CAR" | "FERRY" | "TRAIN" }[] = [
-  { from: "Paris", to: "Londres", mode: "TRAIN" },
-  { from: "Paris", to: "Madrid", mode: "PLANE" },
-  { from: "Paris", to: "New York", mode: "PLANE" },
-  { from: "Paris", to: "Marseille", mode: "CAR" },
-  { from: "Marseille", to: "Alger", mode: "FERRY" },
-  { from: "Paris", to: "Casablanca", mode: "PLANE" },
-];
-
 // Le voyage du colis : ce que Coliz fait réellement, dans l'ordre.
 const JOURNEY: { color: string; title: string; text: string; code?: string }[] = [
   { color: "#5B7CFF", title: "Des identités vérifiées", text: "Expéditeurs et voyageurs sont vérifiés par document d'identité." },
@@ -72,14 +64,6 @@ const JOURNEY: { color: string; title: string; text: string; code?: string }[] =
   { color: "#38B0BE", title: "Un code unique à la réception", text: "À la livraison, un second code est demandé pour s'assurer que le colis est remis à la bonne personne.", code: "Code de réception" },
   { color: "#2FBDAE", title: "Un paiement une fois livré", text: "Le voyageur n'est payé qu'une fois le colis livré, jamais avant." },
 ];
-
-// Icônes en petit format pour la bande "Trajets fréquents" — indépendant de
-// TransportModeBadge, dont les tailles/paddings sont pensés pour les cartes
-// de résultats, pas pour un si petit format.
-function TransportModeIcon({ mode, size, className }: { mode: "PLANE" | "CAR" | "FERRY" | "TRAIN"; size: number; className?: string }) {
-  const Icon = { CAR: CarIcon, PLANE: PlaneIcon, FERRY: FerryIcon, TRAIN: TrainIcon }[mode];
-  return <Icon size={size} className={className} />;
-}
 
 export default async function HomePage() {
   // Connecté : on propose l'accès à l'espace plutôt que la connexion.
@@ -138,22 +122,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Exemples de trajets : un appui lance la recherche. */}
-      <section className="max-w-2xl mx-auto px-5 pt-14">
-        <h2 className="text-[28px] leading-[1.1] font-extrabold tracking-tight text-ink">Des trajets dans toute la France et le monde</h2>
-        <p className="text-ink-muted mt-2 mb-5">Quelques exemples de routes. Touchez-en une pour voir les voyageurs qui la font.</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {FREQUENT_ROUTES.map(({ from, to, mode }) => (
-            <Link key={from + to} href={`/recherche?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`} className="relative block rounded-2xl border border-line bg-surface px-3.5 py-3.5 shadow-card active:bg-sender-light">
-              <span className="block min-w-0 text-[15px] font-bold leading-snug text-ink">
-                <span className="flex items-center gap-2 pr-9"><i className="w-2 h-2 rounded-full bg-sender shrink-0" /><span className="truncate">{from}</span></span>
-                <span className="flex items-center gap-2"><i className="w-2 h-2 rounded-full border-2 border-sender shrink-0" /><span className="truncate">{to}</span></span>
-              </span>
-              <span className="absolute top-3 right-3 w-7 h-7 rounded-full bg-sender-light text-sender flex items-center justify-center"><TransportModeIcon mode={mode} size={15} /></span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* Globe : chaque trajet réservable ajoute un arc. */}
+      <RoutesGlobe />
 
       {/* Le voyage du colis : la ligne passe du bleu (expéditeur) au teal (voyageur). */}
       <section id="comment-ca-marche" className="mt-16 bg-ink text-white rounded-t-[32px] py-16 px-5 scroll-mt-16">

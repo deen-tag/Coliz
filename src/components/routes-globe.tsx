@@ -20,13 +20,27 @@ const BACKDROP: Route[] = [
   [["Paris", 48.86, 2.35], ["Madrid", 40.42, -3.7]],
   [["Paris", 48.86, 2.35], ["Londres", 51.51, -0.13]],
   [["Paris", 48.86, 2.35], ["New York", 40.71, -74.01]],
+  [["Paris", 48.86, 2.35], ["Dakar", 14.69, -17.45]],
+  [["Paris", 48.86, 2.35], ["Abidjan", 5.36, -4.0]],
+  [["Paris", 48.86, 2.35], ["Istanbul", 41.01, 28.98]],
+  [["Paris", 48.86, 2.35], ["Dubaï", 25.2, 55.27]],
+  [["Paris", 48.86, 2.35], ["Montréal", 45.5, -73.57]],
+  [["Londres", 51.51, -0.13], ["New York", 40.71, -74.01]],
 ].map(([a, b]) => ({
   from: { label: a[0] as string, lat: a[1] as number, lng: a[2] as number },
   to: { label: b[0] as string, lat: b[1] as number, lng: b[2] as number },
 }));
 
-// Au-delà de ce nombre de vrais trajets, les routes de fond ont totalement disparu.
-const BACKDROP_FADE_AT = 12;
+const BACKDROP_OPACITY = 0.3;
+const LAT = 20;
+
+// Une route de fond s'efface dès qu'un vrai trajet relie les deux mêmes villes ;
+// les autres restent, donc le globe n'est jamais vide hors d'Europe.
+function routeKey(r: Route) {
+  const a = `${r.from.lat.toFixed(0)}|${r.from.lng.toFixed(0)}`;
+  const b = `${r.to.lat.toFixed(0)}|${r.to.lng.toFixed(0)}`;
+  return [a, b].sort().join(">");
+}
 
 // Arc de grand cercle entre deux villes (Mapbox trace en ligne droite sinon, ce qui
 // donne des traits plats sur un globe).
@@ -117,6 +131,7 @@ export function RoutesGlobe() {
     let map: any;
     let raf = 0;
     let cancelled = false;
+    let removeListeners: () => void = () => {};
 
     async function start() {
       try {
@@ -139,15 +154,21 @@ export function RoutesGlobe() {
         }
         if (cancelled || !mapRef.current) return;
 
-        const backdropOpacity = 0.3 * Math.max(0, (BACKDROP_FADE_AT - real.length) / BACKDROP_FADE_AT);
+        const realKeys = new Set(real.map(routeKey));
+        const backdrop = BACKDROP.filter((r) => !realKeys.has(routeKey(r)));
+
+        // Le globe doit tenir entier dans le carré : on règle le zoom sur la largeur réelle.
+        const w = mapRef.current.clientWidth || 340;
+        const zoom = Math.max(0.4, Math.log2((0.9 * w * Math.PI * Math.cos((LAT * Math.PI) / 180)) / 512));
 
         map = new mapboxgl.Map({
           container: mapRef.current,
           style: "mapbox://styles/mapbox/light-v11",
           projection: "globe",
-          center: [10, 38],
-          zoom: 1.5,
-          // Pas d'interaction : un globe tactile bloquerait le défilement de la page sur mobile.
+          center: [10, LAT],
+          zoom,
+          // Mapbox ne gère pas les gestes : on tourne le globe nous-mêmes (voir plus bas),
+          // pour qu'un glissement vertical continue de faire défiler la page sur mobile.
           interactive: false,
           attributionControl: false,
         });
@@ -155,18 +176,16 @@ export function RoutesGlobe() {
 
         map.on("style.load", () => {
           map.setFog({ color: "#EAF0FF", "high-color": "#EAF0FF", "space-color": WARM, "horizon-blend": 0.04, "star-intensity": 0 });
-          // Fond sobre : on garde seulement les noms de pays et de grandes villes.
+          // Fond épuré : aucun nom de pays, de ville ou de route, seulement la terre et les arcs.
           map.getStyle().layers?.forEach((l: any) => {
-            if (l.type === "symbol" && !/country-label|settlement-major-label/.test(l.id)) {
-              map.setLayoutProperty(l.id, "visibility", "none");
-            }
+            if (l.type === "symbol") map.setLayoutProperty(l.id, "visibility", "none");
           });
 
-          if (backdropOpacity > 0) {
-            map.addSource("backdrop-lines", { type: "geojson", data: linesOf(BACKDROP) });
-            map.addLayer({ id: "backdrop-lines", type: "line", source: "backdrop-lines", layout: { "line-cap": "round" }, paint: { "line-color": BLUE, "line-width": 1.5, "line-opacity": backdropOpacity } });
-            map.addSource("backdrop-points", { type: "geojson", data: pointsOf(BACKDROP) });
-            map.addLayer({ id: "backdrop-points", type: "circle", source: "backdrop-points", paint: { "circle-radius": 2.5, "circle-color": BLUE, "circle-opacity": backdropOpacity } });
+          if (backdrop.length > 0) {
+            map.addSource("backdrop-lines", { type: "geojson", data: linesOf(backdrop) });
+            map.addLayer({ id: "backdrop-lines", type: "line", source: "backdrop-lines", layout: { "line-cap": "round" }, paint: { "line-color": BLUE, "line-width": 1.5, "line-opacity": BACKDROP_OPACITY } });
+            map.addSource("backdrop-points", { type: "geojson", data: pointsOf(backdrop) });
+            map.addLayer({ id: "backdrop-points", type: "circle", source: "backdrop-points", paint: { "circle-radius": 2.5, "circle-color": BLUE, "circle-opacity": BACKDROP_OPACITY } });
           }
           if (real.length > 0) {
             map.addSource("real-lines", { type: "geojson", data: linesOf(real) });
@@ -176,18 +195,51 @@ export function RoutesGlobe() {
           }
         });
 
-        // Rotation lente, en pause quand la section n'est pas à l'écran ou si la personne
-        // a demandé moins d'animations.
+        // Rotation lente, mise en pause quand la section n'est pas à l'écran, pendant un
+        // glissement, ou si la personne a demandé moins d'animations.
+        const el = mapRef.current as HTMLDivElement;
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        let lng = 10;
+        let dragging = false;
+        let lastX = 0;
+        let pausedUntil = 0;
+        const degPerPx = 57.3 / (0.46 * w);
+        const apply = () => map.setCenter([((lng + 540) % 360) - 180, LAT]);
+
+        const onDown = (e: PointerEvent) => {
+          dragging = true;
+          lastX = e.clientX;
+          try { el.setPointerCapture(e.pointerId); } catch {}
+        };
+        const onMove = (e: PointerEvent) => {
+          if (!dragging) return;
+          lng -= (e.clientX - lastX) * degPerPx;
+          lastX = e.clientX;
+          apply();
+        };
+        const onUp = () => {
+          dragging = false;
+          pausedUntil = performance.now() + 2500;
+        };
+        el.addEventListener("pointerdown", onDown);
+        el.addEventListener("pointermove", onMove);
+        el.addEventListener("pointerup", onUp);
+        el.addEventListener("pointercancel", onUp);
+        removeListeners = () => {
+          el.removeEventListener("pointerdown", onDown);
+          el.removeEventListener("pointermove", onMove);
+          el.removeEventListener("pointerup", onUp);
+          el.removeEventListener("pointercancel", onUp);
+        };
+
         if (!reduce) {
           let last = performance.now();
-          let lng = 10;
           const tick = (now: number) => {
             const dt = now - last;
             last = now;
-            if (inView.current && map) {
-              lng = (lng + dt * 0.006) % 360;
-              map.setCenter([lng > 180 ? lng - 360 : lng, 30]);
+            if (inView.current && !dragging && now > pausedUntil) {
+              lng += dt * 0.006;
+              apply();
             }
             raf = requestAnimationFrame(tick);
           };
@@ -203,6 +255,7 @@ export function RoutesGlobe() {
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
+      removeListeners();
       map?.remove();
     };
   }, [near, token]);
@@ -218,7 +271,7 @@ export function RoutesGlobe() {
         ref={mapRef}
         role="img"
         aria-label="Globe montrant les routes entre les villes desservies par Coliz"
-        className="mt-4 mx-auto w-full max-w-md aspect-square pointer-events-none"
+        className="mt-4 mx-auto w-full max-w-md aspect-square touch-pan-y cursor-grab select-none"
       />
     </section>
   );

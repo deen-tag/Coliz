@@ -24,9 +24,9 @@ export default function PortefeuillePage() {
 
       <Card className="mb-4 !bg-primary text-white">
         <p className="text-sm opacity-80">Solde disponible</p>
-        <p className="text-3xl font-semibold mt-1">{Number(wallet?.availableAmount ?? 0).toFixed(2)} €</p>
+        <p className="text-4xl font-extrabold tracking-tight mt-1">{Number(wallet?.availableAmount ?? 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}</p>
         {Number(wallet?.pendingAmount ?? 0) > 0 && (
-          <p className="text-xs opacity-70 mt-1">+ {Number(wallet.pendingAmount).toFixed(2)} € en attente</p>
+          <p className="text-xs opacity-70 mt-1">+ {Number(wallet.pendingAmount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })} en attente</p>
         )}
       </Card>
 
@@ -49,7 +49,7 @@ export default function PortefeuillePage() {
                 <p className="text-sm text-ink">Transfert réservation</p>
                 <p className="text-xs text-ink-muted">{new Date(t.createdAt).toLocaleDateString("fr-FR")}</p>
               </div>
-              <span className="text-sm font-medium text-success">+{Number(t.amount).toFixed(2)} €</span>
+              <span className="text-sm font-medium text-success">+{Number(t.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}</span>
             </Card>
           ))
         ) : (

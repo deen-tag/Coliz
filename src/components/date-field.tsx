@@ -32,7 +32,7 @@ export function DateField({
 
   return (
     <label className="block">
-      <span className="block text-sm text-ink-muted mb-1.5 whitespace-nowrap">{label}</span>
+      <span className="block text-sm font-semibold text-ink mb-1.5 whitespace-nowrap">{label}</span>
       <span className="relative block">
         {icon && (
           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink">{icon}</span>

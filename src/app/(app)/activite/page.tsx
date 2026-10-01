@@ -33,8 +33,8 @@ export default function ActivitePage() {
 
       <div className="grid grid-cols-4 gap-2 mb-6">
         {SHORTCUTS.map(({ href, label, Icon, role }) => (
-          <Link key={href} href={href} className="block" data-role={role}>
-            <Card className="!p-3 flex flex-col items-center gap-2 text-center active:bg-surface-alt">
+          <Link key={href} href={href} className="block h-full" data-role={role}>
+            <Card className="!p-3 h-full flex flex-col items-center gap-2 text-center leading-tight active:bg-surface-alt">
               <span className="w-10 h-10 rounded-control bg-primary-light text-primary flex items-center justify-center">
                 <Icon size={20} />
               </span>

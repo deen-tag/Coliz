@@ -340,7 +340,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="block text-sm text-ink-muted mb-1.5">{label}</span>
+      <span className="block text-sm font-semibold text-ink mb-1.5">{label}</span>
       <input
         className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
         {...props}

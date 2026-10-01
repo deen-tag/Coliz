@@ -63,9 +63,9 @@ export default async function HomePage() {
 
       {/* HERO : l'illustration est le fond du bloc titre, sa partie neutre porte le texte. */}
       <section className="max-w-5xl mx-auto">
-        <div className="relative min-h-[410px] sm:min-h-0 sm:aspect-[3/2] sm:max-h-[580px] overflow-hidden">
-          <Image src="/brand/hero.webp" alt="" fill priority sizes="(min-width: 1024px) 1024px, 100vw" className="object-cover object-[75%_100%] sm:object-center select-none pointer-events-none" aria-hidden="true" />
-          <div className="absolute inset-0 sm:hidden" style={{ background: "linear-gradient(to bottom, #F8F7F3 0, #F8F7F3 36%, transparent 70%)" }} />
+        <div className="relative min-h-[540px] sm:min-h-0 sm:aspect-[3/2] sm:max-h-[580px] overflow-hidden">
+          <Image src="/brand/hero.webp" alt="" fill priority sizes="(min-width: 1024px) 1024px, 100vw" className="object-contain object-bottom sm:object-cover sm:object-center select-none pointer-events-none" aria-hidden="true" />
+          <div className="absolute inset-0 sm:hidden" style={{ background: "linear-gradient(to bottom, #F8F7F3 0, #F8F7F3 46%, transparent 60%)" }} />
           <div className="relative z-10 px-5 pt-5 sm:px-10 sm:pt-0 sm:w-[52%] sm:h-full sm:flex sm:flex-col sm:justify-center">
             <h1 className="text-[38px] sm:text-6xl font-extrabold leading-[1.02] tracking-tight text-ink max-w-[11em]">
               Vos colis <span className="text-route">voyagent</span> avec ceux qui voyagent.
@@ -94,12 +94,12 @@ export default async function HomePage() {
         <p className="text-ink-muted mt-2 mb-5">Quelques exemples de routes. Touchez-en une pour voir les voyageurs qui la font.</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {FREQUENT_ROUTES.map(({ from, to, mode }) => (
-            <Link key={from + to} href={`/recherche?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`} className="flex items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-card active:bg-sender-light">
-              <span className="min-w-0 text-[15px] font-bold leading-snug text-ink">
-                <span className="flex items-center gap-2"><i className="w-2 h-2 rounded-full bg-sender shrink-0" /><span className="truncate">{from}</span></span>
+            <Link key={from + to} href={`/recherche?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`} className="relative block rounded-2xl border border-line bg-surface px-3.5 py-3.5 shadow-card active:bg-sender-light">
+              <span className="block min-w-0 text-[15px] font-bold leading-snug text-ink">
+                <span className="flex items-center gap-2 pr-9"><i className="w-2 h-2 rounded-full bg-sender shrink-0" /><span className="truncate">{from}</span></span>
                 <span className="flex items-center gap-2"><i className="w-2 h-2 rounded-full border-2 border-sender shrink-0" /><span className="truncate">{to}</span></span>
               </span>
-              <span className="w-9 h-9 shrink-0 rounded-full bg-sender-light text-sender flex items-center justify-center"><TransportModeIcon mode={mode} size={18} /></span>
+              <span className="absolute top-3 right-3 w-7 h-7 rounded-full bg-sender-light text-sender flex items-center justify-center"><TransportModeIcon mode={mode} size={15} /></span>
             </Link>
           ))}
         </div>

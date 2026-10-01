@@ -12,17 +12,15 @@ export function BookingRow({ b }: { b: any }) {
   return (
     <Link href={bookingHref(b)} className="block" data-role={role}>
       <Card className="!p-4 active:bg-surface-alt transition-colors">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <RouteLine from={b.originLabel} to={b.destinationLabel} className="flex-1" />
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <RolePill role={role} />
           <StatusBadge status={b.status} />
         </div>
-        <p className="text-sm text-ink-muted flex items-center flex-wrap gap-x-2 gap-y-1">
-          <RolePill role={role} />
-          <span>
-            {formatTripMoment(b.departureAt)}
-            {" · "}
-            {role === "sender" ? `avec ${b.counterpart}` : `pour ${b.counterpart}`}
-          </span>
+        <RouteLine from={b.originLabel} to={b.destinationLabel} className="text-[17px] mb-1.5" />
+        <p className="text-sm text-ink-muted">
+          {formatTripMoment(b.departureAt)}
+          {" · "}
+          {role === "sender" ? `avec ${b.counterpart}` : `pour ${b.counterpart}`}
         </p>
         <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-line">
           <div className="flex items-center gap-2 min-w-0">

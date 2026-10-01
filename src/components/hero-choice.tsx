@@ -78,7 +78,7 @@ export function HeroChoice() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <DateField name="date" label="Date de départ" placeholder="Toutes les dates" icon={<CalendarIcon size={18} />} />
                 <label className="block">
-                  <span className="block text-sm text-ink-muted mb-1.5 whitespace-nowrap">Période flexible</span>
+                  <span className="block text-sm font-semibold text-ink mb-1.5 whitespace-nowrap">Période flexible</span>
                   <span className="relative block">
                     <ClockIcon size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink" />
                     <select

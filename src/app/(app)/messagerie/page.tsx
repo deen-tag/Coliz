@@ -23,13 +23,15 @@ export default function MessagerieIndexPage() {
 
       <div className="space-y-3">
         {conversations?.map((c: any) => (
-          <Link key={c.bookingId} href={`/messagerie/${c.bookingId}`}>
+          <Link key={c.bookingId} href={`/messagerie/${c.bookingId}`} className="block">
             <Card className="flex items-center gap-3">
               <Avatar name={c.otherUser?.firstName} src={c.otherUser?.avatarUrl} size={44} />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-ink">{c.otherUser?.firstName}</p>
-                {c.route && c.lastMessage && <p className="text-xs text-ink-muted truncate">{c.route}</p>}
-                <p className="text-sm text-ink-muted truncate">{c.lastMessage ?? c.route}</p>
+                {c.route && c.lastMessage && (
+                  <p className="text-xs font-medium text-primary truncate">{String(c.route).split(" → ").map((x: string) => x.split(",")[0].trim()).join(" → ")}</p>
+                )}
+                <p className="text-sm text-ink-muted truncate">{c.lastMessage ?? String(c.route ?? "").split(" → ").map((x: string) => x.split(",")[0].trim()).join(" → ")}</p>
               </div>
             </Card>
           </Link>

@@ -250,9 +250,9 @@ function SearchForm({ from, to, date, flex }: { from: string; to: string; date: 
         <h1 className="text-lg font-extrabold tracking-tight text-ink">Où voulez-vous envoyer votre colis ?</h1>
         <p className="text-sm text-ink-muted mt-0.5">Coliz trouve les voyageurs qui font déjà ce trajet.</p>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <IconField icon={<MapPinIcon size={18} />} placeholder="Départ" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
-        <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <IconField label="Départ" icon={<MapPinIcon size={18} />} placeholder="Ville de départ" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
+        <IconField label="Destination" icon={<MapPinIcon size={18} />} placeholder="Ville d'arrivée" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <DateField label="Date de départ" value={f.date} onChange={(v) => setF({ ...f, date: v })} placeholder="Toutes les dates" icon={<CalendarIcon size={18} />} />

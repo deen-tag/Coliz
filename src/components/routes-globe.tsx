@@ -6,7 +6,8 @@ type LngLat = [number, number];
 type Place = { label: string; lat: number; lng: number };
 type Route = { from: Place; to: Place };
 type RealRoute = Route & { count: number };
-type City = { label: string; c: LngLat; w: number };
+type Link = Route & { count: number; real: boolean };
+type CityInfo = { key: string; label: string; c: LngLat; w: number; real: boolean };
 
 const BLUE = "#2457FF";
 const WARM = "#F8F7F3";
@@ -15,13 +16,11 @@ const WATER = "#CFE0FF";
 const BORDER = "#C5D2EE";
 const INK = "#0E1A3A";
 
-const BACKDROP_OPACITY = 0.3;
 // Latitude de la vue de départ : l'Europe et New York tiennent dans le même cadre.
 const LAT = 28;
-// Vue d'ensemble : seulement les routes les plus actives. Les autres apparaissent au zoom.
-const MAJOR_COUNT = 30;
-const DETAIL_ZOOM = 0.8;
 const MAX_EXTRA_ZOOM = 4.5;
+// Marge autour d'une ville pour la toucher au doigt (le point seul est trop petit à viser).
+const TAP_RADIUS = 24;
 
 // Grandes routes de fond (France, Maghreb, Europe, monde) : affichées en bleu très pâle,
 // pour que le globe ne soit jamais vide. Aucun chiffre.
@@ -120,52 +119,36 @@ function greatCircle(a: LngLat, b: LngLat, steps = 48): LngLat[] {
   return bend(out, a, b);
 }
 
-// w = épaisseur de l'arc. Une route très active est plus épaisse (échelle en racine carrée
-// pour qu'une seule grosse route n'écrase pas toutes les autres). Rien n'est affiché en chiffres.
-function linesOf(routes: Route[], widthOf: (r: Route) => number) {
+// Les arcs d'une ville : w = épaisseur (une route très active est plus épaisse, échelle en
+// racine carrée), o = opacité. Aucun chiffre n'est affiché.
+function linesOf(routes: Route[], propsOf: (r: Route) => { w: number; o: number }) {
   return {
     type: "FeatureCollection" as const,
     features: routes.map((r) => ({
       type: "Feature" as const,
-      properties: { w: widthOf(r) },
+      properties: propsOf(r),
       geometry: { type: "LineString" as const, coordinates: greatCircle([r.from.lng, r.from.lat], [r.to.lng, r.to.lat]) },
     })),
   };
 }
 
-function pointsOf(routes: Route[]) {
-  const seen = new Map<string, LngLat>();
-  routes.forEach((r) => {
-    seen.set(cityKey(r.from), [r.from.lng, r.from.lat]);
-    seen.set(cityKey(r.to), [r.to.lng, r.to.lat]);
-  });
-  return {
-    type: "FeatureCollection" as const,
-    features: Array.from(seen.values()).map((c) => ({
-      type: "Feature" as const,
-      properties: {},
-      geometry: { type: "Point" as const, coordinates: c },
-    })),
-  };
-}
+const EMPTY = { type: "FeatureCollection" as const, features: [] as any[] };
 
-// Noms des villes : rank = -poids, donc les villes les plus actives sont placées en premier
-// et Mapbox masque seul les noms qui se chevauchent.
-function labelsOf(cities: Map<string, City>) {
-  return {
-    type: "FeatureCollection" as const,
-    features: Array.from(cities.values()).map((v) => ({
-      type: "Feature" as const,
-      properties: { label: v.label, rank: -v.w },
-      geometry: { type: "Point" as const, coordinates: v.c },
-    })),
-  };
+// Distance angulaire (en degrés) entre deux points du globe : sert à ignorer les villes
+// qui sont sur la face cachée.
+function angleBetween(a: LngLat, b: LngLat) {
+  const rad = Math.PI / 180;
+  const c =
+    Math.sin(a[1] * rad) * Math.sin(b[1] * rad) +
+    Math.cos(a[1] * rad) * Math.cos(b[1] * rad) * Math.cos((a[0] - b[0]) * rad);
+  return Math.acos(Math.min(1, Math.max(-1, c))) / rad;
 }
 
 type Controls = { zoomBy: (d: number) => void; reset: () => void };
 
-// Globe d'accueil : chaque trajet réservable ajoute un arc. Mapbox n'est chargé que
-// lorsque la section arrive à l'écran (un visiteur qui ne descend pas ne coûte rien).
+// Globe d'accueil : aucune ligne au repos, seulement le nom des villes. Toucher une ville
+// affiche toutes ses routes ; le reste s'estompe. Mapbox n'est chargé que lorsque la section
+// arrive à l'écran (un visiteur qui ne descend pas ne coûte rien).
 export function RoutesGlobe() {
   const sectionRef = useRef<HTMLElement>(null);
   const gestureRef = useRef<HTMLDivElement>(null);
@@ -175,6 +158,7 @@ export function RoutesGlobe() {
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
   const [zoomed, setZoomed] = useState(false);
+  const [picked, setPicked] = useState(false);
   const inView = useRef(false);
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -233,42 +217,62 @@ export function RoutesGlobe() {
         }
         if (cancelled || !mapRef.current || !gestureRef.current) return;
 
-        // Routes principales (toujours visibles) et routes de détail (au zoom).
-        const sorted = [...real].sort((a, b) => b.count - a.count);
-        const major = sorted.slice(0, MAJOR_COUNT);
-        const minor = sorted.slice(MAJOR_COUNT);
-        const maxCount = Math.max(1, ...sorted.map((r) => r.count));
-        const widthOf = (r: Route) => 1.4 + 2.6 * Math.sqrt(((r as RealRoute).count ?? 0) / maxCount);
-
+        // Toutes les routes : les vrais trajets, plus les grandes routes de fond tant qu'aucun
+        // vrai trajet ne relie les deux mêmes villes (elles servent à ne pas laisser le globe vide).
         const realKeys = new Set(real.map(routeKey));
-        const backdrop = BACKDROP.filter((r) => !realKeys.has(routeKey(r)));
+        const links: Link[] = [
+          ...real.map((r) => ({ ...r, real: true })),
+          ...BACKDROP.filter((r) => !realKeys.has(routeKey(r))).map((r) => ({ ...r, count: 0, real: false })),
+        ];
 
-        // Poids d'une ville = nombre de trajets qui la touchent.
-        const weight = new Map<string, number>();
-        sorted.forEach((r) =>
-          [r.from, r.to].forEach((p) => weight.set(cityKey(p), (weight.get(cityKey(p)) ?? 0) + r.count))
+        // Les villes, avec leur poids (nombre de trajets qui les touchent) et leurs routes.
+        const cities = new Map<string, CityInfo>();
+        const byCity = new Map<string, number[]>();
+        links.forEach((l, i) =>
+          [l.from, l.to].forEach((p) => {
+            const k = cityKey(p);
+            let c = cities.get(k);
+            if (!c) {
+              c = { key: k, label: p.label, c: [p.lng, p.lat], w: 0, real: false };
+              cities.set(k, c);
+              byCity.set(k, []);
+            }
+            c.w += l.count;
+            if (l.real) c.real = true;
+            byCity.get(k)!.push(i);
+          })
         );
-        const collect = (routes: Route[], into: Map<string, City>) =>
-          routes.forEach((r) =>
-            [r.from, r.to].forEach((p) => {
-              const k = cityKey(p);
-              if (!into.has(k)) into.set(k, { label: p.label, c: [p.lng, p.lat], w: weight.get(k) ?? 0 });
-            })
-          );
-        const majorCities = new Map<string, City>();
-        collect(major, majorCities);
-        collect(backdrop, majorCities);
-        const minorCities = new Map<string, City>();
-        collect(minor, minorCities);
-        minorCities.forEach((_, k) => {
-          if (majorCities.has(k)) minorCities.delete(k);
-        });
+        const maxW = Math.max(1, ...Array.from(cities.values()).map((c) => c.w));
+        const cityFeatures = {
+          type: "FeatureCollection" as const,
+          features: Array.from(cities.values()).map((c) => ({
+            type: "Feature" as const,
+            properties: {
+              key: c.key,
+              label: c.label,
+              // Les villes les plus actives passent en premier pour leur nom et ont un point plus gros.
+              rank: -c.w,
+              r: c.real ? 3 + 6 * Math.sqrt(c.w / maxW) : 3,
+              real: c.real ? 1 : 0,
+            },
+            geometry: { type: "Point" as const, coordinates: c.c },
+          })),
+        };
+
+        // Arcs de la ville choisie : toutes ses routes, sans limite.
+        const arcsOf = (key: string) => {
+          const mine = (byCity.get(key) ?? []).map((i) => links[i]);
+          const maxLocal = Math.max(1, ...mine.map((l) => l.count));
+          return linesOf(mine, (r) => {
+            const l = r as Link;
+            return l.real ? { w: 1.4 + 2.6 * Math.sqrt(l.count / maxLocal), o: 0.9 } : { w: 1.5, o: 0.45 };
+          });
+        };
 
         // Le globe doit tenir entier dans le carré : on règle le zoom sur la largeur réelle.
         const w = mapRef.current.clientWidth || 340;
         const base = Math.max(0.4, Math.log2((0.9 * w * Math.PI * Math.cos((LAT * Math.PI) / 180)) / 512));
         const maxZ = base + MAX_EXTRA_ZOOM;
-        const detailZ = base + DETAIL_ZOOM;
 
         map = new mapboxgl.Map({
           container: mapRef.current,
@@ -282,6 +286,10 @@ export function RoutesGlobe() {
           attributionControl: false,
         });
         map.addControl(new mapboxgl.AttributionControl({ compact: true }));
+
+        const BASE_DOT_OPACITY = ["case", ["==", ["get", "real"], 1], 1, 0.55];
+        const BASE_LABEL_OPACITY = ["case", ["==", ["get", "real"], 1], 1, 0.75];
+        const BASE_STROKE = 1.2;
 
         map.on("style.load", () => {
           map.setFog({ color: "#EAF0FF", "high-color": "#EAF0FF", "space-color": WARM, "horizon-blend": 0.04, "star-intensity": 0 });
@@ -304,79 +312,73 @@ export function RoutesGlobe() {
             }
           });
 
-          const dotRadius = (small: number, big: number) => ["interpolate", ["linear"], ["zoom"], base, small, maxZ, big];
-          const lineLayer = (id: string, data: any, paint: any, minzoom?: number) => {
-            map.addSource(id, { type: "geojson", data });
-            map.addLayer({ id, type: "line", source: id, ...(minzoom ? { minzoom } : {}), layout: { "line-cap": "round" }, paint });
-          };
-          const pointLayer = (id: string, data: any, paint: any, minzoom?: number) => {
-            map.addSource(id, { type: "geojson", data });
-            map.addLayer({ id, type: "circle", source: id, ...(minzoom ? { minzoom } : {}), paint });
-          };
+          // Les arcs de la ville choisie (vides au repos), sous les points.
+          map.addSource("sel-lines", { type: "geojson", data: EMPTY });
+          map.addLayer({
+            id: "sel-lines",
+            type: "line",
+            source: "sel-lines",
+            layout: { "line-cap": "round" },
+            paint: {
+              "line-color": BLUE,
+              "line-width": ["interpolate", ["linear"], ["zoom"], base, ["get", "w"], maxZ, ["*", ["get", "w"], 0.5]],
+              "line-opacity": ["get", "o"],
+            },
+          });
 
-          if (backdrop.length > 0) {
-            lineLayer("backdrop-lines", linesOf(backdrop, () => 1.5), { "line-color": BLUE, "line-width": 1.5, "line-opacity": BACKDROP_OPACITY });
-            pointLayer("backdrop-points", pointsOf(backdrop), { "circle-radius": dotRadius(2.2, 4), "circle-color": BLUE, "circle-opacity": BACKDROP_OPACITY });
-          }
-
-          // Au zoom, les arcs s'amincissent et deviennent plus transparents : sinon, les routes
-// d'une même ville se superposent en une masse bleue et on ne distingue plus rien.
-          const realPaint = {
-            "line-color": BLUE,
-            "line-width": ["interpolate", ["linear"], ["zoom"], base, ["get", "w"], maxZ, ["*", ["get", "w"], 0.3]],
-            "line-opacity": ["interpolate", ["linear"], ["zoom"], base, 0.85, maxZ, 0.45],
-          };
-          const dotPaint = { "circle-radius": dotRadius(2.8, 5), "circle-color": BLUE, "circle-stroke-color": "#fff", "circle-stroke-width": 1.2 };
-          if (minor.length > 0) {
-            lineLayer("minor-lines", linesOf(minor, widthOf), realPaint, detailZ);
-            pointLayer("minor-points", pointsOf(minor), dotPaint, detailZ);
-          }
-          if (major.length > 0) {
-            lineLayer("major-lines", linesOf(major, widthOf), realPaint);
-            pointLayer("major-points", pointsOf(major), dotPaint);
-          }
-
-          const labelLayer = (id: string, cities: Map<string, City>, minzoom?: number) => {
-            if (cities.size === 0) return;
-            map.addSource(id, { type: "geojson", data: labelsOf(cities) });
-            map.addLayer({
-              id,
-              type: "symbol",
-              source: id,
-              ...(minzoom ? { minzoom } : {}),
-              layout: {
-                "text-field": ["get", "label"],
-                "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"],
-                "text-size": 11,
-                "text-anchor": "top",
-                "text-offset": [0, 0.7],
-                "symbol-sort-key": ["get", "rank"],
-              },
-              paint: {
-                "text-color": INK,
-                "text-halo-color": "#FFFFFF",
-                "text-halo-width": 1.5,
-                "text-opacity": ["case", ["==", ["get", "rank"], 0], 0.75, 1],
-              },
-            });
-          };
-          labelLayer("labels-minor", minorCities, detailZ);
-          labelLayer("labels-major", majorCities);
+          map.addSource("cities", { type: "geojson", data: cityFeatures });
+          map.addLayer({
+            id: "city-dots",
+            type: "circle",
+            source: "cities",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], base, ["get", "r"], maxZ, ["*", ["get", "r"], 1.6]],
+              "circle-color": BLUE,
+              "circle-opacity": BASE_DOT_OPACITY,
+              "circle-stroke-color": "#fff",
+              "circle-stroke-width": BASE_STROKE,
+            },
+          });
+          map.addLayer({
+            id: "city-labels",
+            type: "symbol",
+            source: "cities",
+            layout: {
+              "text-field": ["get", "label"],
+              "text-font": ["DIN Pro Medium", "Arial Unicode MS Regular"],
+              "text-size": 11,
+              "text-anchor": "top",
+              "text-offset": [0, 0.9],
+              "symbol-sort-key": ["get", "rank"],
+            },
+            paint: {
+              "text-color": INK,
+              "text-halo-color": "#FFFFFF",
+              "text-halo-width": 1.5,
+              "text-opacity": BASE_LABEL_OPACITY,
+            },
+          });
 
           if (!cancelled) setReady(true);
         });
 
-        // --- Gestes : un doigt tourne le globe (à plat) ou le déplace (zoomé), deux doigts zooment.
+        // --- Gestes : un doigt tourne le globe (à plat) ou le déplace (zoomé), deux doigts
+        // zooment, un simple toucher choisit une ville.
         const el = gestureRef.current as HTMLDivElement;
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         let lng = 0;
         let lat = LAT;
         let z = base;
         let isZoomed = false;
+        let selectedKey: string | null = null;
         let dragging = false;
         let pausedUntil = 0;
         let lastX = 0;
         let lastY = 0;
+        let downX = 0;
+        let downY = 0;
+        let moved = false;
+        let multi = false;
         let pinchDist = 1;
         let pinchZ = base;
         const pts = new Map<number, { x: number; y: number }>();
@@ -400,10 +402,67 @@ export function RoutesGlobe() {
           map.jumpTo({ center: [wrap(lng), lat], zoom: z });
           syncUi();
         };
-        const ease = () => {
+        const ease = (duration = 350) => {
           pausedUntil = performance.now() + 2500;
-          map.easeTo({ center: [wrap(lng), lat], zoom: z, duration: 350 });
+          map.easeTo({ center: [wrap(lng), lat], zoom: z, duration });
           syncUi();
+        };
+
+        // Choisit une ville (ou aucune) : ses arcs apparaissent, les autres villes s'estompent.
+        const select = (key: string | null) => {
+          if (!map.getLayer("city-dots")) return;
+          selectedKey = key;
+          if (!key) {
+            map.getSource("sel-lines").setData(EMPTY);
+            map.setPaintProperty("city-dots", "circle-opacity", BASE_DOT_OPACITY);
+            map.setPaintProperty("city-dots", "circle-stroke-width", BASE_STROKE);
+            map.setPaintProperty("city-labels", "text-opacity", BASE_LABEL_OPACITY);
+            if (!cancelled) setPicked(false);
+            return;
+          }
+          map.getSource("sel-lines").setData(arcsOf(key));
+          const linked = new Set<string>([key]);
+          (byCity.get(key) ?? []).forEach((i) => {
+            linked.add(cityKey(links[i].from));
+            linked.add(cityKey(links[i].to));
+          });
+          const list = Array.from(linked);
+          map.setPaintProperty("city-dots", "circle-opacity", ["match", ["get", "key"], list, 1, 0.2]);
+          map.setPaintProperty("city-dots", "circle-stroke-width", ["match", ["get", "key"], [key], 3, BASE_STROKE]);
+          map.setPaintProperty("city-labels", "text-opacity", ["match", ["get", "key"], list, 1, 0.2]);
+          // On centre la ville choisie, sans changer le zoom.
+          const c = cities.get(key)!.c;
+          lng = c[0];
+          lat = Math.max(-50, Math.min(60, c[1]));
+          ease(600);
+          if (!cancelled) setPicked(true);
+        };
+
+        // Un simple toucher : la ville la plus proche du doigt, dans une marge confortable.
+        const handleTap = (clientX: number, clientY: number) => {
+          if (!map.getLayer("city-dots")) return;
+          const rect = el.getBoundingClientRect();
+          const x = clientX - rect.left;
+          const y = clientY - rect.top;
+          const center = map.getCenter();
+          const hits = map.queryRenderedFeatures(
+            [[x - TAP_RADIUS, y - TAP_RADIUS], [x + TAP_RADIUS, y + TAP_RADIUS]],
+            { layers: ["city-dots"] }
+          );
+          let best: string | null = null;
+          let bestDist = Infinity;
+          for (const f of hits) {
+            const c = f.geometry.coordinates as LngLat;
+            if (angleBetween([center.lng, center.lat], c) > 85) continue; // face cachée du globe
+            const p = map.project(c);
+            const d = Math.hypot(p.x - x, p.y - y);
+            if (d < bestDist) {
+              bestDist = d;
+              best = f.properties.key as string;
+            }
+          }
+          if (best && best !== selectedKey) select(best);
+          else select(null); // même ville ou toucher à côté : retour à la vue de départ
         };
 
         const onDown = (e: PointerEvent) => {
@@ -411,9 +470,12 @@ export function RoutesGlobe() {
           try { el.setPointerCapture(e.pointerId); } catch {}
           dragging = true;
           if (pts.size === 1) {
-            lastX = e.clientX;
-            lastY = e.clientY;
+            lastX = downX = e.clientX;
+            lastY = downY = e.clientY;
+            moved = false;
+            multi = false;
           } else if (pts.size === 2) {
+            multi = true;
             const [a, b] = Array.from(pts.values());
             pinchDist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
             pinchZ = z;
@@ -422,6 +484,7 @@ export function RoutesGlobe() {
         const onMove = (e: PointerEvent) => {
           if (!pts.has(e.pointerId)) return;
           pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) moved = true;
           if (pts.size >= 2) {
             const [a, b] = Array.from(pts.values());
             const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
@@ -433,12 +496,14 @@ export function RoutesGlobe() {
           const dy = e.clientY - lastY;
           lastX = e.clientX;
           lastY = e.clientY;
+          if (!moved) return;
           lng -= dx * degPerPx();
           // La latitude ne bouge que zoomé : à plat, on ne fait que tourner autour de l'axe.
           if (isZoomed) lat = Math.max(-60, Math.min(70, lat + dy * degPerPx() * Math.cos((lat * Math.PI) / 180)));
           apply();
         };
-        const onUp = (e: PointerEvent) => {
+        const end = (e: PointerEvent, allowTap: boolean) => {
+          const wasLast = pts.size === 1;
           pts.delete(e.pointerId);
           if (pts.size === 1) {
             const p = Array.from(pts.values())[0];
@@ -449,16 +514,19 @@ export function RoutesGlobe() {
             dragging = false;
             pausedUntil = performance.now() + 2500;
           }
+          if (allowTap && wasLast && !moved && !multi) handleTap(e.clientX, e.clientY);
         };
+        const onUp = (e: PointerEvent) => end(e, true);
+        const onCancel = (e: PointerEvent) => end(e, false);
         el.addEventListener("pointerdown", onDown);
         el.addEventListener("pointermove", onMove);
         el.addEventListener("pointerup", onUp);
-        el.addEventListener("pointercancel", onUp);
+        el.addEventListener("pointercancel", onCancel);
         removeListeners = () => {
           el.removeEventListener("pointerdown", onDown);
           el.removeEventListener("pointermove", onMove);
           el.removeEventListener("pointerup", onUp);
-          el.removeEventListener("pointercancel", onUp);
+          el.removeEventListener("pointercancel", onCancel);
         };
 
         controls.current = {
@@ -467,20 +535,21 @@ export function RoutesGlobe() {
             ease();
           },
           reset: () => {
+            select(null);
             z = base;
             lat = LAT;
             ease();
           },
         };
 
-        // Rotation lente : seulement en vue d'ensemble, section visible, sans doigt posé.
-        // Dès qu'on zoome, elle s'arrête ; elle reprend si l'on revient à la vue d'ensemble.
+        // Rotation lente : seulement en vue d'ensemble, sans ville choisie, section visible,
+        // sans doigt posé. Dès qu'on zoome ou qu'on choisit une ville, elle s'arrête.
         if (!reduce) {
           let last = performance.now();
           const tick = (now: number) => {
             const dt = now - last;
             last = now;
-            if (inView.current && !dragging && now > pausedUntil && z <= base + 0.05) {
+            if (inView.current && !dragging && now > pausedUntil && z <= base + 0.05 && selectedKey === null) {
               lng += dt * 0.006;
               apply();
             }
@@ -513,12 +582,12 @@ export function RoutesGlobe() {
   return (
     <section ref={sectionRef} className="max-w-2xl mx-auto px-5 pt-14">
       <h2 className="text-[28px] leading-[1.1] font-extrabold tracking-tight text-ink">Des trajets dans toute la France et le monde</h2>
-      <p className="text-ink-muted mt-2">Les routes sur lesquelles des colis peuvent voyager.</p>
+      <p className="text-ink-muted mt-2">Touchez une ville pour voir ses routes.</p>
       <div className="relative mt-4 mx-auto w-full max-w-md aspect-square">
         <div
           ref={gestureRef}
           role="img"
-          aria-label="Globe montrant les routes entre les villes desservies par Coliz"
+          aria-label="Globe des villes desservies par Coliz : touchez une ville pour voir ses routes"
           className="absolute inset-0 touch-pan-y cursor-grab select-none"
         >
           <div ref={mapRef} className="w-full h-full" />
@@ -529,7 +598,7 @@ export function RoutesGlobe() {
               <button type="button" aria-label="Zoomer" className={btn} onClick={() => controls.current?.zoomBy(0.9)}>+</button>
               <button type="button" aria-label="Dézoomer" className={btn} onClick={() => controls.current?.zoomBy(-0.9)}>−</button>
             </div>
-            {zoomed && (
+            {(zoomed || picked) && (
               <button
                 type="button"
                 onClick={() => controls.current?.reset()}

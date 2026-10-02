@@ -57,12 +57,12 @@ const TRUST: { Icon: (p: IconProps) => JSX.Element; title: string; text: string;
 
 // Le voyage du colis : ce que Coliz fait réellement, dans l'ordre.
 const JOURNEY: { color: string; title: string; text: string; code?: string }[] = [
-  { color: "#5B7CFF", title: "Des identités vérifiées", text: "Expéditeurs et voyageurs sont vérifiés par document d'identité." },
-  { color: "#5289EF", title: "Une mise en relation directe", text: "Coliz vous met en contact avec un voyageur qui fait déjà le trajet." },
-  { color: "#4A96DF", title: "Un code à la remise", text: "Quand vous lui confiez le colis, vous lui donnez un code : la prise en charge est confirmée.", code: "Code de remise" },
-  { color: "#41A3CE", title: "Un colis suivi", text: "Chaque étape du trajet est tracée dans l'application, jusqu'à l'arrivée." },
-  { color: "#38B0BE", title: "Un code unique à la réception", text: "À la livraison, un second code est demandé pour s'assurer que le colis est remis à la bonne personne.", code: "Code de réception" },
-  { color: "#2FBDAE", title: "Un paiement une fois livré", text: "Le voyageur n'est payé qu'une fois le colis livré, jamais avant." },
+  { color: "#3E9BB0", title: "Des identités vérifiées", text: "Expéditeurs et voyageurs sont vérifiés par document d'identité." },
+  { color: "#5F9599", title: "Une mise en relation directe", text: "Coliz vous met en contact avec un voyageur qui fait déjà le trajet." },
+  { color: "#808F82", title: "Un code à la remise", text: "Quand vous lui confiez le colis, vous lui donnez un code : la prise en charge est confirmée.", code: "Code de remise" },
+  { color: "#A0896C", title: "Un colis suivi", text: "Chaque étape du trajet est tracée dans l'application, jusqu'à l'arrivée." },
+  { color: "#C18355", title: "Un code unique à la réception", text: "À la livraison, un second code est demandé pour s'assurer que le colis est remis à la bonne personne.", code: "Code de réception" },
+  { color: "#E27D3E", title: "Un paiement une fois livré", text: "Le voyageur n'est payé qu'une fois le colis livré, jamais avant." },
 ];
 
 export default async function HomePage() {
@@ -95,8 +95,8 @@ export default async function HomePage() {
       <section className="max-w-5xl mx-auto">
         <div className="relative aspect-[3/2] overflow-hidden">
           <Image src="/brand/hero.webp" alt="" fill priority sizes="(min-width: 1024px) 1024px, 100vw" className="object-cover object-center select-none pointer-events-none" aria-hidden="true" />
-          <div className="absolute inset-0 sm:hidden" style={{ background: "linear-gradient(to bottom, #F8F7F3 0, transparent 5%)" }} />
-          <div className="hidden sm:block absolute inset-y-0 right-0 w-20" style={{ background: "linear-gradient(to left, #F8F7F3, transparent)" }} />
+          <div className="absolute inset-0 sm:hidden" style={{ background: "linear-gradient(to bottom, #FAF8F4 0, transparent 5%)" }} />
+          <div className="hidden sm:block absolute inset-y-0 right-0 w-20" style={{ background: "linear-gradient(to left, #FAF8F4, transparent)" }} />
           <div className="relative z-10 px-4 pt-4 sm:px-10 sm:pt-0 sm:w-[52%] sm:h-full sm:flex sm:flex-col sm:justify-center">
             <h1 className="text-[23px] sm:text-6xl font-extrabold leading-[1.08] sm:leading-[1.02] tracking-tight text-ink max-w-[190px] sm:max-w-[11em]">
               Vos colis <span className="text-route">voyagent</span> avec ceux qui voyagent.
@@ -125,17 +125,17 @@ export default async function HomePage() {
       {/* Globe : chaque trajet réservable ajoute un arc. */}
       <RoutesGlobe />
 
-      {/* Le voyage du colis : la ligne passe du bleu (expéditeur) au teal (voyageur). */}
+      {/* Le voyage du colis : la ligne passe du pétrole (expéditeur) au cuivre (voyageur). */}
       <section id="comment-ca-marche" className="mt-16 bg-ink text-white rounded-t-[32px] py-16 px-5 scroll-mt-16">
         <div className="max-w-xl mx-auto">
           <h2 className="text-[28px] leading-[1.1] font-extrabold tracking-tight">Le voyage de votre colis, étape par étape</h2>
           <p className="mt-2 text-white/70">De la rencontre à la livraison, chaque moment important est protégé.</p>
           <ol className="relative mt-9 pl-16">
-            <span aria-hidden className="absolute left-[21px] top-2 bottom-2 w-[3px] rounded bg-gradient-to-b from-[#5B7CFF] to-[#2FBDAE]" />
+            <span aria-hidden className="absolute left-[21px] top-2 bottom-2 w-[3px] rounded bg-gradient-to-b from-[#3E9BB0] to-[#E27D3E]" />
             <span aria-hidden className="coliz-run absolute left-[14px] top-2 w-[17px] h-[17px] rounded-[5px] bg-white ring-[5px] ring-white/20" />
             {JOURNEY.map((j, i) => (
               <li key={j.title} className="relative mb-8 last:mb-0">
-                <span className="absolute -left-16 -top-0.5 w-11 h-11 rounded-full flex items-center justify-center font-extrabold ring-[6px] ring-ink" style={{ backgroundColor: j.color }}>{i + 1}</span>
+                <span className="absolute -left-16 -top-0.5 w-11 h-11 rounded-full flex items-center justify-center font-extrabold text-ink ring-[6px] ring-ink" style={{ backgroundColor: j.color }}>{i + 1}</span>
                 <p className="text-lg font-bold leading-snug">{j.title}</p>
                 <p className="text-[15px] text-white/70 mt-1 leading-relaxed">{j.text}</p>
                 {j.code && (

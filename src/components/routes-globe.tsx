@@ -15,12 +15,12 @@ type Picked = { label: string; deps: Dep[] };
 type Link_ = Route & { count: number; real: boolean };
 type CityInfo = { key: string; label: string; c: LngLat; w: number; real: boolean };
 
-const BLUE = "#2457FF";
-const WARM = "#F8F7F3";
-const LAND = "#FBFAF6";
-const WATER = "#CFE0FF";
-const BORDER = "#C5D2EE";
-const INK = "#0E1A3A";
+const BLUE = "#1B5E6E";
+const WARM = "#FAF8F4";
+const LAND = "#FCFAF7";
+const WATER = "#D3E4E8";
+const BORDER = "#CBD8DA";
+const INK = "#14262D";
 
 // Latitude de la vue de départ : l'Europe et New York tiennent dans le même cadre.
 const LAT = 28;
@@ -276,7 +276,7 @@ export function RoutesGlobe() {
         const BASE_STROKE = 1.2;
 
         map.on("style.load", () => {
-          map.setFog({ color: "#EAF0FF", "high-color": "#EAF0FF", "space-color": WARM, "horizon-blend": 0.04, "star-intensity": 0 });
+          map.setFog({ color: "#E3EEF1", "high-color": "#E3EEF1", "space-color": WARM, "horizon-blend": 0.04, "star-intensity": 0 });
           // Aux couleurs de Coliz : terres blanc chaud, océans bleu clair, frontières très
           // discrètes. Les noms du fond de carte sont masqués (les nôtres sont ajoutés plus bas).
           map.getStyle().layers?.forEach((l: any) => {

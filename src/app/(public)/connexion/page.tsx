@@ -47,11 +47,11 @@ function ConnexionForm() {
   const callbackUrl = params.get("callbackUrl");
   const tripId = tripIdFromCallback(callbackUrl);
   const registered = params.get("registered") === "1";
-  // Venu de « Proposer un trajet » : on reste dans la couleur du voyageur jusqu'au bout.
+  // Venu de « Proposer un trajet » : la page garde la couleur de la marque ; seuls les textes changent.
   const isTravelerFlow = callbackUrl?.startsWith("/trajets/nouveau") ?? false;
 
   return (
-    <main data-role={isTravelerFlow ? "traveler" : "sender"} className="min-h-screen bg-surface-alt px-4 py-10 max-w-sm mx-auto">
+    <main className="min-h-screen bg-surface-alt px-4 py-10 max-w-sm mx-auto">
       <div className="flex justify-center mb-8">
         <a href="/" aria-label="Accueil Coliz">
           <Logo variant="primary" size={40} />

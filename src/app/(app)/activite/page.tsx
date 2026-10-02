@@ -10,7 +10,7 @@ import { isPastBooking } from "@/lib/booking-status";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-// Chaque raccourci porte la couleur de son rôle : bleu côté expéditeur, teal côté voyageur.
+// Chaque raccourci porte la couleur de son rôle : pétrole côté expéditeur, cuivre côté voyageur.
 const SHORTCUTS: { href: string; label: string; Icon: typeof PackageIcon; role: "sender" | "traveler" }[] = [
   { href: "/mes-colis", label: "Mes colis", Icon: PackageIcon, role: "sender" },
   { href: "/mes-voyages", label: "Mes voyages", Icon: SuitcaseIcon, role: "traveler" },

@@ -59,7 +59,7 @@ function InscriptionForm() {
   }
 
   return (
-    <main data-role={isTravelerFlow ? "traveler" : "sender"} className="min-h-screen bg-surface-alt px-4 py-10 max-w-sm mx-auto">
+    <main className="min-h-screen bg-surface-alt px-4 py-10 max-w-sm mx-auto">
       <div className="flex justify-center mb-8">
         <a href="/" aria-label="Accueil Coliz">
           <Logo variant="primary" size={40} />

@@ -4,6 +4,13 @@ import { useEffect, useRef } from "react";
 
 type Point = { lat: number; lng: number; label?: string };
 
+// Mêmes teintes que le globe de l'accueil (routes-globe.tsx).
+const BRAND = "#1B5E6E";
+const LAND = "#FCFAF7";
+const WATER = "#D3E4E8";
+const PARK = "#E9EEE6";
+const BUILDING = "#EFEBE3";
+
 // Mapbox GL est chargé depuis le CDN (pas de dépendance npm lourde) — s'il n'y a
 // pas de token configuré, on affiche un simple encart neutre plutôt qu'une carte
 // cassée : la liste de résultats reste la source d'information principale.
@@ -44,6 +51,28 @@ export function ResultsMap({ points }: { points: Point[] }) {
         interactive: true,
       });
 
+      // Aux couleurs de Coliz : terres blanc chaud, eau bleu pétrole très clair, parcs en vert
+      // sauge pâle. Les routes et les noms de lieux restent ceux de Mapbox (utiles pour se repérer).
+      map.on("style.load", () => {
+        map.getStyle().layers?.forEach((l: any) => {
+          try {
+            if (l.type === "background") {
+              map.setPaintProperty(l.id, "background-color", LAND);
+            } else if (l.type === "fill" && l.id === "water") {
+              map.setPaintProperty(l.id, "fill-color", WATER);
+            } else if (l.type === "line" && /waterway/.test(l.id)) {
+              map.setPaintProperty(l.id, "line-color", WATER);
+            } else if (l.type === "fill" && /park|landuse|landcover|pitch|golf|grass|wood|scrub/.test(l.id)) {
+              map.setPaintProperty(l.id, "fill-color", PARK);
+            } else if (l.type === "fill" && /building/.test(l.id)) {
+              map.setPaintProperty(l.id, "fill-color", BUILDING);
+            }
+          } catch {
+            // Un calque que le style ne laisse pas modifier : on garde sa couleur d'origine.
+          }
+        });
+      });
+
       // Affiche les noms de pays/villes dans la langue du navigateur de chaque
       // visiteur (détection automatique, pas de langue figée en dur).
       const MapboxLanguage = (window as any).MapboxLanguage;
@@ -53,7 +82,7 @@ export function ResultsMap({ points }: { points: Point[] }) {
 
       const bounds = new mapboxgl.LngLatBounds();
       points.forEach((p) => {
-        new mapboxgl.Marker({ color: "#2457FF" }).setLngLat([p.lng, p.lat]).addTo(map);
+        new mapboxgl.Marker({ color: BRAND }).setLngLat([p.lng, p.lat]).addTo(map);
         bounds.extend([p.lng, p.lat]);
       });
       if (points.length > 1) map.fitBounds(bounds, { padding: 40, maxZoom: 8 });

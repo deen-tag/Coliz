@@ -18,8 +18,9 @@ référence, ne pas régénérer un nouveau logo) :
 - `symbol.svg` / `symbol-social.svg` — symbole seul (app icon, réseaux sociaux)
 - `favicon.svg` — favicon du site
 
-Palette (`tailwind.config.ts`) : bleu principal `#0B57D0`, dégradé badge
-`#4FA8FF → #0B57D0`, bleu clair de fond `#E7F1FF`, encre `#0B1B3A`, succès `#20A66A`.
+Palette (`tailwind.config.ts`) : bleu pétrole de marque et expéditeur `#1B5E6E`, cuivre voyageur `#A9501E`
+(accent uniquement), fond blanc chaud `#FAF8F4`, encre `#14262D`, succès `#16A34A`.
+Dégradé du badge : `#2B8AA0 → #1B5E6E`, colis du logo en cuivre (`#F0B993`, trait `#A9501E`).
 
 ## Stack retenue (solo dev)
 
@@ -27,7 +28,7 @@ Palette (`tailwind.config.ts`) : bleu principal `#0B57D0`, dégradé badge
 - **PostgreSQL + Prisma** — schéma typé, migrations versionnées.
 - **NextAuth (Credentials)** — auth email/mot de passe, JWT.
 - **Stripe Connect (comptes Express)** — paiements marketplace.
-- **Tailwind CSS** — charte Coliz (bleu `#0B57D0`, cartes arrondies, beaucoup de blanc).
+- **Tailwind CSS** — charte Coliz (bleu pétrole `#1B5E6E`, cartes arrondies, beaucoup de blanc).
 - **Zod** — validation de toutes les entrées API.
 
 ## Ce qui est en place

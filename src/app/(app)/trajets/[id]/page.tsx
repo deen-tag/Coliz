@@ -28,7 +28,7 @@ export default function TrajetDetailPage() {
   const { data: trip, isLoading } = useSWR(`/api/trips/${id}`, fetcher);
   const { data: session, status } = useSession();
 
-  // Mon propre trajet : je le regarde en tant que voyageur (teal). Sinon je suis expéditeur (bleu).
+  // Mon propre trajet : je le regarde en tant que voyageur (cuivre). Sinon je suis expéditeur (pétrole).
   useRoleOverride(trip && !trip.error && trip.traveler && (session?.user as any)?.id === trip.traveler.id ? "traveler" : null);
 
   // Page à retrouver après connexion / inscription.

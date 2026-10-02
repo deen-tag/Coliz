@@ -16,7 +16,7 @@ import { Avatar } from "@/components/avatar";
 import { useMyAvatar } from "@/components/use-my-avatar";
 import { useRole } from "@/components/role-scope";
 
-// `role` : la couleur propre à chaque entrée (Mes colis en bleu, Mes voyages en teal).
+// `role` : la couleur propre à chaque entrée (Mes colis en pétrole, Mes voyages en cuivre).
 // Les autres entrées prennent la couleur du mode dans lequel on se trouve.
 const LINKS: { href: string; label: string; Icon: typeof SearchIcon; role?: "sender" | "traveler" }[] = [
   { href: "/recherche", label: "Rechercher", Icon: SearchIcon, role: "sender" },
@@ -32,7 +32,7 @@ export function HeaderNav() {
   const pathname = usePathname();
   const { avatarUrl, firstName } = useMyAvatar();
 
-  // CTA contextuel : "Proposer un trajet" (teal) côté voyageur,
+  // CTA contextuel : "Proposer un trajet" (cuivre) côté voyageur,
   // "Envoyer un colis" (bleu) partout ailleurs (brief UI/UX §4).
   // Le mode vient de la page (voir role-scope) : consulter un trajet pour y envoyer un colis reste côté expéditeur.
   const role = useRole();

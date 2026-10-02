@@ -5,27 +5,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Couleur d'accent de la page : suit le rôle de la personne (voir globals.css).
-        // Bleu Coliz = expéditeur (par défaut), teal = voyageur. Tous les composants
-        // qui utilisent primary / primary-light changent donc de couleur d'un seul coup.
+        // Couleur d'accent : bleu pétrole Coliz = marque et expéditeur (par défaut, partout).
+        // Cuivre = voyageur, réservé aux éléments qui portent explicitement data-role="traveler"
+        // (onglet, carte, badge, gain) : un accent chaud, pas la couleur de toute la page.
         primary: "rgb(var(--accent) / <alpha-value>)",
         "primary-light": "rgb(var(--accent-light) / <alpha-value>)",
         // Couleurs fixes des deux rôles, pour les écrans qui montrent les deux côte à côte
         // (accueil, tableau de bord, raccourcis).
-        sender: "#2457FF",
-        "sender-light": "#EAF0FF",
-        traveler: "#0A7B71",
-        "traveler-light": "#E3F5F2",
+        sender: "#1B5E6E",
+        "sender-light": "#E3EEF1",
+        traveler: "#A9501E",
+        "traveler-light": "#FAEBDF",
         // Deep Ink — remplace le noir pur pour titres/texte fort (DA §3)
-        ink: "#0E1A3A",
+        ink: "#14262D",
         // Slate — texte secondaire/métadonnées (DA §3)
-        "ink-muted": "#667085",
+        "ink-muted": "#5B6770",
         // Warm White — fond principal éditorial (homepage, sections) (DA §3)
-        warm: "#F8F7F3",
+        warm: "#FAF8F4",
         surface: "#FFFFFF",
-        "surface-alt": "#F8F7F3",
+        "surface-alt": "#FAF8F4",
         // Soft Gray — bordures discrètes (DA §3/§7)
-        line: "#E4E7EC",
+        line: "#E5E2DA",
         success: "#16A34A",
         "success-light": "#E9F7EF",
         warning: "#D97706",
@@ -33,7 +33,7 @@ const config: Config = {
         error: "#DC2626",
         "error-light": "#FCEAEA",
       },
-      boxShadow: { card: "0 12px 30px -20px rgba(14,26,58,0.45)" },
+      boxShadow: { card: "0 12px 30px -20px rgba(20,38,45,0.45)" },
       borderRadius: {
         card: "20px",
         control: "12px",

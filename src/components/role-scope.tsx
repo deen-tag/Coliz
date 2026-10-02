@@ -3,11 +3,11 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
-// Les deux acteurs de Coliz. L'expéditeur garde le bleu de la marque, le voyageur a sa
-// propre couleur (teal) : on sait toujours dans quel "mode" on est.
+// Les deux acteurs de Coliz. L'expéditeur garde le bleu pétrole de la marque, le voyageur a sa
+// propre couleur (cuivre) en accent : on sait toujours dans quel "mode" on est.
 export type Role = "sender" | "traveler";
 
-// Pages qui ne parlent qu'au voyageur. Tout le reste est côté expéditeur (bleu) ;
+// Pages qui ne parlent qu'au voyageur. Tout le reste est côté expéditeur (pétrole) ;
 // les pages dont le rôle dépend de la réservation le précisent avec useRoleOverride.
 const TRAVELER_PATHS = ["/trajets/nouveau", "/mes-voyages", "/portefeuille"];
 
@@ -23,7 +23,8 @@ const RoleContext = createContext<{ role: Role; setRoleOverride: (role: Role | n
   setRoleOverride: () => {},
 });
 
-// Pose la couleur sur toute la coquille (en-tête, contenu, barre du bas).
+// Pose le rôle sur toute la coquille (en-tête, contenu, barre du bas) sans la recolorer :
+// les boutons principaux restent bleu pétrole, le cuivre vient des éléments data-role="traveler".
 // `display: contents` : le conteneur n'influence pas la mise en page.
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -39,7 +40,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <RoleContext.Provider value={{ role, setRoleOverride }}>
-      <div data-role={role} className="contents">
+      <div data-page-role={role} className="contents">
         {children}
       </div>
     </RoleContext.Provider>

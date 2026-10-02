@@ -35,7 +35,7 @@ export default function ReservationPage() {
   const isSender = booking && userId === booking.senderId;
   const isTraveler = booking && userId === booking.travelerId;
   const counterpart = isSender ? booking?.traveler : booking?.sender;
-  // La page prend la couleur du rôle que j'ai sur cette réservation (bleu expéditeur, teal voyageur).
+  // La page prend la couleur du rôle que j'ai sur cette réservation (pétrole expéditeur, cuivre voyageur).
   useRoleOverride(isSender ? "sender" : isTraveler ? "traveler" : null);
 
   async function respond(action: "accept" | "refuse") {

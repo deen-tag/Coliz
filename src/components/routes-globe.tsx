@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import type { TransportMode } from "@prisma/client";
+import { TransportModeBadge } from "@/components/ui";
 
 type LngLat = [number, number];
 type Place = { label: string; lat: number; lng: number };
 type Route = { from: Place; to: Place };
-type RealRoute = Route & { count: number };
-type Link = Route & { count: number; real: boolean };
+type RealRoute = Route & { count: number; mode?: string };
+// Un départ réel : « de from vers to » avec son moyen de transport (sert aux cartes sous le globe).
+type Dep = { from: string; to: string; mode: string; count: number };
+type Picked = { label: string; deps: Dep[] };
+type Link_ = Route & { count: number; real: boolean };
 type CityInfo = { key: string; label: string; c: LngLat; w: number; real: boolean };
 
 const BLUE = "#2457FF";
@@ -22,38 +28,7 @@ const MAX_EXTRA_ZOOM = 4.5;
 // Marge autour d'une ville pour la toucher au doigt (le point seul est trop petit à viser).
 const TAP_RADIUS = 24;
 
-// Grandes routes de fond (France, Maghreb, Europe, monde) : affichées en bleu très pâle,
-// pour que le globe ne soit jamais vide. Aucun chiffre.
-const BACKDROP: Route[] = [
-  [["Paris", 48.86, 2.35], ["Alger", 36.75, 3.06]],
-  [["Paris", 48.86, 2.35], ["Casablanca", 33.57, -7.59]],
-  [["Paris", 48.86, 2.35], ["Tunis", 36.81, 10.18]],
-  [["Marseille", 43.3, 5.37], ["Alger", 36.75, 3.06]],
-  [["Lyon", 45.76, 4.84], ["Casablanca", 33.57, -7.59]],
-  [["Marseille", 43.3, 5.37], ["Tunis", 36.81, 10.18]],
-  [["Paris", 48.86, 2.35], ["Madrid", 40.42, -3.7]],
-  [["Paris", 48.86, 2.35], ["Londres", 51.51, -0.13]],
-  [["Paris", 48.86, 2.35], ["New York", 40.71, -74.01]],
-  [["Paris", 48.86, 2.35], ["Dakar", 14.69, -17.45]],
-  [["Paris", 48.86, 2.35], ["Abidjan", 5.36, -4.0]],
-  [["Paris", 48.86, 2.35], ["Istanbul", 41.01, 28.98]],
-  [["Paris", 48.86, 2.35], ["Dubaï", 25.2, 55.27]],
-  [["Paris", 48.86, 2.35], ["Montréal", 45.5, -73.57]],
-  [["Londres", 51.51, -0.13], ["New York", 40.71, -74.01]],
-].map(([a, b]) => ({
-  from: { label: a[0] as string, lat: a[1] as number, lng: a[2] as number },
-  to: { label: b[0] as string, lat: b[1] as number, lng: b[2] as number },
-}));
-
 const cityKey = (p: Place) => `${p.lat.toFixed(1)}|${p.lng.toFixed(1)}`;
-
-// Une route de fond s'efface dès qu'un vrai trajet relie les deux mêmes villes ;
-// les autres restent, donc le globe n'est jamais vide hors d'Europe.
-function routeKey(r: Route) {
-  const a = `${r.from.lat.toFixed(0)}|${r.from.lng.toFixed(0)}`;
-  const b = `${r.to.lat.toFixed(0)}|${r.to.lng.toFixed(0)}`;
-  return [a, b].sort().join(">");
-}
 
 // Empreinte stable d'un texte : sert à choisir, une fois pour toutes, de quel côté une route se courbe.
 function hashOf(text: string) {
@@ -158,7 +133,7 @@ export function RoutesGlobe() {
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
   const [zoomed, setZoomed] = useState(false);
-  const [picked, setPicked] = useState(false);
+  const [picked, setPicked] = useState<Picked | null>(null);
   const inView = useRef(false);
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -197,11 +172,20 @@ export function RoutesGlobe() {
         mapboxgl.accessToken = token;
 
         let real: RealRoute[] = [];
+        // Départs réels par ville (sens du trajet respecté) : alimentent les cartes sous le globe.
+        const departures = new Map<string, Dep[]>();
         try {
           const res = await fetch("/api/routes/globe");
           if (res.ok) {
             const data = await res.json();
             const list: RealRoute[] = (data.routes ?? []).map((r: any) => ({ ...r, count: Number(r.count) || 1 }));
+            list.forEach((r) => {
+              const k = cityKey(r.from);
+              const arr = departures.get(k) ?? [];
+              arr.push({ from: r.from.label, to: r.to.label, mode: r.mode ?? "OTHER", count: r.count });
+              departures.set(k, arr);
+            });
+            departures.forEach((arr) => arr.sort((a, b) => b.count - a.count));
             // Un seul arc par paire de villes, quel que soit le sens du trajet.
             const byPair = new Map<string, RealRoute>();
             list.forEach((r) => {
@@ -213,17 +197,17 @@ export function RoutesGlobe() {
             real = Array.from(byPair.values());
           }
         } catch {
-          // Pas de vrais trajets lisibles : le globe affiche ses routes de fond.
+          // Lecture impossible : on traite comme « aucun trajet ».
         }
         if (cancelled || !mapRef.current || !gestureRef.current) return;
+        // Sans aucun trajet, un globe vide ferait « site vide » : on masque la section.
+        if (real.length === 0) {
+          setFailed(true);
+          return;
+        }
 
-        // Toutes les routes : les vrais trajets, plus les grandes routes de fond tant qu'aucun
-        // vrai trajet ne relie les deux mêmes villes (elles servent à ne pas laisser le globe vide).
-        const realKeys = new Set(real.map(routeKey));
-        const links: Link[] = [
-          ...real.map((r) => ({ ...r, real: true })),
-          ...BACKDROP.filter((r) => !realKeys.has(routeKey(r))).map((r) => ({ ...r, count: 0, real: false })),
-        ];
+        // Toutes les routes viennent de ta base (trajets de démo compris, traités comme de vrais trajets).
+        const links: Link_[] = real.map((r) => ({ ...r, real: true }));
 
         // Les villes, avec leur poids (nombre de trajets qui les touchent) et leurs routes.
         const cities = new Map<string, CityInfo>();
@@ -264,7 +248,7 @@ export function RoutesGlobe() {
           const mine = (byCity.get(key) ?? []).map((i) => links[i]);
           const maxLocal = Math.max(1, ...mine.map((l) => l.count));
           return linesOf(mine, (r) => {
-            const l = r as Link;
+            const l = r as Link_;
             return l.real ? { w: 1.4 + 2.6 * Math.sqrt(l.count / maxLocal), o: 0.9 } : { w: 1.5, o: 0.45 };
           });
         };
@@ -417,7 +401,7 @@ export function RoutesGlobe() {
             map.setPaintProperty("city-dots", "circle-opacity", BASE_DOT_OPACITY);
             map.setPaintProperty("city-dots", "circle-stroke-width", BASE_STROKE);
             map.setPaintProperty("city-labels", "text-opacity", BASE_LABEL_OPACITY);
-            if (!cancelled) setPicked(false);
+            if (!cancelled) setPicked(null);
             return;
           }
           map.getSource("sel-lines").setData(arcsOf(key));
@@ -435,7 +419,7 @@ export function RoutesGlobe() {
           lng = c[0];
           lat = Math.max(-50, Math.min(60, c[1]));
           ease(600);
-          if (!cancelled) setPicked(true);
+          if (!cancelled) setPicked({ label: cities.get(key)!.label, deps: departures.get(key) ?? [] });
         };
 
         // Un simple toucher : la ville la plus proche du doigt, dans une marge confortable.
@@ -610,6 +594,37 @@ export function RoutesGlobe() {
           </>
         )}
       </div>
+
+      {picked && (
+        <div className="mt-4">
+          {picked.deps.length > 0 ? (
+            <>
+              <p className="text-sm font-semibold text-ink mb-2">Au départ de {picked.label}</p>
+              <div className="-mx-5 px-5 flex gap-3 overflow-x-auto snap-x pb-2">
+                {picked.deps.map((d) => (
+                  <Link
+                    key={d.to}
+                    href={`/recherche?from=${encodeURIComponent(d.from)}&to=${encodeURIComponent(d.to)}`}
+                    className="snap-start shrink-0 min-w-[150px] rounded-2xl border border-line bg-surface shadow-card px-4 py-3 active:bg-sender-light"
+                  >
+                    <span className="block text-[15px] font-bold text-ink leading-tight">{d.to}</span>
+                    <span className="mt-2 block">
+                      <TransportModeBadge mode={d.mode as TransportMode} variant="plain" />
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-ink-muted">
+              Pas encore de départ depuis {picked.label}.{" "}
+              <Link href={`/recherche?to=${encodeURIComponent(picked.label)}`} className="font-semibold text-sender underline">
+                Voir les trajets vers {picked.label}
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
     </section>
   );
 }

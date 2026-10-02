@@ -11,13 +11,14 @@ const shortLabel = (label: string) => label.split(",")[0].trim();
 const round = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d;
 
 // Routes du globe d'accueil : des paires de villes (nom + coordonnées) pour les trajets
-// encore réservables, avec le nombre de trajets par route (sert seulement à choisir les
-// routes principales et l'épaisseur des arcs : il n'est jamais affiché). Aucune donnée de
+// encore réservables, dans le SENS réel du trajet (les cartes « au départ de… » en ont besoin),
+// avec le moyen de transport le plus fréquent et le nombre de trajets (qui sert seulement à
+// ordonner les routes et à l'épaisseur des arcs : il n'est jamais affiché). Aucune donnée de
 // voyageur ni de date.
 export async function GET() {
   try {
     const rows = await prisma.trip.groupBy({
-      by: ["originLabel", "originLat", "originLng", "destinationLabel", "destinationLat", "destinationLng"],
+      by: ["originLabel", "originLat", "originLng", "destinationLabel", "destinationLat", "destinationLng", "mode"],
       where: {
         status: { in: ["PUBLISHED", "PARTIALLY_BOOKED"] },
         remainingParcels: { gt: 0 },
@@ -25,38 +26,49 @@ export async function GET() {
       },
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
-      take: 200,
+      take: 400,
     });
 
-    // Une seule route par paire de villes : Paris → Madrid et Madrid → Paris donnent un seul
-    // arc, et deux libellés très proches (« Paris » / « Paris, France ») aussi.
-    const merged = new Map<string, { from: Point; to: Point; count: number }>();
+    // Une route par sens et par paire de villes ; deux libellés très proches
+    // (« Paris » / « Paris, France ») comptent pour une seule ville.
+    const merged = new Map<string, { from: Point; to: Point; count: number; modes: Map<string, number> }>();
     for (const r of rows) {
-      const a = `${round(r.originLat, 1)}|${round(r.originLng, 1)}`;
-      const b = `${round(r.destinationLat, 1)}|${round(r.destinationLng, 1)}`;
-      const key = [a, b].sort().join(">");
-      const found = merged.get(key);
-      if (found) {
-        found.count += r._count.id;
-        continue;
+      const key = [round(r.originLat, 1), round(r.originLng, 1), round(r.destinationLat, 1), round(r.destinationLng, 1)].join("|");
+      let found = merged.get(key);
+      if (!found) {
+        found = {
+          from: { label: shortLabel(r.originLabel), lat: round(r.originLat, 2), lng: round(r.originLng, 2) },
+          to: { label: shortLabel(r.destinationLabel), lat: round(r.destinationLat, 2), lng: round(r.destinationLng, 2) },
+          count: 0,
+          modes: new Map(),
+        };
+        merged.set(key, found);
       }
-      merged.set(key, {
-        from: { label: shortLabel(r.originLabel), lat: round(r.originLat, 2), lng: round(r.originLng, 2) },
-        to: { label: shortLabel(r.destinationLabel), lat: round(r.destinationLat, 2), lng: round(r.destinationLng, 2) },
-        count: r._count.id,
-      });
+      found.count += r._count.id;
+      found.modes.set(r.mode, (found.modes.get(r.mode) ?? 0) + r._count.id);
     }
 
     const routes = Array.from(merged.values())
+      .map(({ modes, ...m }) => {
+        let mode = "OTHER";
+        let best = 0;
+        modes.forEach((n, k) => {
+          if (n > best) {
+            best = n;
+            mode = k;
+          }
+        });
+        return { ...m, mode };
+      })
       .sort((a, b) => b.count - a.count)
-      .slice(0, 120);
+      .slice(0, 200);
 
     return NextResponse.json(
       { routes },
       { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } }
     );
   } catch {
-    // Le globe reste affiché avec ses routes de fond si la lecture échoue.
+    // Si la lecture échoue, le globe n'a rien à montrer : la section se masque.
     return NextResponse.json({ routes: [] });
   }
 }

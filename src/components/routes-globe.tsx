@@ -56,6 +56,38 @@ function routeKey(r: Route) {
   return [a, b].sort().join(">");
 }
 
+// Empreinte stable d'un texte : sert à choisir, une fois pour toutes, de quel côté une route se courbe.
+function hashOf(text: string) {
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+// Courbe légèrement l'arc : sans ça, Bruxelles-Madrid passe presque en ligne droite par Paris
+// et se confond avec Paris-Madrid. La courbure grandit avec la longueur de la route, et le côté
+// est fixé par la paire de villes (même courbe dans les deux sens), donc les routes qui partent
+// d'une même ville s'écartent en éventail au lieu de se superposer. Les extrémités ne bougent pas.
+function bend(pts: LngLat[], a: LngLat, b: LngLat): LngLat[] {
+  const dx = pts[pts.length - 1][0] - pts[0][0];
+  const dy = pts[pts.length - 1][1] - pts[0][1];
+  const len = Math.hypot(dx, dy);
+  if (len < 0.5) return pts;
+
+  const ka = `${a[1].toFixed(1)}|${a[0].toFixed(1)}`;
+  const kb = `${b[1].toFixed(1)}|${b[0].toFixed(1)}`;
+  const forward = ka < kb;
+  const h = hashOf(forward ? `${ka}>${kb}` : `${kb}>${ka}`);
+  const side = (h % 2 === 0 ? 1 : -1) * (forward ? 1 : -1);
+  const curve = 0.14 + 0.08 * (((h >>> 1) % 3) / 2);
+  const nx = -dy / len;
+  const ny = dx / len;
+
+  return pts.map((p, i) => {
+    const off = side * curve * len * Math.sin((Math.PI * i) / (pts.length - 1));
+    return [p[0] + nx * off, Math.max(-85, Math.min(85, p[1] + ny * off))] as LngLat;
+  });
+}
+
 // Arc de grand cercle entre deux villes (Mapbox trace en ligne droite sinon, ce qui
 // donne des traits plats sur un globe).
 function greatCircle(a: LngLat, b: LngLat, steps = 48): LngLat[] {
@@ -85,7 +117,7 @@ function greatCircle(a: LngLat, b: LngLat, steps = 48): LngLat[] {
     prevLng = lng;
     out.push([lng, lat]);
   }
-  return out;
+  return bend(out, a, b);
 }
 
 // w = épaisseur de l'arc. Une route très active est plus épaisse (échelle en racine carrée
@@ -185,7 +217,16 @@ export function RoutesGlobe() {
           const res = await fetch("/api/routes/globe");
           if (res.ok) {
             const data = await res.json();
-            real = (data.routes ?? []).map((r: any) => ({ ...r, count: Number(r.count) || 1 }));
+            const list: RealRoute[] = (data.routes ?? []).map((r: any) => ({ ...r, count: Number(r.count) || 1 }));
+            // Un seul arc par paire de villes, quel que soit le sens du trajet.
+            const byPair = new Map<string, RealRoute>();
+            list.forEach((r) => {
+              const k = [cityKey(r.from), cityKey(r.to)].sort().join(">");
+              const found = byPair.get(k);
+              if (found) found.count += r.count;
+              else byPair.set(k, { ...r });
+            });
+            real = Array.from(byPair.values());
           }
         } catch {
           // Pas de vrais trajets lisibles : le globe affiche ses routes de fond.
@@ -278,7 +319,13 @@ export function RoutesGlobe() {
             pointLayer("backdrop-points", pointsOf(backdrop), { "circle-radius": dotRadius(2.2, 4), "circle-color": BLUE, "circle-opacity": BACKDROP_OPACITY });
           }
 
-          const realPaint = { "line-color": BLUE, "line-width": ["get", "w"], "line-opacity": 0.85 };
+          // Au zoom, les arcs s'amincissent et deviennent plus transparents : sinon, les routes
+// d'une même ville se superposent en une masse bleue et on ne distingue plus rien.
+          const realPaint = {
+            "line-color": BLUE,
+            "line-width": ["interpolate", ["linear"], ["zoom"], base, ["get", "w"], maxZ, ["*", ["get", "w"], 0.3]],
+            "line-opacity": ["interpolate", ["linear"], ["zoom"], base, 0.85, maxZ, 0.45],
+          };
           const dotPaint = { "circle-radius": dotRadius(2.8, 5), "circle-color": BLUE, "circle-stroke-color": "#fff", "circle-stroke-width": 1.2 };
           if (minor.length > 0) {
             lineLayer("minor-lines", linesOf(minor, widthOf), realPaint, detailZ);

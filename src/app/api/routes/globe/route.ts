@@ -28,10 +28,13 @@ export async function GET() {
       take: 200,
     });
 
-    // Deux libellés très proches (« Paris » / « Paris, France ») = une seule route.
+    // Une seule route par paire de villes : Paris → Madrid et Madrid → Paris donnent un seul
+    // arc, et deux libellés très proches (« Paris » / « Paris, France ») aussi.
     const merged = new Map<string, { from: Point; to: Point; count: number }>();
     for (const r of rows) {
-      const key = [round(r.originLat, 1), round(r.originLng, 1), round(r.destinationLat, 1), round(r.destinationLng, 1)].join("|");
+      const a = `${round(r.originLat, 1)}|${round(r.originLng, 1)}`;
+      const b = `${round(r.destinationLat, 1)}|${round(r.destinationLng, 1)}`;
+      const key = [a, b].sort().join(">");
       const found = merged.get(key);
       if (found) {
         found.count += r._count.id;

@@ -1,4 +1,4 @@
-// Données de démonstration : 50 trajets + 50 colis cohérents (fonctions pures, sans base de données).
+// Données de démonstration : 54 trajets + 50 colis cohérents (fonctions pures, sans base de données).
 // Tous les comptes créés se terminent par @demo.coliz (purge facile).
 //
 // Cohérence recherchée :
@@ -62,13 +62,17 @@ const C: Record<string, City> = {
   francfort: { name: "Francfort", country: "Allemagne", lat: 50.1109, lng: 8.6821 },
   berlin: { name: "Berlin", country: "Allemagne", lat: 52.52, lng: 13.405 },
   geneve: { name: "Genève", country: "Suisse", lat: 46.2044, lng: 6.1432 },
+  // Hors Europe, hors Afrique (pour que le globe d'accueil montre aussi le reste du monde)
+  newyork: { name: "New York", country: "États-Unis", lat: 40.7128, lng: -74.006 },
+  montreal: { name: "Montréal", country: "Canada", lat: 45.5017, lng: -73.5673 },
+  dubai: { name: "Dubaï", country: "Émirats arabes unis", lat: 25.2048, lng: 55.2708 },
 };
 
 const EUROPE = new Set(["France", "Belgique", "Espagne", "Italie", "Portugal", "Roumanie", "Pologne", "Royaume-Uni", "Allemagne", "Suisse"]);
 
 type Mode = "PLANE" | "TRAIN" | "CAR" | "BUS" | "FERRY" | "VAN";
 
-// 50 liaisons : [départ, arrivée, mode]. Avions pour l'international, ferry pour les traversées
+// 54 liaisons : [départ, arrivée, mode]. Avions pour l'international, ferry pour les traversées
 // de Méditerranée au départ de Marseille (lignes qui existent réellement), train/voiture/bus en Europe.
 // Répartition : Algérie 13, Maroc 5, Tunisie 3, Afrique subsaharienne 6, Europe sud/est + Turquie 8,
 // Europe du nord 6, France 6, plus 3 liaisons Europe/Maghreb en sens inverse.
@@ -97,7 +101,13 @@ const ROUTES: [string, string, Mode][] = [
   ["strasbourg", "paris", "TRAIN"], ["toulouse", "lyon", "CAR"],
   // Retours et liaisons croisées
   ["bruxelles", "casablanca", "PLANE"], ["lyon", "barcelone", "CAR"], ["rome", "paris", "PLANE"],
+  // Long-courriers hors Afrique : Amérique du Nord et Golfe.
+  ["paris", "newyork", "PLANE"], ["paris", "dubai", "PLANE"], ["paris", "montreal", "PLANE"], ["londres", "newyork", "PLANE"],
 ];
+
+// ATTENTION : le mélange des dates et des colis utilise 7, 17 et 29 modulo le nombre de liaisons.
+// Ce nombre doit rester premier avec 7, 17 et 29 (54 convient ; 49, 51 ou 56 ne conviendraient pas :
+// les trajets se répéteraient au lieu d'être répartis).
 
 // `countries` = pays d'attache (famille, origine, voyages réguliers) : sert à attribuer les trajets/colis de façon crédible.
 // « France » signifie que la personne circule aussi en France même.
@@ -107,12 +117,12 @@ const TRAVELERS = [
   { first: "Mehdi", last: "Ouali", verified: false, countries: ["Algérie", "France"] },
   { first: "Leïla", last: "Meziane", verified: true, countries: ["Maroc", "France"] },
   { first: "Rayan", last: "Cherif", verified: false, countries: ["Tunisie", "Algérie"] },
-  { first: "Camille", last: "Robin", verified: true, countries: ["Espagne", "Portugal", "Italie", "France"] },
+  { first: "Camille", last: "Robin", verified: true, countries: ["Espagne", "Portugal", "Italie", "Canada", "France"] },
   { first: "Nabil", last: "Saadi", verified: true, countries: ["Algérie", "Maroc"] },
-  { first: "Chloé", last: "Martin", verified: false, countries: ["Belgique", "Royaume-Uni", "France"] },
+  { first: "Chloé", last: "Martin", verified: false, countries: ["Belgique", "Royaume-Uni", "États-Unis", "France"] },
   { first: "Aminata", last: "Diallo", verified: true, countries: ["Sénégal", "Mali"] },
   { first: "Yao", last: "Kouassi", verified: true, countries: ["Côte d'Ivoire", "Cameroun"] },
-  { first: "Emre", last: "Kaya", verified: true, countries: ["Turquie", "Allemagne"] },
+  { first: "Emre", last: "Kaya", verified: true, countries: ["Turquie", "Allemagne", "Émirats arabes unis"] },
   { first: "Joana", last: "Ferreira", verified: true, countries: ["Portugal", "Espagne"] },
   { first: "Andrei", last: "Popescu", verified: false, countries: ["Roumanie", "Pologne"] },
   { first: "Youssef", last: "El Idrissi", verified: true, countries: ["Maroc", "Belgique"] },
@@ -123,16 +133,16 @@ const SENDERS = [
   { first: "Nadia", last: "Kaci", countries: ["Algérie"] },
   { first: "Omar", last: "Bensalem", countries: ["Algérie", "Tunisie"] },
   { first: "Sarah", last: "Lopez", countries: ["Espagne", "Portugal"] },
-  { first: "Hugo", last: "Bernard", countries: ["France", "Belgique", "Suisse"] },
+  { first: "Hugo", last: "Bernard", countries: ["France", "Belgique", "Suisse", "Canada"] },
   { first: "Fatima", last: "Zerrouki", countries: ["Algérie", "Maroc"] },
   { first: "Lucas", last: "Petit", countries: ["France", "Italie", "Allemagne"] },
   { first: "Amel", last: "Boudiaf", countries: ["Algérie", "Tunisie"] },
-  { first: "Thomas", last: "Girard", countries: ["France", "Royaume-Uni", "Pologne"] },
+  { first: "Thomas", last: "Girard", countries: ["France", "Royaume-Uni", "Pologne", "États-Unis"] },
   { first: "Khadija", last: "Amrani", countries: ["Maroc", "Belgique"] },
   { first: "Ibrahima", last: "Ndiaye", countries: ["Sénégal", "Mali"] },
   { first: "Awa", last: "Traoré", countries: ["Côte d'Ivoire", "Mali", "Cameroun"] },
   { first: "Mihai", last: "Ionescu", countries: ["Roumanie", "Pologne"] },
-  { first: "Elif", last: "Demir", countries: ["Turquie", "Allemagne"] },
+  { first: "Elif", last: "Demir", countries: ["Turquie", "Allemagne", "Émirats arabes unis"] },
   { first: "Marta", last: "Silva", countries: ["Portugal", "Espagne"] },
   { first: "Sonia", last: "Trabelsi", countries: ["Tunisie", "France"] },
 ];

@@ -1,5 +1,5 @@
 // ROUTE TEMPORAIRE — à supprimer juste après usage (voir commandes Termux).
-// Recrée les données de démo : nouveaux comptes @demo.coliz + 50 trajets + 50 colis (bulk-data.ts).
+// Recrée les données de démo : nouveaux comptes @demo.coliz + 54 trajets + 50 colis (bulk-data.ts).
 // Ne touche JAMAIS aux vrais comptes (seuls les emails @demo.coliz sont concernés)
 // ni aux trajets/colis qui ont déjà une réservation.
 import { NextResponse } from "next/server";
@@ -82,7 +82,7 @@ export async function GET(req: Request) {
     where: { sender: { email: { endsWith: "@demo.coliz" } }, bookings: { none: {} } },
   });
 
-  // 3) Création des 50 trajets et 50 colis
+  // 3) Création des 54 trajets et 50 colis
   const trips = buildTrips(now, travelerIds.length);
   const parcels = buildParcels(trips, senderIds.length);
 

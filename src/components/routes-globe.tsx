@@ -52,7 +52,7 @@ function bend(pts: LngLat[], a: LngLat, b: LngLat): LngLat[] {
   const forward = ka < kb;
   const h = hashOf(forward ? `${ka}>${kb}` : `${kb}>${ka}`);
   const side = (h % 2 === 0 ? 1 : -1) * (forward ? 1 : -1);
-  const curve = 0.14 + 0.08 * (((h >>> 1) % 3) / 2);
+  const curve = 0.06 + 0.05 * (((h >>> 1) % 3) / 2);
   const nx = -dy / len;
   const ny = dx / len;
 
@@ -236,7 +236,7 @@ export function RoutesGlobe() {
               label: c.label,
               // Les villes les plus actives passent en premier pour leur nom et ont un point plus gros.
               rank: -c.w,
-              r: c.real ? 3 + 6 * Math.sqrt(c.w / maxW) : 3,
+              r: c.real ? 2.5 + 3.5 * Math.sqrt(c.w / maxW) : 2.5,
               real: c.real ? 1 : 0,
             },
             geometry: { type: "Point" as const, coordinates: c.c },
@@ -249,7 +249,7 @@ export function RoutesGlobe() {
           const maxLocal = Math.max(1, ...mine.map((l) => l.count));
           return linesOf(mine, (r) => {
             const l = r as Link_;
-            return l.real ? { w: 1.4 + 2.6 * Math.sqrt(l.count / maxLocal), o: 0.9 } : { w: 1.5, o: 0.45 };
+            return l.real ? { w: 1 + 1.2 * Math.sqrt(l.count / maxLocal), o: 0.6 } : { w: 1, o: 0.3 };
           });
         };
 
@@ -299,10 +299,21 @@ export function RoutesGlobe() {
           // Les arcs de la ville choisie (vides au repos), sous les points.
           map.addSource("sel-lines", { type: "geojson", data: EMPTY });
           map.addLayer({
+            id: "sel-lines-casing",
+            type: "line",
+            source: "sel-lines",
+            layout: { "line-cap": "round", "line-join": "round" },
+            paint: {
+              "line-color": "#FFFFFF",
+              "line-width": ["interpolate", ["linear"], ["zoom"], base, ["+", ["get", "w"], 2], maxZ, ["*", ["+", ["get", "w"], 2], 0.5]],
+              "line-opacity": ["*", ["get", "o"], 0.7],
+            },
+          });
+          map.addLayer({
             id: "sel-lines",
             type: "line",
             source: "sel-lines",
-            layout: { "line-cap": "round" },
+            layout: { "line-cap": "round", "line-join": "round" },
             paint: {
               "line-color": BLUE,
               "line-width": ["interpolate", ["linear"], ["zoom"], base, ["get", "w"], maxZ, ["*", ["get", "w"], 0.5]],

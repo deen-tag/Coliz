@@ -49,6 +49,8 @@ function ConnexionForm() {
   const registered = params.get("registered") === "1";
   // Venu de « Proposer un trajet » : la page garde la couleur de la marque ; seuls les textes changent.
   const isTravelerFlow = callbackUrl?.startsWith("/trajets/nouveau") ?? false;
+  // Venu de « Publier mon colis ».
+  const isParcelFlow = !tripId && (callbackUrl?.startsWith("/colis/nouveau") ?? false);
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-10 max-w-sm mx-auto">
@@ -59,14 +61,16 @@ function ConnexionForm() {
       </div>
       {tripId && <JourneySteps current={4} />}
       <h1 className="text-2xl font-extrabold tracking-tight text-ink mb-1">
-        {tripId ? "Connectez-vous pour réserver" : isTravelerFlow ? "Connectez-vous pour publier votre trajet" : "Se connecter"}
+        {tripId ? "Connectez-vous pour réserver" : isTravelerFlow ? "Connectez-vous pour publier votre trajet" : isParcelFlow ? "Connectez-vous pour publier votre colis" : "Se connecter"}
       </h1>
       <p className="text-sm text-ink-muted mb-6">
         {tripId
           ? "Vous reviendrez directement sur ce trajet."
           : isTravelerFlow
             ? "Vous reviendrez directement sur la publication de votre trajet."
-            : "Accédez à votre espace Coliz."}
+            : isParcelFlow
+              ? "Vous reviendrez directement sur la publication de votre colis."
+              : "Accédez à votre espace Coliz."}
       </p>
       {registered && (
         <p className="mb-5 rounded-control bg-success-light text-success text-sm px-4 py-3">

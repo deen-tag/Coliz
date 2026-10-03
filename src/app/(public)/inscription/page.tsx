@@ -26,6 +26,8 @@ function InscriptionForm() {
   const tripId = tripIdFromCallback(callbackUrl);
   // Venu de « Proposer un trajet » : on reste dans la couleur du voyageur jusqu'au bout.
   const isTravelerFlow = callbackUrl?.startsWith("/trajets/nouveau") ?? false;
+  // Venu de « Publier mon colis ».
+  const isParcelFlow = !tripId && (callbackUrl?.startsWith("/colis/nouveau") ?? false);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -67,14 +69,16 @@ function InscriptionForm() {
       </div>
       {tripId && <JourneySteps current={4} />}
       <h1 className="text-2xl font-extrabold tracking-tight text-ink mb-1">
-        {tripId ? "Créez votre compte pour réserver" : isTravelerFlow ? "Créez votre compte pour publier votre trajet" : "Créer un compte"}
+        {tripId ? "Créez votre compte pour réserver" : isTravelerFlow ? "Créez votre compte pour publier votre trajet" : isParcelFlow ? "Créez votre compte pour publier votre colis" : "Créer un compte"}
       </h1>
       <p className="text-sm text-ink-muted mb-6">
         {tripId
           ? "Vous reviendrez directement sur ce trajet."
           : isTravelerFlow
             ? "Gagnez de l'argent en transportant un colis sur un trajet que vous faites déjà."
-            : "Envoyez ou transportez des colis en quelques minutes."}
+            : isParcelFlow
+              ? "Vous reviendrez directement sur la publication de votre colis."
+              : "Envoyez ou transportez des colis en quelques minutes."}
       </p>
       {tripId && <AuthTripContext tripId={tripId} />}
 

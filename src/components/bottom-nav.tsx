@@ -7,10 +7,10 @@ import { HomeIcon, SearchIcon, MessageIcon, UserIcon, ActivityIcon } from "@/com
 import { Avatar } from "@/components/avatar";
 import { useMyAvatar } from "@/components/use-my-avatar";
 
-// Navigation mobile compacte (brief UI/UX §4) : Accueil / Rechercher / Activité / Messages / Profil.
+// Navigation mobile compacte (brief UI/UX §4) : Mon espace / Rechercher / Activité / Messages / Profil.
 // "Activité" regroupe Mes colis, Mes voyages, Réservations et Portefeuille sur /activite.
 const TABS = [
-  { href: "/dashboard", label: "Accueil", Icon: HomeIcon },
+  { href: "/dashboard", label: "Mon espace", Icon: HomeIcon },
   { href: "/recherche", label: "Rechercher", Icon: SearchIcon },
   { href: "/activite", label: "Activité", Icon: ActivityIcon },
   { href: "/messagerie", label: "Messages", Icon: MessageIcon },

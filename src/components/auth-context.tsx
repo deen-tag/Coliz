@@ -9,7 +9,8 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 // Sur connexion / inscription : si l'on vient d'un trajet, on le rappelle
 // pour que l'utilisateur sache pourquoi on lui demande un compte et où il revient.
 export function tripIdFromCallback(callbackUrl: string | null): string | null {
-  return callbackUrl?.match(/^\/trajets\/([^/?#]+)/)?.[1] ?? null;
+  // « /trajets/nouveau » (publier un trajet) n'est pas un trajet à réserver.
+  return callbackUrl?.match(/^\/trajets\/(?!nouveau(?:[/?#]|$))([^/?#]+)/)?.[1] ?? null;
 }
 
 export function AuthTripContext({ tripId, label = "Le trajet que vous avez choisi" }: { tripId: string; label?: string }) {

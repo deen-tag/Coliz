@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const { data: session } = useSession();
   const { data } = useSWR("/api/dashboard", fetcher);
   const { data: bookings } = useSWR("/api/bookings", fetcher);
-  const [q, setQ] = useState({ from: "", to: "" });
+  const [q, setQ] = useState({ to: "" });
 
   const actions = computeActions(bookings);
   const firstName = (session?.user?.name ?? "").split(" ")[0];
@@ -50,7 +50,6 @@ export default function DashboardPage() {
   function search(e: React.FormEvent) {
     e.preventDefault();
     const p = new URLSearchParams();
-    if (q.from.trim()) p.set("from", q.from.trim());
     if (q.to.trim()) p.set("to", q.to.trim());
     router.push(`/recherche?${p.toString()}`);
   }
@@ -107,10 +106,7 @@ export default function DashboardPage() {
       {/* Recherche : directement sur le fond, pas dans une carte de plus */}
       <form onSubmit={search} className="mb-10 space-y-3">
         <h2 className="text-base font-bold tracking-tight text-ink">Chercher un trajet</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <IconField icon={<MapPinIcon size={18} />} placeholder="Départ" value={q.from} onChange={(e) => setQ({ ...q, from: e.target.value })} />
-          <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} />
-        </div>
+        <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} />
         <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
       </form>
 

@@ -4,9 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { Card, PrimaryButton } from "@/components/ui";
-import { DateField } from "@/components/date-field";
 import { IconField } from "@/components/form-field";
-import { CalendarIcon, CheckBadgeIcon, ClockIcon, MapPinIcon, PackageIcon, SuitcaseIcon } from "@/components/icons";
+import { CheckBadgeIcon, MapPinIcon, PackageIcon, SuitcaseIcon } from "@/components/icons";
 
 type Role = "sender" | "traveler";
 
@@ -69,33 +68,17 @@ export function HeroChoice() {
       <div id="accueil-panneau" role="tabpanel" className="mt-3">
         {role === "sender" ? (
           <Card>
-            <p className="text-sm text-ink-muted mb-4">Trouvez un voyageur qui fait déjà le trajet.</p>
+            <p className="text-sm text-ink-muted mb-4">Trouvez un voyageur qui va là où vous envoyez votre colis.</p>
             <form action="/recherche" className="space-y-3">
-              <div className="grid sm:grid-cols-2 gap-3">
-                <IconField name="from" label="Départ" placeholder="Ville de départ" icon={<MapPinIcon size={18} />} />
-                <IconField name="to" label="Destination" placeholder="Ville d'arrivée" icon={<MapPinIcon size={18} />} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <DateField name="date" label="Date de départ" placeholder="Toutes les dates" icon={<CalendarIcon size={18} />} />
-                <label className="block">
-                  <span className="block text-sm font-semibold text-ink mb-1.5 whitespace-nowrap">Période flexible</span>
-                  <span className="relative block">
-                    <ClockIcon size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink" />
-                    <select
-                      name="flex"
-                      defaultValue="3"
-                      className="w-full rounded-control border border-line bg-surface pl-11 pr-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
-                    >
-                      <option value="0">Date exacte</option>
-                      <option value="3">± 3 jours</option>
-                      <option value="7">± 7 jours</option>
-                      <option value="15">± 15 jours</option>
-                    </select>
-                  </span>
-                </label>
-              </div>
+              <IconField name="to" label="Où va votre colis ?" placeholder="Ville d'arrivée" icon={<MapPinIcon size={18} />} />
               <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
             </form>
+            <p className="mt-4 text-center text-sm text-ink-muted">
+              Aucun trajet ne convient ?{" "}
+              <Link href="/colis/nouveau" className="font-semibold text-primary underline underline-offset-2">
+                Publier mon colis
+              </Link>
+            </p>
           </Card>
         ) : (
           <Card className="!bg-primary-light !border-primary/20">
@@ -112,7 +95,7 @@ export function HeroChoice() {
               ))}
             </ul>
             <Link href="/trajets/nouveau" className="block mt-5">
-              <PrimaryButton>Proposer un trajet</PrimaryButton>
+              <PrimaryButton>Publier mon trajet</PrimaryButton>
             </Link>
           </Card>
         )}

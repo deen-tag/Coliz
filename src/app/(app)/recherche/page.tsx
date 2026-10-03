@@ -6,16 +6,13 @@ import useSWR from "swr";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, VerifiedBadge, TransportModeBadge, PrimaryButton, SecondaryButton } from "@/components/ui";
 import { ResultsMap } from "@/components/results-map";
-import { DateField } from "@/components/date-field";
-import { IconField, IconSelect } from "@/components/form-field";
-import { MapPinIcon, CalendarIcon, ClockIcon, ChevronRightIcon, StarIcon } from "@/components/icons";
+import { IconField } from "@/components/form-field";
+import { MapPinIcon, ChevronRightIcon, StarIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { JourneySteps } from "@/components/journey-steps";
 import { RouteLine, TrustStrip, formatPrice, formatTripMoment } from "@/components/trip-parts";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
-const DATE_FMT: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
 
 export default function RecherchePage() {
   return (
@@ -32,12 +29,10 @@ function RechercheContent() {
   const parcelId = params.get("parcelId");
   const from = params.get("from");
   const to = params.get("to");
-  const date = params.get("date");
-  const flex = params.get("flex") ?? "3";
 
   // Sans recherche préalable, le formulaire est ouvert ; sinon il se replie
   // en un résumé modifiable pour laisser la place aux résultats.
-  const hasSearch = Boolean(from || to || date);
+  const hasSearch = Boolean(from || to);
   const [editing, setEditing] = useState(!hasSearch);
 
   const endpoint = parcelId
@@ -45,7 +40,6 @@ function RechercheContent() {
     : `/api/trips/search-public?${new URLSearchParams({
         ...(from ? { from } : {}),
         ...(to ? { to } : {}),
-        ...(date ? { date, flex } : {}),
       })}`;
 
   const { data, isLoading } = useSWR(endpoint, fetcher);
@@ -78,11 +72,7 @@ function RechercheContent() {
   }
 
   const routeLabel = from && to ? `${from} → ${to}` : from ? `Depuis ${from}` : to ? `Vers ${to}` : "Tous les trajets";
-  const periodLabel = date
-    ? Number(flex) > 0
-      ? `Départ entre le ${addDays(date, -Number(flex))} et le ${addDays(date, Number(flex))}`
-      : `Départ le ${addDays(date, 0)}`
-    : "Toutes les dates";
+  const periodLabel = "Du départ le plus proche au plus lointain";
 
   const count = parcelId ? (results?.length ?? 0) : total;
   const title = isLoading
@@ -99,7 +89,7 @@ function RechercheContent() {
 
       {!parcelId &&
         (editing ? (
-          <SearchForm from={from ?? ""} to={to ?? ""} date={date ?? ""} flex={flex} />
+          <SearchForm to={to ?? ""} />
         ) : (
           <Card className="mb-6 !p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-control bg-primary-light text-primary flex items-center justify-center shrink-0">
@@ -142,7 +132,7 @@ function RechercheContent() {
         <Card className="text-center">
           <p className="font-medium text-ink mb-1.5">Aucun trajet ne correspond pour le moment.</p>
           <p className="text-sm text-ink-muted mb-5">
-            Essayez d&apos;élargir la période ou de changer de ville. Vous pouvez aussi publier votre colis : vous
+            Essayez de changer de ville. Vous pouvez aussi publier votre colis : vous
             êtes prévenu dès qu&apos;un voyageur correspond à votre trajet.
           </p>
           <div className="space-y-2.5">
@@ -226,21 +216,16 @@ function TripResultCard({ r, parcelId }: { r: any; parcelId: string | null }) {
   );
 }
 
-// Formulaire de recherche rappelé en haut de page : on peut changer une ville
-// ou une date sans repasser par l'accueil.
-function SearchForm({ from, to, date, flex }: { from: string; to: string; date: string; flex: string }) {
+// Formulaire de recherche rappelé en haut de page : on peut changer la destination
+// sans repasser par l'accueil.
+function SearchForm({ to }: { to: string }) {
   const router = useRouter();
-  const [f, setF] = useState({ from, to, date, flex });
+  const [f, setF] = useState({ to });
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const q = new URLSearchParams();
-    if (f.from.trim()) q.set("from", f.from.trim());
     if (f.to.trim()) q.set("to", f.to.trim());
-    if (f.date) {
-      q.set("date", f.date);
-      q.set("flex", f.flex);
-    }
     router.push(`/recherche?${q.toString()}`);
   }
 
@@ -250,26 +235,8 @@ function SearchForm({ from, to, date, flex }: { from: string; to: string; date: 
         <h1 className="text-lg font-extrabold tracking-tight text-ink">Où voulez-vous envoyer votre colis ?</h1>
         <p className="text-sm text-ink-muted mt-0.5">Coliz trouve les voyageurs qui font déjà ce trajet.</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <IconField label="Départ" icon={<MapPinIcon size={18} />} placeholder="Ville de départ" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
-        <IconField label="Destination" icon={<MapPinIcon size={18} />} placeholder="Ville d'arrivée" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <DateField label="Date de départ" value={f.date} onChange={(v) => setF({ ...f, date: v })} placeholder="Toutes les dates" icon={<CalendarIcon size={18} />} />
-        <IconSelect label="Période flexible" icon={<ClockIcon size={18} />} value={f.flex} onChange={(e) => setF({ ...f, flex: e.target.value })}>
-          <option value="0">Date exacte</option>
-          <option value="3">± 3 jours</option>
-          <option value="7">± 7 jours</option>
-          <option value="15">± 15 jours</option>
-        </IconSelect>
-      </div>
+      <IconField label="Destination" icon={<MapPinIcon size={18} />} placeholder="Ville d'arrivée" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
       <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
     </Card>
   );
-}
-
-function addDays(dateStr: string, days: number) {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + days);
-  return d.toLocaleDateString("fr-FR", DATE_FMT);
 }

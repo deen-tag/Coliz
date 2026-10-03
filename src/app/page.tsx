@@ -57,7 +57,7 @@ const TRUST: { Icon: (p: IconProps) => JSX.Element; title: string; text: string;
 
 // Le voyage du colis : ce que Coliz fait réellement, dans l'ordre.
 const JOURNEY: { color: string; title: string; text: string; code?: string }[] = [
-  { color: "#3E9BB0", title: "Des identités vérifiées", text: "Expéditeurs et voyageurs sont vérifiés par document d'identité." },
+  { color: "#3E9BB0", title: "Des identités vérifiées", text: "Chaque membre est vérifié par document d'identité." },
   { color: "#5F9599", title: "Une mise en relation directe", text: "Coliz vous met en contact avec un voyageur qui fait déjà le trajet." },
   { color: "#808F82", title: "Un code à la remise", text: "Quand vous lui confiez le colis, vous lui donnez un code : la prise en charge est confirmée.", code: "Code de remise" },
   { color: "#A0896C", title: "Un colis suivi", text: "Chaque étape du trajet est tracée dans l'application, jusqu'à l'arrivée." },
@@ -152,13 +152,19 @@ export default async function HomePage() {
       <section className="px-5 py-14 text-center">
         <h2 className="text-[28px] leading-[1.1] font-extrabold tracking-tight text-ink mb-5">Prêt à faire voyager votre colis ?</h2>
         <div className="grid sm:grid-cols-2 gap-3 max-w-lg mx-auto">
-          <Link href="/colis/nouveau" className="rounded-2xl bg-sender text-white font-bold py-4">Envoyer un colis</Link>
-          <Link href="/trajets/nouveau" className="rounded-2xl bg-traveler text-white font-bold py-4">Proposer un trajet</Link>
+          <Link href="/colis/nouveau" className="rounded-2xl bg-sender text-white py-4 px-4 text-center">
+            <span className="block font-bold">Publier mon colis</span>
+            <span className="block text-xs text-white/85 mt-0.5">Soyez prévenu quand un trajet correspond</span>
+          </Link>
+          <Link href="/trajets/nouveau" className="rounded-2xl bg-traveler text-white py-4 px-4 text-center">
+            <span className="block font-bold">Publier mon trajet</span>
+            <span className="block text-xs text-white/85 mt-0.5">Recevez des demandes de colis</span>
+          </Link>
         </div>
       </section>
 
       <footer className="text-center text-xs text-ink-muted/70 pb-10">
-        Coliz est une marketplace mettant en relation expéditeurs et voyageurs. Coliz n&apos;est ni transporteur ni assureur.
+        Coliz met en relation ceux qui envoient un colis et ceux qui voyagent. Coliz n&apos;est ni transporteur ni assureur.
       </footer>
     </main>
   );

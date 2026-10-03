@@ -35,8 +35,8 @@ export async function GET(req: Request) {
   const [trips, total] = await Promise.all([
     prisma.trip.findMany({
       where,
-      // Les derniers trajets mis en ligne d'abord (à égalité : départ le plus proche, puis id pour un ordre stable).
-      orderBy: [{ createdAt: "desc" }, { departureAt: "asc" }, { id: "asc" }],
+      // Du départ le plus proche au plus lointain (puis id pour un ordre stable entre deux pages).
+      orderBy: [{ departureAt: "asc" }, { id: "asc" }],
       skip: offset,
       take: limit,
       include: { traveler: { select: { firstName: true, avatarUrl: true, ratingAverage: true, ratingCount: true, identityVerifiedAt: true } } },

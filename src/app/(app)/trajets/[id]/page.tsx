@@ -74,7 +74,9 @@ export default function TrajetDetailPage() {
   }
 
   const isOwner = (session?.user as any)?.id === trip.traveler.id;
-  const bookable = trip.remainingParcels > 0 && ["PUBLISHED", "PARTIALLY_BOOKED"].includes(trip.status);
+  // Un trajet n'accepte plus de demandes une fois parti.
+  const departed = new Date(trip.departureAt).getTime() <= Date.now();
+  const bookable = !departed && trip.remainingParcels > 0 && ["PUBLISHED", "PARTIALLY_BOOKED"].includes(trip.status);
   const departureTime = formatTripTime(trip.departureAt);
   const places = trip.remainingParcels;
 
@@ -90,7 +92,7 @@ export default function TrajetDetailPage() {
             {shortCity(trip.originLabel)} <span className="text-ink-muted font-normal">→</span> {shortCity(trip.destinationLabel)}
           </h1>
           {/* Le statut n'apporte rien à un expéditeur tant que le trajet est réservable. */}
-          {(isOwner || !bookable) && <StatusBadge status={trip.status} />}
+          {(isOwner || (!bookable && !departed)) && <StatusBadge status={trip.status} />}
         </div>
       </div>
 
@@ -238,7 +240,7 @@ export default function TrajetDetailPage() {
         </div>
       ) : (
         <div className="text-center py-3">
-          <p className="text-sm text-ink-muted mb-4">Ce trajet n&apos;a plus de place disponible.</p>
+          <p className="text-sm text-ink-muted mb-4">{departed ? "Ce trajet est déjà parti." : "Ce trajet n'a plus de place disponible."}</p>
           <Link href="/recherche">
             <SecondaryButton className="w-auto px-6">Voir d&apos;autres trajets</SecondaryButton>
           </Link>

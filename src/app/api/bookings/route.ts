@@ -30,6 +30,10 @@ export async function POST(req: Request) {
   if (parcel.senderId !== user.id) {
     return NextResponse.json({ error: "Ce colis ne vous appartient pas" }, { status: 403 });
   }
+  // Un trajet n'accepte plus de demandes une fois parti.
+  if (trip.departureAt.getTime() <= Date.now()) {
+    return NextResponse.json({ error: "Ce trajet est déjà parti" }, { status: 422 });
+  }
   if (trip.remainingParcels < parcel.parcelCount) {
     return NextResponse.json({ error: "Capacité insuffisante sur ce trajet" }, { status: 422 });
   }

@@ -121,7 +121,7 @@ export default function BookingScreen() {
       {/* ── Actions selon le statut et le rôle ── */}
       {!isSender && b.status === "REQUESTED" ? (
         <View style={{ gap: 10, marginBottom: 14 }}>
-          <Button title="Accepter la demande" icon="checkmark" onPress={accept} loading={busy === "accept"} />
+          <Button title="Accepter la demande" icon="checkmark" variant="traveler" onPress={accept} loading={busy === "accept"} />
           <View style={{ flexDirection: "row", gap: 10 }}>
             <Button title="Proposer un prix" variant="secondary" style={{ flex: 1 }} onPress={() => setPriceOpen(true)} />
             <Button title="Refuser" variant="secondary" style={{ flex: 1 }} onPress={refuse} loading={busy === "refuse"} />
@@ -160,7 +160,7 @@ export default function BookingScreen() {
           />
         </>
       ) : null}
-      {b.status === "COMPLETED" ? <Button title="Donner mon avis" icon="star-outline" onPress={() => router.push(`/review/${b.id}`)} style={{ marginBottom: 14 }} /> : null}
+      {b.status === "COMPLETED" ? <Button title="Donner mon avis" icon="star-outline" variant={isSender ? "primary" : "traveler"} onPress={() => router.push(`/review/${b.id}`)} style={{ marginBottom: 14 }} /> : null}
 
       {/* ── Suivi ── */}
       {timeline ? (
@@ -193,7 +193,7 @@ export default function BookingScreen() {
               <Text style={{ color: colors.muted }}>{isSender ? "Voyageur" : "Expéditeur"}{other.identityVerifiedAt ? " · vérifié" : ""}</Text>
             </View>
           </Pressable>
-          <Button title="Écrire" small icon="chatbubble-outline" onPress={() => router.push(`/chat/${b.id}`)} />
+          <Button title="Écrire" small icon="chatbubble-outline" variant={isSender ? "primary" : "traveler"} onPress={() => router.push(`/chat/${b.id}`)} />
         </View>
       </Card>
 

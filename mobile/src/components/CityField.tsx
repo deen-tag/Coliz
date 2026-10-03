@@ -31,7 +31,7 @@ export function CityField({ label, placeholder = "Ville", value, onChange, icon 
         style={[styles.field, error ? { borderColor: colors.error } : null]}
       >
         <Ionicons name={icon} size={20} color={colors.muted} style={{ marginRight: 8 }} />
-        <Text numberOfLines={1} style={{ flex: 1, fontSize: 16, color: value ? colors.ink : "#9AA5AB" }}>
+        <Text numberOfLines={1} style={{ flex: 1, fontSize: 16, color: value ? colors.ink : colors.placeholder }}>
           {value?.label ?? placeholder}
         </Text>
         {value ? (
@@ -113,7 +113,7 @@ function CityPicker({ visible, title, allowLocation, onClose, onPick }: { visibl
         </View>
         <View style={[styles.field, { marginHorizontal: 16 }]}>
           <Ionicons name="search" size={20} color={colors.muted} style={{ marginRight: 8 }} />
-          <TextInput autoFocus value={q} onChangeText={setQ} placeholder="Tapez une ville…" placeholderTextColor="#9AA5AB" style={{ flex: 1, fontSize: 16, color: colors.ink }} returnKeyType="search" autoCorrect={false} />
+          <TextInput autoFocus value={q} onChangeText={setQ} placeholder="Tapez une ville…" placeholderTextColor={colors.placeholder} style={{ flex: 1, fontSize: 16, color: colors.ink }} returnKeyType="search" autoCorrect={false} />
           {loading ? <ActivityIndicator color={colors.primary} /> : null}
         </View>
         {allowLocation ? (
@@ -134,7 +134,7 @@ function CityPicker({ visible, title, allowLocation, onClose, onPick }: { visibl
             ) : null
           }
           renderItem={({ item }) => (
-            <Pressable onPress={() => onPick(item)} style={({ pressed }) => [styles.result, pressed && { backgroundColor: "#F4F1EA" }]} accessibilityRole="button">
+            <Pressable onPress={() => onPick(item)} style={({ pressed }) => [styles.result, pressed && { backgroundColor: colors.pressed }]} accessibilityRole="button">
               <Ionicons name="location-outline" size={20} color={colors.muted} style={{ marginRight: 12 }} />
               <Text style={{ flex: 1, fontSize: 16, color: colors.ink }}>{item.label}</Text>
             </Pressable>

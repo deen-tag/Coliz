@@ -91,7 +91,7 @@ function Bookings({ items }: { items: BookingListItem[] }) {
             <Text style={{ fontWeight: "700", fontSize: 16, color: colors.ink }}>{shortCity(b.originLabel)} → {shortCity(b.destinationLabel)}</Text>
             <Text style={{ color: colors.muted, marginTop: 3 }}>{dateShort(b.departureAt)} · avec {b.counterpart}</Text>
           </View>
-          <Text style={{ fontWeight: "800", color: colors.primary }}>{eur(b.role === "sender" ? b.totalAmount : b.contributionAmount)}</Text>
+          <Text style={{ fontWeight: "800", color: b.role === "sender" ? colors.primary : colors.traveler }}>{eur(b.role === "sender" ? b.totalAmount : b.contributionAmount)}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
           <Badge label={info.title} tone={info.tone === "neutral" ? "neutral" : info.tone} />

@@ -59,7 +59,7 @@ export function DateField({ label, value, onChange, withTime, minimumDate, error
       <Text style={styles.label}>{label}</Text>
       <Pressable onPress={open} style={[styles.field, error ? { borderColor: colors.error } : null]} accessibilityRole="button" accessibilityLabel={`${label} : ${text}`}>
         <Ionicons name="calendar-outline" size={20} color={colors.muted} style={{ marginRight: 8 }} />
-        <Text style={{ flex: 1, fontSize: 16, color: value ? colors.ink : "#9AA5AB" }}>{text}</Text>
+        <Text style={{ flex: 1, fontSize: 16, color: value ? colors.ink : colors.placeholder }}>{text}</Text>
         {clearable && value ? (
           <Pressable onPress={() => onChange(null)} hitSlop={12} accessibilityLabel="Effacer la date">
             <Ionicons name="close-circle" size={20} color={colors.muted} />

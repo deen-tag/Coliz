@@ -34,7 +34,7 @@ function Inner() {
           : <EmptyState icon="chatbubble-ellipses-outline" title="Aucune conversation" text="Une conversation s'ouvre automatiquement dès qu'une demande de réservation est envoyée." />
         }
         renderItem={({ item }) => (
-          <Pressable onPress={() => router.push(`/chat/${item.bookingId}`)} style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, minHeight: 72 }, pressed && { backgroundColor: "#F4F1EA" }]} accessibilityRole="button">
+          <Pressable onPress={() => router.push(`/chat/${item.bookingId}`)} style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, minHeight: 72 }, pressed && { backgroundColor: colors.pressed }]} accessibilityRole="button">
             <Avatar name={item.otherUser.firstName} uri={item.otherUser.avatarUrl} size={48} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

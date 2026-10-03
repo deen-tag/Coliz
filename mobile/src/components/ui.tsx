@@ -88,7 +88,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input({ label, e
         {icon ? <Ionicons name={icon} size={20} color={colors.muted} style={{ marginRight: 8, marginTop: rest.multiline ? 14 : 0 }} /> : null}
         <TextInput
           ref={ref}
-          placeholderTextColor="#9AA5AB"
+          placeholderTextColor={colors.placeholder}
           style={[styles.input, rest.multiline && { minHeight: 90, textAlignVertical: "top", paddingTop: 14 }, style]}
           secureTextEntry={hidden}
           onFocus={(e) => {
@@ -126,7 +126,7 @@ export function Card({ children, style, onPress }: { children: React.ReactNode; 
 
 type Tone = "neutral" | "info" | "success" | "warning" | "error" | "traveler";
 const TONES: Record<Tone, { bg: string; fg: string }> = {
-  neutral: { bg: "#EEF0F1", fg: colors.muted },
+  neutral: { bg: colors.neutralBg, fg: colors.muted },
   info: { bg: colors.primaryLight, fg: colors.primary },
   success: { bg: colors.successLight, fg: colors.success },
   warning: { bg: colors.warningLight, fg: colors.warning },
@@ -211,7 +211,7 @@ export function Row({ icon, title, subtitle, onPress, right, danger }: { icon?: 
     </View>
   );
   return onPress ? (
-    <Pressable onPress={onPress} style={({ pressed }) => pressed && { backgroundColor: "#F4F1EA" }} accessibilityRole="button">
+    <Pressable onPress={onPress} style={({ pressed }) => pressed && { backgroundColor: colors.pressed }} accessibilityRole="button">
       {content}
     </Pressable>
   ) : (
@@ -256,7 +256,7 @@ export function Loading({ label }: { label?: string }) {
 }
 
 export function Skeleton({ height = 90, style }: { height?: number; style?: StyleProp<ViewStyle> }) {
-  return <View style={[{ height, borderRadius: radius.card, backgroundColor: "#EFEBE3", marginBottom: 12 }, style]} />;
+  return <View style={[{ height, borderRadius: radius.card, backgroundColor: colors.track, marginBottom: 12 }, style]} />;
 }
 export function SkeletonList({ count = 4 }: { count?: number }) {
   return (
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   badge: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, alignSelf: "flex-start" },
   row: { flexDirection: "row", alignItems: "center", paddingVertical: 14, paddingHorizontal: 16, minHeight: 60 },
   rowIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: colors.primaryLight, alignItems: "center", justifyContent: "center", marginRight: 14 },
-  segment: { flexDirection: "row", backgroundColor: "#EFEBE3", borderRadius: radius.control, padding: 4, marginBottom: 14 },
+  segment: { flexDirection: "row", backgroundColor: colors.track, borderRadius: radius.control, padding: 4, marginBottom: 14 },
   segItem: { flex: 1, minHeight: 40, alignItems: "center", justifyContent: "center", borderRadius: 9 },
   segActive: { backgroundColor: colors.surface, ...shadow, shadowOpacity: 0.08, elevation: 1 },
   chip: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, minHeight: 44, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.line, backgroundColor: colors.surface, marginRight: 8, marginBottom: 8 },

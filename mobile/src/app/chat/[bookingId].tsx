@@ -82,7 +82,7 @@ export default function Chat() {
         )}
         {sendError ? <Text style={{ color: colors.error, paddingHorizontal: 16, paddingBottom: 6 }}>{sendError}</Text> : null}
         <View style={{ flexDirection: "row", alignItems: "flex-end", padding: 10, paddingBottom: Math.max(insets.bottom, 10), backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.line, gap: 8 }}>
-          <TextInput value={text} onChangeText={setText} placeholder="Votre message…" placeholderTextColor="#9AA5AB" multiline maxLength={2000} style={{ flex: 1, minHeight: 44, maxHeight: 120, backgroundColor: colors.bg, borderRadius: 22, paddingHorizontal: 16, paddingTop: 11, paddingBottom: 11, fontSize: 16, color: colors.ink }} />
+          <TextInput value={text} onChangeText={setText} placeholder="Votre message…" placeholderTextColor={colors.placeholder} multiline maxLength={2000} style={{ flex: 1, minHeight: 44, maxHeight: 120, backgroundColor: colors.bg, borderRadius: 22, paddingHorizontal: 16, paddingTop: 11, paddingBottom: 11, fontSize: 16, color: colors.ink }} />
           <Pressable onPress={send} disabled={!text.trim() || sending} accessibilityLabel="Envoyer" style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: text.trim() ? colors.primary : colors.line, alignItems: "center", justifyContent: "center" }}>
             <Ionicons name="send" size={20} color="#fff" />
           </Pressable>

@@ -9,7 +9,7 @@ import { TripCard } from "@/components/TripCard";
 import { goLogin } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/auth";
 import { useApi } from "@/lib/hooks";
-import { colors } from "@/lib/theme";
+import { colors, radius, shadow } from "@/lib/theme";
 import { bookingStatusInfo } from "@/lib/booking-status";
 import { shortCity } from "@/lib/format";
 import type { BookingListItem, CityChoice, Dashboard, SearchResponse } from "@/lib/types";
@@ -58,32 +58,31 @@ export default function Home() {
         ) : null}
       </View>
 
-      <Card style={{ backgroundColor: colors.primary, borderColor: colors.primary }}>
-        <Text style={{ color: "#fff", fontSize: 20, fontWeight: "800", marginBottom: 4 }}>Vos colis voyagent avec ceux qui voyagent</Text>
-        <Text style={{ color: "rgba(255,255,255,0.85)", marginBottom: 16 }}>Trouvez un voyageur qui fait déjà votre trajet.</Text>
-        <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, paddingBottom: 2 }}>
+      <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
+        <Pressable onPress={() => act("/parcel/new")} style={[{ flex: 1, backgroundColor: colors.primary, borderRadius: radius.card, padding: 16, minHeight: 132 }, shadow]} accessibilityRole="button">
+          <Ionicons name="cube-outline" size={28} color="#fff" />
+          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16, marginTop: 10 }}>J'envoie un colis</Text>
+          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, marginTop: 4 }}>Trouvez un voyageur qui fait déjà le trajet.</Text>
+        </Pressable>
+        <Pressable onPress={() => act("/trip/new")} style={[{ flex: 1, backgroundColor: colors.traveler, borderRadius: radius.card, padding: 16, minHeight: 132 }, shadow]} accessibilityRole="button">
+          <Ionicons name="airplane-outline" size={28} color="#fff" />
+          <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16, marginTop: 10 }}>Je propose un trajet</Text>
+          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, marginTop: 4 }}>Votre trajet peut vous rapporter.</Text>
+        </Pressable>
+      </View>
+
+      <Card>
+        <H2>Chercher un trajet</H2>
+        <View style={{ marginTop: 10 }}>
           <CityField label="Départ" placeholder="D'où part votre colis ?" value={from} onChange={setFrom} icon="radio-button-on-outline" allowLocation />
           <CityField label="Arrivée" placeholder="Où doit-il aller ?" value={to} onChange={setTo} icon="flag-outline" />
         </View>
         <Button
-          title="Rechercher un trajet"
-          variant="secondary"
+          title="Voir les trajets disponibles"
           icon="search"
-          style={{ marginTop: 14, borderColor: "#fff" }}
           onPress={() => router.push({ pathname: "/(tabs)/search", params: { from: from ? shortCity(from.label) : "", to: to ? shortCity(to.label) : "", run: "1" } })}
         />
       </Card>
-
-      <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-        <Pressable onPress={() => act("/parcel/new")} style={{ flex: 1, backgroundColor: colors.primaryLight, borderRadius: 20, padding: 16, minHeight: 112 }} accessibilityRole="button">
-          <Ionicons name="cube-outline" size={28} color={colors.primary} />
-          <Text style={{ color: colors.primary, fontWeight: "800", fontSize: 16, marginTop: 10 }}>J'envoie un colis</Text>
-        </Pressable>
-        <Pressable onPress={() => act("/trip/new")} style={{ flex: 1, backgroundColor: colors.travelerLight, borderRadius: 20, padding: 16, minHeight: 112 }} accessibilityRole="button">
-          <Ionicons name="airplane-outline" size={28} color={colors.traveler} />
-          <Text style={{ color: colors.traveler, fontWeight: "800", fontSize: 16, marginTop: 10 }}>Je propose un trajet</Text>
-        </Pressable>
-      </View>
 
       {todo.length > 0 ? (
         <>

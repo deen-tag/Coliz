@@ -87,7 +87,7 @@ const config: ExpoConfig = {
     stripePublishableKey: settings.stripePublishableKey,
     hasAndroidMapsKey: Boolean(settings.googleMapsAndroidKey),
     // Rempli automatiquement par la commande « eas init » (identifiant de votre projet Expo).
-    eas: { projectId: process.env.EAS_PROJECT_ID ?? undefined },
+    eas: { projectId: settings.easProjectId || process.env.EAS_PROJECT_ID || undefined },
   },
 };
 

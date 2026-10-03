@@ -3,5 +3,6 @@
   "stripePublishableKey": "",
   "googleMapsAndroidKey": "",
   "bundleId": "app.coliz.mobile",
-  "universalLinkHost": ""
+  "universalLinkHost": "",
+  "easProjectId": "3575767c-eb41-4f8c-93c8-906292a0a59b"
 }

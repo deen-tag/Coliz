@@ -1,88 +1,102 @@
-# Coliz — application mobile (Android + iPhone)
+# Coliz — application mobile
 
-Application **native** (React Native + Expo + TypeScript) branchée sur votre site et votre backend existants.
-Le site web n'est pas modifié dans son fonctionnement : seuls des ajouts ont été faits (voir « Ce qui a changé côté site »).
+Application native **Android** (React Native + Expo SDK 55 + TypeScript), branchée sur le site et son API.
 
-## Pourquoi ces choix (en clair)
-- **React Native + Expo** : un seul code pour Android et iPhone, vrai rendu natif (pas une WebView).
-- **EAS Build (service d'Expo)** : les applications sont fabriquées **dans le cloud**. Vous n'avez besoin ni d'Android Studio, ni de Xcode, ni d'un Mac.
-- **Votre backend est conservé** : Next.js, Prisma, Stripe, Resend, Mapbox restent identiques. L'app parle aux mêmes routes `/api/...`.
+_Dernière mise à jour : 3 octobre 2026._
 
----
-## ÉTAPE 0 — Déployer les modifications du site (obligatoire, une seule fois)
-Des fichiers ont été ajoutés au site (connexion mobile, notifications push, envoi de photos).
-1. Copiez le contenu du dossier `Coliz-main` (qui contient `mobile/`, `src/`, `prisma/`) dans votre dépôt GitHub, comme d'habitude.
-2. Vercel redéploie tout seul. Votre commande `build` exécute déjà `prisma db push` : la nouvelle table `PushToken` est créée automatiquement.
-3. Résultat attendu : le site continue de fonctionner comme avant. Aucune nouvelle variable d'environnement n'est nécessaire (le jeton mobile utilise votre `NEXTAUTH_SECRET` existant).
+## État
 
-## ÉTAPE 1 — Installer les outils sur votre ordinateur (Windows ou Mac)
-1. Allez sur https://nodejs.org → bouton **LTS** → installez (Suivant, Suivant…). Redémarrez l'ordinateur.
-2. Ouvrez un terminal : **Windows** : touche Windows, tapez `PowerShell`, Entrée. **Mac** : Cmd+Espace, tapez `Terminal`, Entrée.
-3. Tapez `node -v` puis Entrée. Résultat attendu : un numéro de version (ex. `v22.x.x`).
-4. Créez un compte gratuit sur https://expo.dev/signup (retenez email + mot de passe).
+- **Android** : une APK de test (profil `preview`) est installée et fonctionne.
+- **iPhone** : pas fait. Il faut un compte Apple Developer payant (voir plus bas).
+- **EAS Update** (mises à jour sans nouvelle APK) : installé (`expo-updates`), **premier envoi pas encore testé**.
 
-## ÉTAPE 2 — Renseigner vos 2 réglages
-Ouvrez `mobile/coliz.config.json` avec le Bloc-notes et remplacez :
-- `apiUrl` : l'adresse de votre site, ex. `https://coliz.vercel.app` (sans `/` à la fin)
-- `stripePublishableKey` : votre clé Stripe **publique** (commence par `pk_test_`). Jamais la clé `sk_`.
-Laissez le reste vide pour l'instant. (`googleMapsAndroidKey` : voir « Carte sur Android » plus bas.)
+## Comment l'appli et le site sont liés
 
-## ÉTAPE 3 — Installer le projet
-Dans le terminal, allez dans le dossier (remplacez le chemin par le vôtre) :
+L'appli parle au site (adresse dans `coliz.config.json`, aujourd'hui `https://coliz-app.vercel.app`) via les routes `/api/...`. Ce sont **deux interfaces séparées** :
+
+| Ce que je change | Visible dans l'appli ? |
+|---|---|
+| Données (trajets, comptes, messages) | Oui, tout de suite |
+| API et base de données du site | Oui, après le déploiement Vercel |
+| Page, design ou texte du **site** | Non |
+| Écrans, couleurs, textes de l'**appli** (`mobile/src`) | Seulement après un build, ou une mise à jour EAS Update |
+| Paquets, permissions, icône, changement de domaine | Seulement après un nouveau build (APK) |
+
+Une nouveauté qui doit exister dans les deux demande du travail des deux côtés : une route `/api/mobile/...` côté site, un écran dans `mobile/src/app/` côté appli.
+
+## Envoyer un changement (depuis Termux)
+
 ```
-cd chemin/vers/Coliz-main/mobile
-npm install
-npx expo install --fix
-```
-Résultat attendu : de longues lignes défilent, puis le terminal rend la main sans mot « ERROR ». Cela peut prendre 3-5 minutes. (`expo install --fix` aligne automatiquement toutes les versions.)
-
-## ÉTAPE 4 — Créer l'APK Android pour tester
-```
-npm install -g eas-cli
-eas login
-eas init
-eas build --platform android --profile preview
-```
-- `eas login` : saisissez votre compte expo.dev.
-- `eas init` : répondez **Y** (oui) à chaque question. Cela crée votre projet Expo.
-- `eas build` : à la question « Generate a new Android Keystore? » répondez **Y**.
-- Attendez 10-20 minutes. Résultat attendu : un **lien** et un **QR code** s'affichent.
-- Sur votre téléphone Android : ouvrez le lien (ou scannez le QR code), téléchargez l'APK, ouvrez-le. Si Android demande « Autoriser l'installation depuis cette source » : acceptez. Installez, ouvrez **Coliz**.
-
-## ÉTAPE 5 — Tester sur iPhone
-Apple impose un compte **Apple Developer (99 $/an)** pour installer sur un vrai iPhone. Je ne peux pas le créer à votre place (paiement + vos informations).
-1. Inscrivez-vous sur https://developer.apple.com/programs/enroll (validation : 1 à 2 jours).
-2. Branchez-vous : `eas device:create` → suivez le lien affiché **depuis votre iPhone** pour enregistrer le téléphone (Réglages > Profil téléchargé > Installer).
-3. `eas build --platform ios --profile preview` → connectez-vous avec votre identifiant Apple quand demandé, acceptez les propositions par défaut.
-4. À la fin, ouvrez le lien depuis l'iPhone et installez. (iOS 16+ : Réglages > Confidentialité et sécurité > **Mode développeur** : activez et redémarrez.)
-Alternative sans iPhone : sur un **Mac** avec Xcode, `eas build --platform ios --profile preview-simulator` donne une app pour le simulateur.
-
-## ÉTAPE 6 — Builds pour une future publication (rien n'est publié)
-```
-eas build --platform android --profile production   # fichier .aab pour Google Play
-eas build --platform ios --profile production       # pour l'App Store (compte Apple requis)
+cd ~/coliz-seed
+# copier les fichiers modifiés (ou dézipper le zip fourni), puis :
+git status --short            # vérifier que seuls les fichiers prévus sont listés
+git add mobile/src            # ou les fichiers précis
+git commit -m "message"
+git push
 ```
 
-## Notifications push
-Après `eas init`, rien d'autre à faire pour Android/iPhone avec le service Expo. Le serveur envoie les push via `exp.host` (aucune clé secrète). **Pour Android**, Google exige en plus un fichier Firebase : https://docs.expo.dev/push-notifications/fcm-credentials/ (je ne peux pas créer votre compte Firebase). Sans lui, tout marche sauf les push Android.
+## Fabriquer l'APK (build)
 
-## Carte sur Android (facultatif)
-iPhone : carte Apple, aucune clé. Android : sans clé, l'app propose des boutons « Ouvrir dans Maps ». Pour la carte intégrée : créez une clé Google Maps (Maps SDK for Android) restreinte à l'app, collez-la dans `googleMapsAndroidKey`, relancez le build.
+Sur **expo.dev** (compte `cloiz`, projet `Coliz`, relié à GitHub) :
 
-## Lancer en mode développement (optionnel)
-`npx expo start` puis scannez le QR avec l'app **Expo Go** — ⚠️ Stripe et les notifications exigent un vrai build (étape 4) : Expo Go ne suffit pas.
+1. **Builds** → **Build from GitHub** (en haut à droite).
+2. Base directory `/mobile` · Platform **Android** · Git ref `main` · EAS Build profile `preview` · Environment **Preview**.
+3. **Confirm** une seule fois, puis ouvrir **Builds**. Le build dure 10 à 15 minutes.
+4. Quand la ligne est verte : ouvrir le build, menu **⋮** de « Build artifact » → télécharger l'APK (le bouton **Install** n'affiche qu'un QR code).
+5. Ouvrir le fichier `.apk` dans Téléchargements. Si Play Protect bloque : **Plus de détails → Installer quand même**. Si « Appli non installée » : réessayer, ou désinstaller l'ancienne version d'abord.
 
-## Ce qui a changé côté site (ajouts uniquement)
-- `src/server/auth/session.ts` : `requireUser()` accepte maintenant aussi `Authorization: Bearer <jeton>` (le cookie web fonctionne comme avant).
-- `src/server/auth/mobile-token.ts` + `src/app/api/mobile/*` : connexion mobile, renouvellement, `/me`, enregistrement des appareils push. Le jeton s'invalide si le mot de passe change ou si le compte est suspendu.
-- `prisma/schema.prisma` : modèle `PushToken` (+ relation sur `User`).
-- `src/server/notifications/service.ts` : envoi push Expo en plus des notifications et emails existants.
-- `src/app/api/uploads/parcel-photo` : envoi de photo de colis (même contrôle du contenu que l'avatar).
-- Messages / demandes / acceptations : les push contiennent l'identifiant de réservation (ouverture directe).
+## Mises à jour sans nouvelle APK (EAS Update)
+
+Configuré dans `app.config.ts` : `runtimeVersion` en politique `fingerprint` (une mise à jour n'est reçue que par les APK dont le code natif est identique) et `updates.url` basée sur l'identifiant du projet. Le canal est `preview` (`eas.json`). Plan gratuit d'Expo : 1 000 utilisateurs actifs par mois.
+
+Envoi d'une mise à jour, depuis Termux (**procédure à valider au premier essai**) :
+
+```
+cd ~/coliz-seed/mobile
+npm install --no-audit --no-fund        # il faut node_modules pour fabriquer la mise à jour
+export EXPO_TOKEN=<jeton>               # voir ci-dessous, ne jamais l'écrire dans le dépôt
+eas update --channel preview --message "texte"
+```
+
+- Le jeton est celui du robot **Termux** (rôle Developer), créé sur expo.dev → Account → Access tokens. Il ne vaut que pour la session Termux en cours.
+- L'appli cherche la mise à jour à l'ouverture et l'affiche à l'ouverture suivante : l'ouvrir **deux fois**.
+- Un changement de paquet, de permission ou d'icône exige toujours un nouveau build.
+
+## Pièges rencontrés (à ne pas refaire)
+
+- **Versions `"*"` dans `package.json`** : `typescript` s'est installé en 7.x et a fait échouer la lecture de `app.config.ts`. Les versions sont maintenant fixées (`typescript ~5.9.2`, `@types/react ~19.2.10`).
+- **`package-lock.json` obligatoire** dans `mobile/` : Expo exige un fichier de versions complet. Après un changement de paquet, le régénérer et l'envoyer sur GitHub.
+- **Ajouter un paquet** : `npx expo install <paquet>` (il choisit la version compatible Expo 55), jamais `npm install <paquet>` à la main.
+- **`npx expo` sans `node_modules`** télécharge Expo 57 au lieu de 55. Toujours faire d'abord `npm install` dans `mobile/`.
+- **Téléphone plein** : `node_modules` pèse plus de 600 Mo. Le supprimer quand on n'en a plus besoin : `rm -rf ~/coliz-seed/mobile/node_modules`. Le build cloud réinstalle tout lui-même.
+- **Lancer les commandes dans le bon dossier** : `~/coliz-seed/mobile` pour l'appli, `~/coliz-seed` pour le site.
+- **Platform « All »** lance aussi iOS, qui échoue sans compte Apple : choisir **Android**.
+- **Environment** du formulaire de build : le remettre sur **Preview** (il revient parfois sur Default ou Production).
+- **Se connecter à l'appli avec le compte de l'autre** : on ne peut pas réserver son propre trajet (« C'est votre trajet »).
+
+## Réglages (`coliz.config.json`)
+
+| Clé | État |
+|---|---|
+| `apiUrl` | `https://coliz-app.vercel.app` |
+| `stripePublishableKey` | Vide : paiement non disponible dans l'appli (clé `pk_` uniquement, jamais `sk_`) |
+| `googleMapsAndroidKey` | Vide : sans clé, l'appli propose des boutons « Ouvrir dans Maps » |
+| `universalLinkHost` | Vide : les liens du site n'ouvrent pas l'appli |
+
+Toute modification de ce fichier demande un nouveau build, car les valeurs sont copiées dans l'APK.
+
+## iPhone
+
+Apple impose un compte Apple Developer (environ 99 $ par an) pour installer sur un vrai iPhone. Sans lui : pas d'APK équivalent, pas de build iOS. Voie gratuite : utiliser le **site** dans Safari (ajout à l'écran d'accueil). `app.config.ts` contient déjà la partie iOS.
+
+## Ce qui a été ajouté côté site pour l'appli
+
+- `src/server/auth/session.ts` : `requireUser()` accepte aussi `Authorization: Bearer <jeton>`.
+- `src/server/auth/mobile-token.ts` et `src/app/api/mobile/*` : connexion mobile, renouvellement, `/me`, appareils push. Le jeton s'invalide si le mot de passe change ou si le compte est suspendu.
+- `prisma/schema.prisma` : modèle `PushToken`.
+- `src/server/notifications/service.ts` : push Expo en plus des notifications et emails.
+- `src/app/api/uploads/parcel-photo` : envoi de photo de colis.
 
 ## Sécurité
-Aucune clé secrète dans l'app (uniquement l'URL du site et la clé Stripe `pk_`). Jeton dans le coffre natif (Keychain / Keystore). Paiement via PaymentSheet Stripe (cartes jamais en contact avec votre serveur). Verrouillage Face ID / empreinte facultatif.
 
-## Correspondance avec le site
-Accueil, recherche (liste + carte), détail trajet, partage, création de colis (photo caméra/galerie), trajets compatibles, création de trajet, réservation (accepter / refuser / négocier / payer / annuler), codes de remise et de réception, suivi, messagerie, avis, incidents, notifications, portefeuille Stripe Connect, vérification d'identité, paramètres, suppression de compte.
-Non repris (usage web) : back-office admin.
+Aucune clé secrète dans l'appli (seulement l'adresse du site et la clé Stripe publique). Jeton de connexion rangé dans le coffre du téléphone. Paiement par la feuille Stripe (les cartes ne passent jamais par le serveur). Verrouillage par empreinte ou Face ID en option.

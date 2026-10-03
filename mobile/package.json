@@ -1,0 +1,49 @@
+{
+  "name": "coliz-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "typecheck": "tsc --noEmit",
+    "build:android-apk": "eas build --platform android --profile preview",
+    "build:android-store": "eas build --platform android --profile production",
+    "build:ios-test": "eas build --platform ios --profile preview",
+    "build:ios-store": "eas build --platform ios --profile production"
+  },
+  "dependencies": {
+    "expo": "~55.0.0",
+    "expo-router": "*",
+    "expo-constants": "*",
+    "expo-linking": "*",
+    "expo-status-bar": "*",
+    "expo-splash-screen": "*",
+    "expo-secure-store": "*",
+    "expo-notifications": "*",
+    "expo-device": "*",
+    "expo-location": "*",
+    "expo-image-picker": "*",
+    "expo-image-manipulator": "*",
+    "expo-local-authentication": "*",
+    "expo-web-browser": "*",
+    "expo-haptics": "*",
+    "expo-system-ui": "*",
+    "@expo/vector-icons": "*",
+    "react": "*",
+    "react-native": "*",
+    "react-native-screens": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-gesture-handler": "*",
+    "react-native-maps": "*",
+    "@react-native-community/netinfo": "*",
+    "@react-native-community/datetimepicker": "*",
+    "@stripe/stripe-react-native": "*",
+    "date-fns": "3.6.0"
+  },
+  "devDependencies": {
+    "typescript": "*",
+    "@types/react": "*"
+  }
+}

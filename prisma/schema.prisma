@@ -66,6 +66,7 @@ model User {
   reviewsWritten     Review[]     @relation("ReviewAuthor")
   reviewsReceived    Review[]     @relation("ReviewTarget")
   notifications      Notification[]
+  pushTokens         PushToken[]
   passwordResetTokens PasswordResetToken[]
   messages           Message[]
   incidents          Incident[]
@@ -513,6 +514,19 @@ model PasswordResetToken {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// Appareils mobiles enregistrés pour les notifications push (app Expo / React Native).
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   // "ios" | "android"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }

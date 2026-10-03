@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   });
 
   const recipientId = booking.senderId === user.id ? booking.travelerId : booking.senderId;
-  await notifyUser(recipientId, "new_message", "Vous avez reçu un nouveau message.");
+  await notifyUser(recipientId, "new_message", "Vous avez reçu un nouveau message.", { bookingId: booking.id });
 
   return NextResponse.json(message, { status: 201 });
 }

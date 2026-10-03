@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Capacité insuffisante sur ce trajet" }, { status: 422 });
   }
 
-  await notifyUser(trip.travelerId, "booking_requested", `Nouvelle demande de réservation pour votre trajet.`);
+  await notifyUser(trip.travelerId, "booking_requested", `Nouvelle demande de réservation pour votre trajet.`, { bookingId: booking.id });
 
   return NextResponse.json(booking, { status: 201 });
 }

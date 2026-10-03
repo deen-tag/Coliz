@@ -22,7 +22,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   }
 
   await prisma.booking.update({ where: { id: booking.id }, data: { status: "ACCEPTED" } });
-  await notifyUser(booking.senderId, "booking_accepted", "Votre demande de réservation a été acceptée. Vous pouvez procéder au paiement.");
+  await notifyUser(booking.senderId, "booking_accepted", "Votre demande de réservation a été acceptée. Vous pouvez procéder au paiement.", { bookingId: booking.id });
 
   return NextResponse.json({ ok: true, status: "ACCEPTED" });
 }

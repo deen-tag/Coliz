@@ -1,0 +1,7 @@
+{
+  "apiUrl": "https://VOTRE-SITE.vercel.app",
+  "stripePublishableKey": "pk_test_REMPLACEZ_MOI",
+  "googleMapsAndroidKey": "",
+  "bundleId": "app.coliz.mobile",
+  "universalLinkHost": ""
+}

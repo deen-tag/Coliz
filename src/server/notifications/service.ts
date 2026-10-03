@@ -24,11 +24,43 @@ const EMAIL_TEMPLATES: Partial<Record<NotificationType, () => { subject: string;
   incident_action_required: emailTemplates.incidentReported,
 };
 
-export async function notifyUser(userId: string, type: NotificationType, content: string) {
+// Push mobile via le service Expo (aucune clé secrète requise côté serveur pour un usage standard).
+// Best-effort : une panne du push ne doit jamais faire échouer l'action de l'utilisateur.
+async function sendPush(userId: string, content: string, data: Record<string, string>) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { notifyPush: true, pushTokens: { select: { token: true } } },
+  });
+  if (!user || !user.notifyPush || user.pushTokens.length === 0) return;
+
+  const res = await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(
+      user.pushTokens.map((t) => ({ to: t.token, sound: "default", title: "Coliz", body: content, data }))
+    ),
+  });
+  if (!res.ok) return;
+
+  // Nettoyage des appareils désinstallés (Expo répond DeviceNotRegistered).
+  const json = (await res.json().catch(() => null)) as { data?: { status: string; details?: { error?: string } }[] } | null;
+  const dead = (json?.data ?? [])
+    .map((r, i) => (r.status === "error" && r.details?.error === "DeviceNotRegistered" ? user.pushTokens[i].token : null))
+    .filter((t): t is string => Boolean(t));
+  if (dead.length) await prisma.pushToken.deleteMany({ where: { token: { in: dead } } });
+}
+
+export async function notifyUser(userId: string, type: NotificationType, content: string, data: Record<string, string> = {}) {
   await prisma.notification.create({ data: { userId, type, content } });
 
+  try {
+    await sendPush(userId, content, { type, ...data });
+  } catch {
+    // push indisponible : la notification reste visible dans l'app
+  }
+
   const template = EMAIL_TEMPLATES[type];
-  if (!template) return; // pas de gabarit email pour ce type -> in-app seulement
+  if (!template) return; // pas de gabarit email pour ce type -> in-app + push seulement
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -38,7 +70,4 @@ export async function notifyUser(userId: string, type: NotificationType, content
 
   const { subject, html } = template();
   await sendEmail(user.email, subject, html);
-
-  // TODO : push web/mobile — brancher un provider (OneSignal, FCM) et respecter
-  // `notifyPush` de la même façon que `notifyEmail` ci-dessus.
 }

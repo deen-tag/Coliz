@@ -82,6 +82,9 @@ const config: ExpoConfig = {
     ["@stripe/stripe-react-native", { enableGooglePay: false }],
   ],
   experiments: { typedRoutes: false },
+  // Mises à jour à distance (EAS Update) : une mise à jour n'est envoyée qu'aux APK dont le code natif est identique.
+  runtimeVersion: { policy: "fingerprint" },
+  updates: { url: settings.easProjectId ? `https://u.expo.dev/${settings.easProjectId}` : undefined },
   extra: {
     apiUrl: settings.apiUrl,
     stripePublishableKey: settings.stripePublishableKey,

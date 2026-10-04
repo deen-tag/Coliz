@@ -89,7 +89,7 @@ function RechercheContent() {
 
       {!parcelId &&
         (editing ? (
-          <SearchForm to={to ?? ""} />
+          <SearchForm from={from ?? ""} to={to ?? ""} />
         ) : (
           <Card className="mb-6 !p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-control bg-primary-light text-primary flex items-center justify-center shrink-0">
@@ -217,14 +217,15 @@ function TripResultCard({ r, parcelId }: { r: any; parcelId: string | null }) {
 }
 
 // Formulaire de recherche rappelé en haut de page : on peut changer la destination
-// sans repasser par l'accueil.
-function SearchForm({ to }: { to: string }) {
+// sans repasser par l'accueil (départ et arrivée).
+function SearchForm({ from, to }: { from: string; to: string }) {
   const router = useRouter();
-  const [f, setF] = useState({ to });
+  const [f, setF] = useState({ from, to });
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const q = new URLSearchParams();
+    if (f.from.trim()) q.set("from", f.from.trim());
     if (f.to.trim()) q.set("to", f.to.trim());
     router.push(`/recherche?${q.toString()}`);
   }
@@ -235,6 +236,7 @@ function SearchForm({ to }: { to: string }) {
         <h1 className="text-lg font-extrabold tracking-tight text-ink">Où voulez-vous envoyer votre colis ?</h1>
         <p className="text-sm text-ink-muted mt-0.5">Coliz trouve les voyageurs qui font déjà ce trajet.</p>
       </div>
+      <IconField label="Départ" icon={<MapPinIcon size={18} />} placeholder="Ville de départ" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
       <IconField label="Destination" icon={<MapPinIcon size={18} />} placeholder="Ville d'arrivée" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
       <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
     </Card>

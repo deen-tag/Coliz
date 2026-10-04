@@ -70,6 +70,7 @@ export function HeroChoice() {
           <Card>
             <p className="text-sm text-ink-muted mb-4">Trouvez un voyageur qui va là où vous envoyez votre colis.</p>
             <form action="/recherche" className="space-y-3">
+              <IconField name="from" label="D'où part votre colis ?" placeholder="Ville de départ" icon={<MapPinIcon size={18} />} />
               <IconField name="to" label="Où va votre colis ?" placeholder="Ville d'arrivée" icon={<MapPinIcon size={18} />} />
               <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
             </form>

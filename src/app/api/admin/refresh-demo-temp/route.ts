@@ -1,6 +1,7 @@
 // ROUTE TEMPORAIRE — à supprimer juste après usage (même principe que seed-demo-bulk-temp).
-// 1) Reporte dans le futur les trajets de démo déjà passés (de 1 mois, ou plus si besoin).
-// 2) Ajoute 30 trajets vers des destinations variées (buildExtraTrips), sans doublon si on relance.
+// 1) Repousse tous les trajets de démo qui partent dans moins de ~3 mois (92 jours) : on les décale de
+//    1 mois, 2 mois… jusqu'à dépasser ce seuil, ce qui garde leur répartition dans le temps.
+// 2) Ajoute 30 trajets vers des destinations variées (buildExtraTrips), à partir de ~3 mois, sans doublon.
 // Ne touche JAMAIS aux vrais comptes (seuls les comptes @demo.coliz sont concernés), ni aux trajets
 // qui ont déjà une réservation. Les colis n'ont plus de date : rien à reporter de ce côté.
 // Ajouter &dry=1 pour voir ce qui serait fait sans rien modifier.
@@ -13,10 +14,12 @@ export const maxDuration = 60;
 
 const SECRET = "coliz-demo-v2-k4p8x";
 const DAY_MS = 24 * 3600 * 1000;
+// La démo « commence » dans ~3 mois : aucun trajet de démo ne part avant.
+const MIN_AHEAD_DAYS = 92;
 
-// Décale d'autant de mois qu'il faut pour que le départ soit dans plus d'un jour.
+// Décale d'autant de mois qu'il faut pour que le départ soit au-delà du seuil (~3 mois).
 function shiftedForward(departureAt: Date, now: Date) {
-  const min = now.getTime() + DAY_MS;
+  const min = now.getTime() + MIN_AHEAD_DAYS * DAY_MS;
   let k = 1;
   let next = new Date(departureAt);
   next.setUTCMonth(next.getUTCMonth() + k);
@@ -34,10 +37,10 @@ export async function GET(req: Request) {
   const dry = url.searchParams.get("dry") === "1";
   const now = new Date();
 
-  // 1) Trajets de démo déjà passés, sans réservation : on les reporte dans le futur.
+  // 1) Trajets de démo qui partent trop tôt (passés ou dans moins de ~3 mois), sans réservation : on les repousse.
   const past = await prisma.trip.findMany({
     where: {
-      departureAt: { lt: now },
+      departureAt: { lt: new Date(now.getTime() + MIN_AHEAD_DAYS * DAY_MS) },
       status: "PUBLISHED",
       bookings: { none: {} },
       traveler: { email: { endsWith: "@demo.coliz" } },
@@ -67,7 +70,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Aucun voyageur de démo trouvé : lance d'abord seed-demo-bulk-temp." }, { status: 409 });
   }
 
-  const extras = buildExtraTrips(now, travelerIds.length);
+  const extras = buildExtraTrips(now, travelerIds.length, MIN_AHEAD_DAYS);
   const upcoming = await prisma.trip.findMany({
     where: { departureAt: { gte: now }, traveler: { email: { endsWith: "@demo.coliz" } } },
     select: { originLabel: true, destinationLabel: true },

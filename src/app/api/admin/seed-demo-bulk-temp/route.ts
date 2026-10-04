@@ -83,7 +83,8 @@ export async function GET(req: Request) {
   });
 
   // 3) Création des 54 trajets et 50 colis
-  const trips = buildTrips(now, travelerIds.length);
+  // Les départs de démo commencent dans ~3 mois (le lancement n'est pas pour demain).
+  const trips = buildTrips(now, travelerIds.length, 92);
   const parcels = buildParcels(trips, senderIds.length);
 
   const createdTrips = await prisma.trip.createMany({

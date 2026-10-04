@@ -321,7 +321,8 @@ function pickProfile(countriesOfProfiles: string[][], wanted: string[], usage: n
   return best === -1 ? fallback : best;
 }
 
-export function buildTrips(now: Date, travelerCount: number): BulkTrip[] {
+// minDays : nombre de jours avant le premier départ (par défaut 2 ; 92 pour une démo qui commence dans ~3 mois).
+export function buildTrips(now: Date, travelerCount: number, minDays = 2): BulkTrip[] {
   const rnd = mulberry32(20261001);
   const usage: number[] = new Array(travelerCount).fill(0);
   const hours: [number, number][] = [[6, 45], [8, 15], [9, 40], [11, 5], [13, 30], [15, 50], [18, 5], [19, 33], [21, 10]];
@@ -335,7 +336,7 @@ export function buildTrips(now: Date, travelerCount: number): BulkTrip[] {
     // Le créneau de date est mélangé (17 est premier avec 50) : sans ça, la liste triée par date montrerait
     // d'abord tous les trajets Algérie, puis tous ceux du Maroc, etc. (les routes sont rangées par pays).
     const slot = (i * 17) % ROUTES.length;
-    dep.setUTCDate(dep.getUTCDate() + 2 + Math.floor((slot * 45) / ROUTES.length) + Math.floor(rnd() * 3));
+    dep.setUTCDate(dep.getUTCDate() + minDays + Math.floor((slot * 45) / ROUTES.length) + Math.floor(rnd() * 3));
     dep.setUTCHours(h, m, 0, 0);
     const durationH = km / SPEED_KMH[mode] + (mode === "PLANE" ? 1.5 : 0.3);
     const arr = new Date(dep.getTime() + durationH * 3600 * 1000);
@@ -512,9 +513,9 @@ const EXTRA_ROUTES: [string, string, Mode][] = [
   ["paris", "budapest", "PLANE"], ["paris", "dublin", "PLANE"], ["paris", "copenhague", "PLANE"],
 ];
 
-// Trajets supplémentaires : départs répartis sur les 60 prochains jours (toujours dans le futur).
+// Trajets supplémentaires : départs répartis sur ~2 mois à partir de minDays jours (toujours dans le futur).
 // travelerIndex tourne sur toute la liste de voyageurs ; relancer produit toujours les mêmes données.
-export function buildExtraTrips(now: Date, travelerCount: number): BulkTrip[] {
+export function buildExtraTrips(now: Date, travelerCount: number, minDays = 3): BulkTrip[] {
   const rnd = mulberry32(20261004);
   const hours: [number, number][] = [[6, 45], [8, 15], [9, 40], [11, 5], [13, 30], [15, 50], [18, 5], [19, 33], [21, 10]];
   return EXTRA_ROUTES.map(([from, to, mode], i) => {
@@ -525,7 +526,7 @@ export function buildExtraTrips(now: Date, travelerCount: number): BulkTrip[] {
     const dep = new Date(now);
     // 7 est premier avec 30 : les dates sont mélangées entre les destinations.
     const slot = (i * 7) % EXTRA_ROUTES.length;
-    dep.setUTCDate(dep.getUTCDate() + 3 + Math.floor((slot * 57) / EXTRA_ROUTES.length) + Math.floor(rnd() * 3));
+    dep.setUTCDate(dep.getUTCDate() + minDays + Math.floor((slot * 57) / EXTRA_ROUTES.length) + Math.floor(rnd() * 3));
     dep.setUTCHours(h, m, 0, 0);
     const durationH = km / SPEED_KMH[mode] + (mode === "PLANE" ? 1.5 : 0.3);
     const arr = new Date(dep.getTime() + durationH * 3600 * 1000);

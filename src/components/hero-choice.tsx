@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { Card, PrimaryButton } from "@/components/ui";
-import { IconField } from "@/components/form-field";
-import { CheckBadgeIcon, MapPinIcon, PackageIcon, SuitcaseIcon } from "@/components/icons";
+import { CityAutocomplete } from "@/components/city-autocomplete";
+import { CheckBadgeIcon, PackageIcon, SuitcaseIcon } from "@/components/icons";
 
 type Role = "sender" | "traveler";
 
@@ -24,7 +25,21 @@ const TRAVELER_POINTS = [
 // Un seul bloc dessous change de contenu (recherche d'un côté, présentation de l'autre),
 // donc rien n'est relégué en bas de page.
 export function HeroChoice() {
+  const router = useRouter();
   const [role, setRole] = useState<Role>("sender");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  // On cherche sur le nom de la ville seul (« Paris », pas « Paris, Île-de-France, France »).
+  const city = (t: string) => t.split(",")[0].trim();
+
+  function search(e: React.FormEvent) {
+    e.preventDefault();
+    const q = new URLSearchParams();
+    if (city(from)) q.set("from", city(from));
+    if (city(to)) q.set("to", city(to));
+    router.push(`/recherche?${q.toString()}`);
+  }
 
   return (
     <div data-role={role}>
@@ -69,9 +84,9 @@ export function HeroChoice() {
         {role === "sender" ? (
           <Card>
             <p className="text-sm text-ink-muted mb-4">Trouvez un voyageur qui va là où vous envoyez votre colis.</p>
-            <form action="/recherche" className="space-y-3">
-              <IconField name="from" label="D'où part votre colis ?" placeholder="Ville de départ" icon={<MapPinIcon size={18} />} />
-              <IconField name="to" label="Où va votre colis ?" placeholder="Ville d'arrivée" icon={<MapPinIcon size={18} />} />
+            <form onSubmit={search} className="space-y-3">
+              <CityAutocomplete label="D'où part votre colis ?" placeholder="Ville de départ" onText={setFrom} />
+              <CityAutocomplete label="Où va votre colis ?" placeholder="Ville d'arrivée" onText={setTo} />
               <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
             </form>
             <p className="mt-4 text-center text-sm text-ink-muted">

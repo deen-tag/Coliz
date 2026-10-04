@@ -7,14 +7,22 @@ type Suggestion = { label: string; lat: number; lng: number };
 
 export function CityAutocomplete({
   label,
-  value,
+  value = null,
   onSelect,
+  onText,
+  defaultText = "",
+  placeholder = "Ville",
 }: {
   label: string;
-  value: { label: string; lat: number; lng: number } | null;
-  onSelect: (v: Suggestion) => void;
+  value?: { label: string; lat: number; lng: number } | null;
+  onSelect?: (v: Suggestion) => void;
+  // Texte courant du champ (saisie libre ou suggestion choisie) : sert aux recherches,
+  // où l'on n'a pas besoin des coordonnées.
+  onText?: (text: string) => void;
+  defaultText?: string;
+  placeholder?: string;
 }) {
-  const [query, setQuery] = useState(value?.label ?? "");
+  const [query, setQuery] = useState(value?.label ?? defaultText);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -42,11 +50,12 @@ export function CityAutocomplete({
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
+            onText?.(e.target.value);
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
-          placeholder="Ville"
+          placeholder={placeholder}
           className="w-full rounded-control border border-line bg-surface pl-11 pr-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
         </span>
@@ -60,7 +69,8 @@ export function CityAutocomplete({
                 type="button"
                 onMouseDown={() => {
                   setQuery(s.label);
-                  onSelect(s);
+                  onSelect?.(s);
+                  onText?.(s.label);
                   setOpen(false);
                 }}
                 className="w-full text-left px-4 py-2.5 text-sm hover:bg-primary-light"

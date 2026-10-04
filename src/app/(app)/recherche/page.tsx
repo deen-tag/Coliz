@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, VerifiedBadge, TransportModeBadge, PrimaryButton, SecondaryButton } from "@/components/ui";
 import { ResultsMap } from "@/components/results-map";
-import { IconField } from "@/components/form-field";
+import { CityAutocomplete } from "@/components/city-autocomplete";
 import { MapPinIcon, ChevronRightIcon, StarIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { JourneySteps } from "@/components/journey-steps";
@@ -221,12 +221,14 @@ function TripResultCard({ r, parcelId }: { r: any; parcelId: string | null }) {
 function SearchForm({ from, to }: { from: string; to: string }) {
   const router = useRouter();
   const [f, setF] = useState({ from, to });
+  // Nom de la ville seul (« Paris », pas « Paris, Île-de-France, France »).
+  const city = (t: string) => t.split(",")[0].trim();
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const q = new URLSearchParams();
-    if (f.from.trim()) q.set("from", f.from.trim());
-    if (f.to.trim()) q.set("to", f.to.trim());
+    if (city(f.from)) q.set("from", city(f.from));
+    if (city(f.to)) q.set("to", city(f.to));
     router.push(`/recherche?${q.toString()}`);
   }
 
@@ -236,8 +238,8 @@ function SearchForm({ from, to }: { from: string; to: string }) {
         <h1 className="text-lg font-extrabold tracking-tight text-ink">Où voulez-vous envoyer votre colis ?</h1>
         <p className="text-sm text-ink-muted mt-0.5">Coliz trouve les voyageurs qui font déjà ce trajet.</p>
       </div>
-      <IconField label="Départ" icon={<MapPinIcon size={18} />} placeholder="Ville de départ" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
-      <IconField label="Destination" icon={<MapPinIcon size={18} />} placeholder="Ville d'arrivée" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
+      <CityAutocomplete label="Départ" placeholder="Ville de départ" defaultText={from} onText={(t) => setF((p) => ({ ...p, from: t }))} />
+      <CityAutocomplete label="Destination" placeholder="Ville d'arrivée" defaultText={to} onText={(t) => setF((p) => ({ ...p, to: t }))} />
       <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
     </Card>
   );

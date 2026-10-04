@@ -6,9 +6,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Card, PrimaryButton, StatusBadge } from "@/components/ui";
-import { BellIcon, ChevronRightIcon, MapPinIcon, PackageIcon, SuitcaseIcon } from "@/components/icons";
+import { BellIcon, ChevronRightIcon, PackageIcon, SuitcaseIcon } from "@/components/icons";
 import { RouteLine, formatTripDate } from "@/components/trip-parts";
-import { IconField } from "@/components/form-field";
+import { CityAutocomplete } from "@/components/city-autocomplete";
+import { searchQuery, type PlaceInput } from "@/lib/search-query";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -42,16 +43,15 @@ export default function DashboardPage() {
   const { data: session } = useSession();
   const { data } = useSWR("/api/dashboard", fetcher);
   const { data: bookings } = useSWR("/api/bookings", fetcher);
-  const [q, setQ] = useState({ to: "" });
+  const [from, setFrom] = useState<PlaceInput>({ text: "" });
+  const [to, setTo] = useState<PlaceInput>({ text: "" });
 
   const actions = computeActions(bookings);
   const firstName = (session?.user?.name ?? "").split(" ")[0];
 
   function search(e: React.FormEvent) {
     e.preventDefault();
-    const p = new URLSearchParams();
-    if (q.to.trim()) p.set("to", q.to.trim());
-    router.push(`/recherche?${p.toString()}`);
+    router.push(`/recherche?${searchQuery(from, to)}`);
   }
 
   return (
@@ -106,7 +106,8 @@ export default function DashboardPage() {
       {/* Recherche : directement sur le fond, pas dans une carte de plus */}
       <form onSubmit={search} className="mb-10 space-y-3">
         <h2 className="text-base font-bold tracking-tight text-ink">Chercher un trajet</h2>
-        <IconField icon={<MapPinIcon size={18} />} placeholder="Destination" value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} />
+        <CityAutocomplete label="Départ" placeholder="Ville de départ" onText={(t) => setFrom({ text: t })} onSelect={(c) => setFrom({ text: c.label, lat: c.lat, lng: c.lng })} />
+        <CityAutocomplete label="Destination" placeholder="Ville d'arrivée" onText={(t) => setTo({ text: t })} onSelect={(c) => setTo({ text: c.label, lat: c.lat, lng: c.lng })} />
         <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
       </form>
 

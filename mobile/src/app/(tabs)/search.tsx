@@ -16,6 +16,11 @@ import type { CityChoice, SearchResponse, TripResult } from "@/lib/types";
 const PAGE = 15;
 const canMap = Platform.OS === "ios" || HAS_ANDROID_MAPS_KEY;
 
+// Coordonnées d'une ville choisie dans la liste (0,0 = inconnues) : le serveur cherche alors
+// dans un rayon autour d'elle, pour que « Paris » trouve aussi Orly, Roissy, Versailles…
+const geoOf = (c: CityChoice | null, key: "from" | "to") =>
+  c && (c.lat || c.lng) ? { [`${key}Lat`]: c.lat, [`${key}Lng`]: c.lng } : {};
+
 export default function Search() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ from?: string; to?: string; run?: string }>();
@@ -34,7 +39,7 @@ export default function Search() {
   const [error, setError] = useState<ApiError | null>(null);
 
   const run = useCallback(
-    async (mode: "reset" | "more" | "refresh", f = fromText, t = toText, d = date, offset = 0) => {
+    async (mode: "reset" | "more" | "refresh", f = fromText, t = toText, d = date, offset = 0, geo: Record<string, number> = { ...geoOf(from, "from"), ...geoOf(to, "to") }) => {
       if (mode === "reset") setLoading(true);
       if (mode === "more") setLoadingMore(true);
       if (mode === "refresh") setRefreshing(true);
@@ -42,7 +47,7 @@ export default function Search() {
       try {
         const res = await api<SearchResponse>("/api/trips/search-public", {
           auth: false,
-          query: { from: f, to: t, date: d ? d.toISOString() : undefined, limit: PAGE, offset },
+          query: { from: f, to: t, ...geo, date: d ? d.toISOString() : undefined, limit: PAGE, offset },
         });
         setItems((prev) => (mode === "more" ? [...prev, ...res.trips] : res.trips));
         setTotal(res.total);
@@ -55,7 +60,7 @@ export default function Search() {
         setRefreshing(false);
       }
     },
-    [fromText, toText, date]
+    [fromText, toText, date, from, to]
   );
 
   // Premier chargement, ou arrivée depuis l'accueil avec des villes déjà saisies.
@@ -79,7 +84,7 @@ export default function Search() {
     const t = nt ? shortCity(nt.label) : "";
     setFromText(f);
     setToText(t);
-    run("reset", f, t, nd, 0);
+    run("reset", f, t, nd, 0, { ...geoOf(nf, "from"), ...geoOf(nt, "to") });
   }
 
   const header = (

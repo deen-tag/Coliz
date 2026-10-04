@@ -4,14 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { TransportMode } from "@prisma/client";
 import { TransportModeBadge } from "@/components/ui";
+import { searchQuery } from "@/lib/search-query";
 
 type LngLat = [number, number];
 type Place = { label: string; lat: number; lng: number };
 type Route = { from: Place; to: Place };
 type RealRoute = Route & { count: number; mode?: string };
 // Un départ réel : « de from vers to » avec son moyen de transport (sert aux cartes sous le globe).
-type Dep = { from: string; to: string; mode: string; count: number };
-type Picked = { label: string; deps: Dep[] };
+type Dep = { from: Place; to: Place; mode: string; count: number };
+type Picked = { label: string; place: Place; deps: Dep[] };
 type Link_ = Route & { count: number; real: boolean };
 type CityInfo = { key: string; label: string; c: LngLat; w: number; real: boolean };
 
@@ -182,7 +183,7 @@ export function RoutesGlobe() {
             list.forEach((r) => {
               const k = cityKey(r.from);
               const arr = departures.get(k) ?? [];
-              arr.push({ from: r.from.label, to: r.to.label, mode: r.mode ?? "OTHER", count: r.count });
+              arr.push({ from: r.from, to: r.to, mode: r.mode ?? "OTHER", count: r.count });
               departures.set(k, arr);
             });
             departures.forEach((arr) => arr.sort((a, b) => b.count - a.count));
@@ -430,7 +431,7 @@ export function RoutesGlobe() {
           lng = c[0];
           lat = Math.max(-50, Math.min(60, c[1]));
           ease(600);
-          if (!cancelled) setPicked({ label: cities.get(key)!.label, deps: departures.get(key) ?? [] });
+          if (!cancelled) setPicked({ label: cities.get(key)!.label, place: { label: cities.get(key)!.label, lat: c[1], lng: c[0] }, deps: departures.get(key) ?? [] });
         };
 
         // Un simple toucher : la ville la plus proche du doigt, dans une marge confortable.
@@ -614,11 +615,11 @@ export function RoutesGlobe() {
               <div className="-mx-5 px-5 flex gap-3 overflow-x-auto snap-x pb-2">
                 {picked.deps.map((d) => (
                   <Link
-                    key={d.to}
-                    href={`/recherche?from=${encodeURIComponent(d.from)}&to=${encodeURIComponent(d.to)}`}
+                    key={d.to.label}
+                    href={`/recherche?${searchQuery({ text: d.from.label, lat: d.from.lat, lng: d.from.lng }, { text: d.to.label, lat: d.to.lat, lng: d.to.lng })}`}
                     className="snap-start shrink-0 min-w-[150px] rounded-2xl border border-line bg-surface shadow-card px-4 py-3 active:bg-sender-light"
                   >
-                    <span className="block text-[15px] font-bold text-ink leading-tight">{d.to}</span>
+                    <span className="block text-[15px] font-bold text-ink leading-tight">{d.to.label}</span>
                     <span className="mt-2 block">
                       <TransportModeBadge mode={d.mode as TransportMode} variant="plain" />
                     </span>
@@ -629,7 +630,7 @@ export function RoutesGlobe() {
           ) : (
             <p className="text-sm text-ink-muted">
               Pas encore de départ depuis {picked.label}.{" "}
-              <Link href={`/recherche?to=${encodeURIComponent(picked.label)}`} className="font-semibold text-sender underline">
+              <Link href={`/recherche?${searchQuery({ text: "" }, { text: picked.place.label, lat: picked.place.lat, lng: picked.place.lng })}`} className="font-semibold text-sender underline">
                 Voir les trajets vers {picked.label}
               </Link>
             </p>

@@ -7,6 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Card, VerifiedBadge, TransportModeBadge, PrimaryButton, SecondaryButton } from "@/components/ui";
 import { ResultsMap } from "@/components/results-map";
 import { CityAutocomplete } from "@/components/city-autocomplete";
+import { searchQuery, type PlaceInput } from "@/lib/search-query";
 import { MapPinIcon, ChevronRightIcon, StarIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { JourneySteps } from "@/components/journey-steps";
@@ -29,6 +30,9 @@ function RechercheContent() {
   const parcelId = params.get("parcelId");
   const from = params.get("from");
   const to = params.get("to");
+  // Coordonnées de la ville choisie dans la liste : la recherche couvre alors un rayon autour d'elle.
+  const geo = ["fromLat", "fromLng", "toLat", "toLng"].flatMap((k) => (params.get(k) ? [[k, params.get(k)!]] : []));
+  const num = (k: string) => (params.get(k) ? Number(params.get(k)) : undefined);
 
   // Sans recherche préalable, le formulaire est ouvert ; sinon il se replie
   // en un résumé modifiable pour laisser la place aux résultats.
@@ -40,6 +44,7 @@ function RechercheContent() {
     : `/api/trips/search-public?${new URLSearchParams({
         ...(from ? { from } : {}),
         ...(to ? { to } : {}),
+        ...Object.fromEntries(geo),
       })}`;
 
   const { data, isLoading } = useSWR(endpoint, fetcher);
@@ -89,7 +94,7 @@ function RechercheContent() {
 
       {!parcelId &&
         (editing ? (
-          <SearchForm from={from ?? ""} to={to ?? ""} />
+          <SearchForm from={{ text: from ?? "", lat: num("fromLat"), lng: num("fromLng") }} to={{ text: to ?? "", lat: num("toLat"), lng: num("toLng") }} />
         ) : (
           <Card className="mb-6 !p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-control bg-primary-light text-primary flex items-center justify-center shrink-0">
@@ -218,18 +223,13 @@ function TripResultCard({ r, parcelId }: { r: any; parcelId: string | null }) {
 
 // Formulaire de recherche rappelé en haut de page : on peut changer la destination
 // sans repasser par l'accueil (départ et arrivée).
-function SearchForm({ from, to }: { from: string; to: string }) {
+function SearchForm({ from, to }: { from: PlaceInput; to: PlaceInput }) {
   const router = useRouter();
   const [f, setF] = useState({ from, to });
-  // Nom de la ville seul (« Paris », pas « Paris, Île-de-France, France »).
-  const city = (t: string) => t.split(",")[0].trim();
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const q = new URLSearchParams();
-    if (city(f.from)) q.set("from", city(f.from));
-    if (city(f.to)) q.set("to", city(f.to));
-    router.push(`/recherche?${q.toString()}`);
+    router.push(`/recherche?${searchQuery(f.from, f.to)}`);
   }
 
   return (
@@ -238,8 +238,8 @@ function SearchForm({ from, to }: { from: string; to: string }) {
         <h1 className="text-lg font-extrabold tracking-tight text-ink">Où voulez-vous envoyer votre colis ?</h1>
         <p className="text-sm text-ink-muted mt-0.5">Coliz trouve les voyageurs qui font déjà ce trajet.</p>
       </div>
-      <CityAutocomplete label="Départ" placeholder="Ville de départ" defaultText={from} onText={(t) => setF((p) => ({ ...p, from: t }))} />
-      <CityAutocomplete label="Destination" placeholder="Ville d'arrivée" defaultText={to} onText={(t) => setF((p) => ({ ...p, to: t }))} />
+      <CityAutocomplete label="Départ" placeholder="Ville de départ" defaultText={from.text} onText={(t) => setF((p) => ({ ...p, from: { text: t } }))} onSelect={(c) => setF((p) => ({ ...p, from: { text: c.label, lat: c.lat, lng: c.lng } }))} />
+      <CityAutocomplete label="Destination" placeholder="Ville d'arrivée" defaultText={to.text} onText={(t) => setF((p) => ({ ...p, to: { text: t } }))} onSelect={(c) => setF((p) => ({ ...p, to: { text: c.label, lat: c.lat, lng: c.lng } }))} />
       <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
     </Card>
   );

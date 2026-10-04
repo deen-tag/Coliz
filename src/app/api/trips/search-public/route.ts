@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { displayPrice } from "@/server/pricing";
 import { prisma } from "@/lib/prisma";
 
+// Rayon de recherche autour d'une ville choisie (à vol d'oiseau).
+const RADIUS_KM = 40;
+
 // Recherche "libre" : pas encore de colis publié, on filtre juste par villes/date
 // pour montrer qu'il y a du monde disponible (conversion vers l'inscription ensuite).
 export async function GET(req: Request) {
@@ -22,8 +25,29 @@ export async function GET(req: Request) {
     remainingParcels: { gt: 0 },
     departureAt: { gte: new Date() },
   };
-  if (from) where.originLabel = { contains: from, mode: "insensitive" };
-  if (to) where.destinationLabel = { contains: to, mode: "insensitive" };
+  // Ville choisie dans la liste (coordonnées connues) : on cherche dans un rayon autour d'elle,
+  // pour que « Paris » trouve aussi Orly, Roissy, Versailles… Sinon, saisie libre : on cherche sur le nom.
+  const num = (k: string) => {
+    const v = searchParams.get(k);
+    return v !== null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : null;
+  };
+  const near = (lat: number, lng: number) => {
+    const dLat = RADIUS_KM / 111;
+    const dLng = RADIUS_KM / (111 * Math.max(0.2, Math.cos((lat * Math.PI) / 180)));
+    return { lat: { gte: lat - dLat, lte: lat + dLat }, lng: { gte: lng - dLng, lte: lng + dLng } };
+  };
+  const fromLat = num("fromLat"), fromLng = num("fromLng");
+  const toLat = num("toLat"), toLng = num("toLng");
+  if (fromLat !== null && fromLng !== null) {
+    const b = near(fromLat, fromLng);
+    where.originLat = b.lat;
+    where.originLng = b.lng;
+  } else if (from) where.originLabel = { contains: from, mode: "insensitive" };
+  if (toLat !== null && toLng !== null) {
+    const b = near(toLat, toLng);
+    where.destinationLat = b.lat;
+    where.destinationLng = b.lng;
+  } else if (to) where.destinationLabel = { contains: to, mode: "insensitive" };
   if (date) {
     const d = new Date(date);
     const from_ = new Date(d); from_.setDate(from_.getDate() - flexDays);

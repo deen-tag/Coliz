@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { Card, PrimaryButton } from "@/components/ui";
 import { CityAutocomplete } from "@/components/city-autocomplete";
+import { searchQuery, type PlaceInput } from "@/lib/search-query";
 import { CheckBadgeIcon, PackageIcon, SuitcaseIcon } from "@/components/icons";
 
 type Role = "sender" | "traveler";
@@ -27,18 +28,12 @@ const TRAVELER_POINTS = [
 export function HeroChoice() {
   const router = useRouter();
   const [role, setRole] = useState<Role>("sender");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-
-  // On cherche sur le nom de la ville seul (« Paris », pas « Paris, Île-de-France, France »).
-  const city = (t: string) => t.split(",")[0].trim();
+  const [from, setFrom] = useState<PlaceInput>({ text: "" });
+  const [to, setTo] = useState<PlaceInput>({ text: "" });
 
   function search(e: React.FormEvent) {
     e.preventDefault();
-    const q = new URLSearchParams();
-    if (city(from)) q.set("from", city(from));
-    if (city(to)) q.set("to", city(to));
-    router.push(`/recherche?${q.toString()}`);
+    router.push(`/recherche?${searchQuery(from, to)}`);
   }
 
   return (
@@ -85,8 +80,8 @@ export function HeroChoice() {
           <Card>
             <p className="text-sm text-ink-muted mb-4">Trouvez un voyageur qui va là où vous envoyez votre colis.</p>
             <form onSubmit={search} className="space-y-3">
-              <CityAutocomplete label="D'où part votre colis ?" placeholder="Ville de départ" onText={setFrom} />
-              <CityAutocomplete label="Où va votre colis ?" placeholder="Ville d'arrivée" onText={setTo} />
+              <CityAutocomplete label="D'où part votre colis ?" placeholder="Ville de départ" onText={(t) => setFrom({ text: t })} onSelect={(c) => setFrom({ text: c.label, lat: c.lat, lng: c.lng })} />
+              <CityAutocomplete label="Où va votre colis ?" placeholder="Ville d'arrivée" onText={(t) => setTo({ text: t })} onSelect={(c) => setTo({ text: c.label, lat: c.lat, lng: c.lng })} />
               <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
             </form>
             <p className="mt-4 text-center text-sm text-ink-muted">

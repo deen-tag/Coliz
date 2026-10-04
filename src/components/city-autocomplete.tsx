@@ -16,8 +16,7 @@ export function CityAutocomplete({
   label: string;
   value?: { label: string; lat: number; lng: number } | null;
   onSelect?: (v: Suggestion) => void;
-  // Texte courant du champ (saisie libre ou suggestion choisie) : sert aux recherches,
-  // où l'on n'a pas besoin des coordonnées.
+  // Appelé à chaque frappe (saisie libre). Le choix d'une suggestion passe par onSelect.
   onText?: (text: string) => void;
   defaultText?: string;
   placeholder?: string;
@@ -70,7 +69,6 @@ export function CityAutocomplete({
                 onMouseDown={() => {
                   setQuery(s.label);
                   onSelect?.(s);
-                  onText?.(s.label);
                   setOpen(false);
                 }}
                 className="w-full text-left px-4 py-2.5 text-sm hover:bg-primary-light"

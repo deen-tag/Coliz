@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 // Suggestions pour un champ « ville » : les villes d'abord, puis les lieux de transport
 // (aéroports, gares, ports, gares routières) — pratique pour les départs/arrivées en avion, train ou ferry.
 type Kind = "city" | "airport" | "train" | "port" | "bus";
+type Hit = { label: string; lat: number; lng: number; kind: Kind };
 
-const KIND_LABEL: Record<Exclude<Kind, "city">, string> = {
+const KIND_LABEL: Record<Kind, string | null> = {
+  city: null,
   airport: "Aéroport",
   train: "Gare",
   port: "Port",
@@ -40,19 +42,19 @@ export async function GET(req: Request) {
     fetch(`${base}?types=poi&language=fr&limit=10&access_token=${token}`).catch(() => null),
   ]);
 
-  const cities = placesRes?.ok
-    ? ((await placesRes.json()).features ?? []).map((f: any) => ({
-        label: f.place_name as string,
-        lat: f.center[1] as number,
-        lng: f.center[0] as number,
-        kind: "city" as Kind,
+  const cities: Hit[] = placesRes?.ok
+    ? ((await placesRes.json()).features ?? []).map((f: any): Hit => ({
+        label: f.place_name,
+        lat: f.center[1],
+        lng: f.center[0],
+        kind: "city",
       }))
     : [];
 
-  const hubs = poiRes?.ok
-    ? ((await poiRes.json()).features ?? []).flatMap((f: any) => {
+  const hubs: Hit[] = poiRes?.ok
+    ? ((await poiRes.json()).features ?? []).flatMap((f: any): Hit[] => {
         const kind = transportKind(f.properties);
-        return kind ? [{ label: f.place_name as string, lat: f.center[1] as number, lng: f.center[0] as number, kind }] : [];
+        return kind ? [{ label: f.place_name, lat: f.center[1], lng: f.center[0], kind }] : [];
       })
     : [];
 
@@ -65,6 +67,6 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json(
-    merged.slice(0, 8).map((s) => ({ ...s, kindLabel: s.kind === "city" ? null : KIND_LABEL[s.kind] }))
+    merged.slice(0, 8).map((s) => ({ ...s, kindLabel: KIND_LABEL[s.kind] }))
   );
 }

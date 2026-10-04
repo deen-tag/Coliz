@@ -30,13 +30,11 @@ describe("fitsDimensions", () => {
 });
 
 describe("computeMatchScore", () => {
-  it("un trajet plus proche et plus proche en date obtient un meilleur (plus bas) score", () => {
-    const close = computeMatchScore(10, 10, 0);
-    const far = computeMatchScore(100, 100, 3);
-    expect(close).toBeLessThan(far);
+  it("un trajet plus proche des villes du colis obtient un meilleur (plus bas) score", () => {
+    expect(computeMatchScore(10, 10)).toBeLessThan(computeMatchScore(100, 100));
   });
 
-  it("un jour d'écart pèse 20 km dans le score", () => {
-    expect(computeMatchScore(0, 0, 1)).toBe(20);
+  it("la date ne compte pas : le score est la somme des distances", () => {
+    expect(computeMatchScore(12, 8)).toBe(20);
   });
 });

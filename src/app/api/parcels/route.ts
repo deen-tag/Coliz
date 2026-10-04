@@ -10,7 +10,8 @@ const parcelSchema = z.object({
   destinationLabel: z.string().min(1),
   destinationLat: z.number(),
   destinationLng: z.number(),
-  desiredDate: z.coerce.date(),
+  // Facultative : un colis ne dépend plus d'une date, seules les villes comptent pour le trouver.
+  desiredDate: z.coerce.date().optional(),
   dateFlexibleDays: z.number().int().min(0).default(0),
   weightKg: z.number().positive(),
   lengthCm: z.number().positive(),
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
     data: {
       senderId: user.id,
       ...data,
+      desiredDate: data.desiredDate ?? new Date(),
       status: "SEARCHING",
     },
   });

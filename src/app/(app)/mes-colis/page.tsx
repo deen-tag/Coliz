@@ -4,7 +4,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { Card, SectionHeader, StatusBadge, TransportModeBadge, EmptyState, PrimaryButton } from "@/components/ui";
 import { ChevronRightIcon } from "@/components/icons";
-import { RouteLine, formatPrice, formatTripDate } from "@/components/trip-parts";
+import { RouteLine, formatPrice } from "@/components/trip-parts";
 import { bookingHref } from "@/lib/booking-status";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -63,10 +63,7 @@ export default function MesColisPage() {
                 <RouteLine from={p.originLabel} to={p.destinationLabel} className="flex-1" />
                 <StatusBadge status={p.status} />
               </div>
-              <p className="text-sm text-ink-muted">
-                {formatTripDate(p.desiredDate)}
-                {p.booking && ` · avec ${p.booking.travelerFirstName}`}
-              </p>
+              {p.booking && <p className="text-sm text-ink-muted">Avec {p.booking.travelerFirstName}</p>}
               <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-line">
                 <div className="flex items-center gap-2 min-w-0">
                   {p.booking && <TransportModeBadge mode={p.booking.mode} />}

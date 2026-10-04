@@ -21,7 +21,9 @@ export function fitsDimensions(
   );
 }
 
-// Score "best_match" : plus c'est bas, mieux c'est (distance en km + pénalité de jours d'écart).
-export function computeMatchScore(distanceOriginKm: number, distanceDestinationKm: number, daysFromDesiredDate: number) {
-  return distanceOriginKm + distanceDestinationKm + daysFromDesiredDate * 20;
+// Score de proximité : plus c'est bas, mieux c'est (somme des distances départ + arrivée, en km).
+// La date ne compte pas : un colis n'a pas de date, seules les villes servent à le rapprocher d'un trajet.
+export function computeMatchScore(distanceOriginKm: number, distanceDestinationKm: number) {
+  return distanceOriginKm + distanceDestinationKm;
 }
+

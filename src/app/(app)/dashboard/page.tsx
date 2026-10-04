@@ -120,7 +120,6 @@ export default function DashboardPage() {
                   <RouteLine from={p.originLabel} to={p.destinationLabel} className="flex-1" />
                   <StatusBadge status={p.status} />
                 </div>
-                <p className="text-sm text-ink-muted mt-1.5">{formatTripDate(p.desiredDate)}</p>
               </Link>
             ))}
           </Card>

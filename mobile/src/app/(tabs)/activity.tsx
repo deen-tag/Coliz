@@ -122,7 +122,6 @@ function Parcels({ items }: { items: MyParcel[] }) {
           return (
             <Card key={p.id} onPress={() => (p.booking && p.booking.status !== "CANCELLED" ? router.push(`/booking/${p.booking.id}`) : router.push(`/parcel/${p.id}`))}>
               <Text style={{ fontWeight: "700", fontSize: 16, color: colors.ink }}>{shortCity(p.originLabel)} → {shortCity(p.destinationLabel)}</Text>
-              <Text style={{ color: colors.muted, marginTop: 3 }}>Souhaité le {dateShort(p.desiredDate)}</Text>
               <View style={{ flexDirection: "row", gap: 6, marginTop: 10, alignItems: "center" }}>
                 <Badge label={st.label} tone={st.tone} />
                 {p.booking && p.booking.status !== "CANCELLED" ? <Text style={{ color: colors.muted }}>avec {p.booking.travelerFirstName} · {eur(p.booking.totalAmount)}</Text> : (

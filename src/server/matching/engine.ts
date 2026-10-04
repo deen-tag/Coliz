@@ -16,24 +16,19 @@ export interface MatchResult {
   score: number;
   distanceOriginKm: number;
   distanceDestinationKm: number;
-  daysFromDesiredDate: number;
 }
 
 /**
  * Retourne les trajets compatibles avec un colis, triés selon le critère demandé.
- * Le score "best_match" combine proximité géographique et proximité de date —
- * les deux critères objectifs les plus déterminants pour l'utilisateur.
+ * Le colis n'a pas de date : seules comptent les villes (proximité), le poids, les dimensions et les
+ * places restantes. Tous les trajets à venir qui correspondent s'affichent, quel que soit leur jour.
+ * Par défaut (best_match), les départs les plus proches dans le temps sont en premier.
  */
 export async function findMatchingTrips(parcel: Parcel, filters: MatchFilters = {}) {
-  const dateFrom = new Date(parcel.desiredDate);
-  dateFrom.setDate(dateFrom.getDate() - parcel.dateFlexibleDays);
-  const dateTo = new Date(parcel.desiredDate);
-  dateTo.setDate(dateTo.getDate() + parcel.dateFlexibleDays);
-
   const candidates = await prisma.trip.findMany({
     where: {
       status: { in: ["PUBLISHED", "PARTIALLY_BOOKED"] },
-      departureAt: { gte: dateFrom, lte: dateTo },
+      departureAt: { gte: new Date() }, // seulement les trajets à venir
       remainingParcels: { gte: parcel.parcelCount },
       capacityWeightKg: { gte: parcel.weightKg },
       ...(filters.transportModes ? { mode: { in: filters.transportModes } } : {}),
@@ -50,10 +45,6 @@ export async function findMatchingTrips(parcel: Parcel, filters: MatchFilters = 
         trip.destinationLat,
         trip.destinationLng
       );
-      const daysFromDesiredDate = Math.abs(
-        (trip.departureAt.getTime() - parcel.desiredDate.getTime()) / (1000 * 60 * 60 * 24)
-      );
-
       // Dimensions : on vérifie que le colis rentre dans la capacité déclarée (ordre simple, sans rotation 3D)
       const fits = fitsDimensions(parcel, trip);
 
@@ -72,10 +63,10 @@ export async function findMatchingTrips(parcel: Parcel, filters: MatchFilters = 
       if (distanceDestinationKm > maxDestination) return null;
       if (filters.maxContribution && Number(trip.contributionAmount) > filters.maxContribution) return null;
 
-      // Score : plus c'est bas, mieux c'est (distance en km + pénalité de jours d'écart)
-      const score = computeMatchScore(distanceOriginKm, distanceDestinationKm, daysFromDesiredDate);
+      // Score : plus c'est bas, mieux c'est (distance en km)
+      const score = computeMatchScore(distanceOriginKm, distanceDestinationKm);
 
-      return { tripId: trip.id, travelerId: trip.travelerId, score, distanceOriginKm, distanceDestinationKm, daysFromDesiredDate, trip };
+      return { tripId: trip.id, travelerId: trip.travelerId, score, distanceOriginKm, distanceDestinationKm, trip };
     })
     .filter((r): r is NonNullable<typeof r> => r !== null);
 
@@ -89,7 +80,8 @@ export async function findMatchingTrips(parcel: Parcel, filters: MatchFilters = 
       case "rating":
         return b.trip.traveler.ratingAverage - a.trip.traveler.ratingAverage;
       default:
-        return a.score - b.score;
+        // best_match : départ le plus proche dans le temps d'abord, puis le plus proche des villes
+        return a.trip.departureAt.getTime() - b.trip.departureAt.getTime() || a.score - b.score;
     }
   });
 
@@ -132,8 +124,7 @@ type TripLike = {
 // par "Mes voyages" ("N opportunités compatibles", brief UI/UX §22) et par
 // la notification automatique à la publication d'un trajet. Volontairement
 // simple : réutilise les mêmes critères de faisabilité que
-// findMatchingTrips (fenêtre de dates du colis, gabarit, proximité
-// géographique pondérée par mode), sans dupliquer un moteur de recherche
+// findMatchingTrips (gabarit, proximité géographique pondérée par mode ; pas de date), sans dupliquer un moteur de recherche
 // inverse complet.
 export async function findCompatibleParcels(trip: TripLike): Promise<Parcel[]> {
   if (trip.remainingParcels < 1) return [];
@@ -145,10 +136,6 @@ export async function findCompatibleParcels(trip: TripLike): Promise<Parcel[]> {
   const radiusKm = proximityRadiusKm(trip.mode);
 
   return openParcels.filter((parcel) => {
-    const daysApart = Math.abs(
-      (trip.departureAt.getTime() - parcel.desiredDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (daysApart > parcel.dateFlexibleDays) return false;
     if (parcel.parcelCount > trip.remainingParcels) return false;
     if (parcel.weightKg > trip.capacityWeightKg) return false;
     if (!fitsDimensions(parcel, trip)) return false;

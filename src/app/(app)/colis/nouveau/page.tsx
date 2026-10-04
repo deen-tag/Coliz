@@ -6,12 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { Card, PrimaryButton, SecondaryButton, LoadingState } from "@/components/ui";
 import { CityAutocomplete } from "@/components/city-autocomplete";
-import { DateField } from "@/components/date-field";
 import { IconField } from "@/components/form-field";
-import { CalendarIcon, ScaleIcon, EuroIcon } from "@/components/icons";
+import { ScaleIcon, EuroIcon } from "@/components/icons";
 import { JourneySteps } from "@/components/journey-steps";
 import { AuthTripContext } from "@/components/auth-context";
-import { formatPrice, formatTripDate, formatTripMoment, shortCity } from "@/components/trip-parts";
+import { formatPrice, formatTripMoment, shortCity } from "@/components/trip-parts";
 
 type Place = { label: string; lat: number; lng: number };
 
@@ -22,7 +21,7 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 const FORM_STEPS = ["Trajet", "Colis", "Confirmation"];
 
 const STEP_TEXT: Record<1 | 2 | 3, { title: string; subtitle: string }> = {
-  1: { title: "Où part votre colis ?", subtitle: "Indiquez le trajet et la date à laquelle vous souhaitez l'envoyer." },
+  1: { title: "Où part votre colis ?", subtitle: "Indiquez la ville de départ et la ville d'arrivée." },
   2: { title: "Que voulez-vous envoyer ?", subtitle: "Le poids et les dimensions permettent de trouver les voyageurs compatibles." },
   3: { title: "Vérifiez et confirmez", subtitle: "Dernière étape avant de voir les trajets disponibles." },
 };
@@ -56,7 +55,6 @@ function NouveauColisContent() {
   const [origin, setOrigin] = useState<Place | null>(null);
   const [destination, setDestination] = useState<Place | null>(null);
   const [form, setForm] = useState({
-    desiredDate: "",
     weightKg: "",
     lengthCm: "",
     widthCm: "",
@@ -76,7 +74,8 @@ function NouveauColisContent() {
     };
   }
 
-  function parcelPayload(o: Place, d: Place, desiredDate: string) {
+  // Pas de date pour un colis publié seul : seules les villes comptent. (Depuis un trajet précis, on reprend sa date.)
+  function parcelPayload(o: Place, d: Place, desiredDate?: string) {
     return {
       originLabel: o.label,
       originLat: o.lat,
@@ -105,7 +104,7 @@ function NouveauColisContent() {
     const res = await fetch("/api/parcels", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parcelPayload(origin, destination, form.desiredDate)),
+      body: JSON.stringify(parcelPayload(origin, destination)),
     });
     setLoading(false);
     if (!res.ok) {
@@ -168,7 +167,7 @@ function NouveauColisContent() {
 
   const canContinue =
     step === 1
-      ? Boolean(origin && destination && form.desiredDate)
+      ? Boolean(origin && destination)
       : step === 2
         ? Number(form.weightKg) > 0 &&
           Number(form.lengthCm) > 0 &&
@@ -276,12 +275,6 @@ function NouveauColisContent() {
           <div className="space-y-4">
             <CityAutocomplete label="Ville de départ" value={origin} onSelect={setOrigin} />
             <CityAutocomplete label="Ville d'arrivée" value={destination} onSelect={setDestination} />
-            <DateField
-              label="Date souhaitée"
-              value={form.desiredDate}
-              onChange={(v) => setForm((f) => ({ ...f, desiredDate: v }))}
-              icon={<CalendarIcon size={18} />}
-            />
           </div>
         )}
         {step === 2 && (
@@ -299,7 +292,6 @@ function NouveauColisContent() {
           <div className="space-y-5">
             <dl className="space-y-3 text-sm">
               <SummaryRow label="Trajet" value={`${shortCity(origin?.label ?? "")} → ${shortCity(destination?.label ?? "")}`} />
-              <SummaryRow label="Date souhaitée" value={form.desiredDate ? formatTripDate(form.desiredDate) : "—"} />
               <SummaryRow label="Poids" value={`${form.weightKg} kg`} />
               <SummaryRow label="Dimensions" value={`${form.lengthCm}×${form.widthCm}×${form.heightCm} cm`} />
               <SummaryRow label="Valeur déclarée" value={`${form.declaredValue} €`} />

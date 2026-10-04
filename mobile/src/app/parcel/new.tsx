@@ -6,7 +6,6 @@ import { Screen } from "@/components/Screen";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Button, Card, H2, InlineMessage, Input } from "@/components/ui";
 import { CityField } from "@/components/CityField";
-import { DateField } from "@/components/DateField";
 import { api, errorMessage } from "@/lib/api";
 import { pickPhoto, uploadImage } from "@/lib/photos";
 import { colors, radius } from "@/lib/theme";
@@ -26,7 +25,6 @@ function Form() {
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
   const [origin, setOrigin] = useState<CityChoice | null>(null);
   const [dest, setDest] = useState<CityChoice | null>(null);
-  const [date, setDate] = useState<Date | null>(null);
   const [weight, setWeight] = useState("");
   const [l, setL] = useState("");
   const [w, setW] = useState("");
@@ -48,7 +46,6 @@ function Form() {
 
   async function submit() {
     if (!origin || !dest) return setError("Choisissez la ville de départ et la ville d'arrivée.");
-    if (!date) return setError("Indiquez la date souhaitée.");
     if (![weight, l, w, h].every((v) => num(v) > 0)) return setError("Renseignez le poids et les trois dimensions du colis.");
     if (value.trim() === "" || num(value) < 0) return setError("Indiquez la valeur déclarée (0 si aucune).");
     if (!accepted) return setError("Vous devez confirmer avoir lu la liste des objets interdits.");
@@ -62,8 +59,6 @@ function Form() {
         body: {
           originLabel: origin.label, originLat: origin.lat, originLng: origin.lng,
           destinationLabel: dest.label, destinationLat: dest.lat, destinationLng: dest.lng,
-          desiredDate: date.toISOString(),
-          dateFlexibleDays: 3,
           weightKg: num(weight), lengthCm: num(l), widthCm: num(w), heightCm: num(h),
           parcelCount: Math.max(1, Math.round(num(count) || 1)),
           declaredValue: num(value),
@@ -91,7 +86,6 @@ function Form() {
       <H2 style={{ marginBottom: 12 }}>Trajet souhaité</H2>
       <CityField label="Départ" placeholder="Où récupérer le colis ?" value={origin} onChange={setOrigin} icon="radio-button-on-outline" allowLocation />
       <CityField label="Arrivée" placeholder="Où l'envoyer ?" value={dest} onChange={setDest} icon="flag-outline" />
-      <DateField label="Date souhaitée (± 3 jours)" value={date} onChange={setDate} minimumDate={new Date()} />
 
       <H2 style={{ marginVertical: 12 }}>Le colis</H2>
       <Input label="Poids (kg)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="Ex. 4,5" />

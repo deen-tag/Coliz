@@ -135,17 +135,37 @@ function RechercheContent() {
 
       {results?.length === 0 && (
         <Card className="text-center">
-          <p className="font-medium text-ink mb-1.5">Aucun trajet ne correspond pour le moment.</p>
-          <p className="text-sm text-ink-muted mb-5">
-            Essayez de changer de ville. Vous pouvez aussi publier votre colis : vous
-            êtes prévenu dès qu&apos;un voyageur correspond à votre trajet.
-          </p>
-          <div className="space-y-2.5">
-            {!parcelId && <SecondaryButton onClick={() => setEditing(true)}>Modifier ma recherche</SecondaryButton>}
-            <Link href="/colis/nouveau" className="block">
-              <PrimaryButton>Publier mon colis</PrimaryButton>
-            </Link>
-          </div>
+          {parcelId ? (
+            <>
+              <p className="font-medium text-ink mb-1.5">Votre colis est enregistré.</p>
+              <p className="text-sm text-ink-muted mb-5">
+                Aucun voyageur ne correspond pour l&apos;instant (date, ville, poids ou dimensions). Vous êtes
+                prévenu dès qu&apos;un trajet compatible est publié : inutile de republier votre colis.
+              </p>
+              <div className="space-y-2.5">
+                <Link href="/mes-colis" className="block">
+                  <PrimaryButton>Voir mes colis</PrimaryButton>
+                </Link>
+                <Link href="/recherche" className="block">
+                  <SecondaryButton>Voir tous les trajets</SecondaryButton>
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="font-medium text-ink mb-1.5">Aucun trajet ne correspond pour le moment.</p>
+              <p className="text-sm text-ink-muted mb-5">
+                Essayez de changer de ville. Vous pouvez aussi publier votre colis : vous
+                êtes prévenu dès qu&apos;un voyageur correspond à votre trajet.
+              </p>
+              <div className="space-y-2.5">
+                <SecondaryButton onClick={() => setEditing(true)}>Modifier ma recherche</SecondaryButton>
+                <Link href="/colis/nouveau" className="block">
+                  <PrimaryButton>Publier mon colis</PrimaryButton>
+                </Link>
+              </div>
+            </>
+          )}
         </Card>
       )}
 

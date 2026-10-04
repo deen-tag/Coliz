@@ -66,6 +66,36 @@ const C: Record<string, City> = {
   newyork: { name: "New York", country: "États-Unis", lat: 40.7128, lng: -74.006 },
   montreal: { name: "Montréal", country: "Canada", lat: 45.5017, lng: -73.5673 },
   dubai: { name: "Dubaï", country: "Émirats arabes unis", lat: 25.2048, lng: 55.2708 },
+  // Destinations supplémentaires (buildExtraTrips) : Asie, Moyen-Orient, Afrique de l'Est et australe, Amériques, Europe.
+  tokyo: { name: "Tokyo", country: "Japon", lat: 35.6762, lng: 139.6503 },
+  bangkok: { name: "Bangkok", country: "Thaïlande", lat: 13.7563, lng: 100.5018 },
+  shanghai: { name: "Shanghai", country: "Chine", lat: 31.2304, lng: 121.4737 },
+  delhi: { name: "New Delhi", country: "Inde", lat: 28.6139, lng: 77.209 },
+  doha: { name: "Doha", country: "Qatar", lat: 25.2854, lng: 51.531 },
+  beyrouth: { name: "Beyrouth", country: "Liban", lat: 33.8938, lng: 35.5018 },
+  lecaire: { name: "Le Caire", country: "Égypte", lat: 30.0444, lng: 31.2357 },
+  johannesburg: { name: "Johannesburg", country: "Afrique du Sud", lat: -26.2041, lng: 28.0473 },
+  nairobi: { name: "Nairobi", country: "Kenya", lat: -1.2921, lng: 36.8219 },
+  addis: { name: "Addis-Abeba", country: "Éthiopie", lat: 9.03, lng: 38.7469 },
+  kinshasa: { name: "Kinshasa", country: "RD Congo", lat: -4.4419, lng: 15.2663 },
+  libreville: { name: "Libreville", country: "Gabon", lat: 0.4162, lng: 9.4673 },
+  conakry: { name: "Conakry", country: "Guinée", lat: 9.6412, lng: -13.5784 },
+  antananarivo: { name: "Antananarivo", country: "Madagascar", lat: -18.8792, lng: 47.5079 },
+  ouagadougou: { name: "Ouagadougou", country: "Burkina Faso", lat: 12.3714, lng: -1.5197 },
+  lome: { name: "Lomé", country: "Togo", lat: 6.1725, lng: 1.2314 },
+  cotonou: { name: "Cotonou", country: "Bénin", lat: 6.3703, lng: 2.3912 },
+  nouakchott: { name: "Nouakchott", country: "Mauritanie", lat: 18.0735, lng: -15.9582 },
+  saopaulo: { name: "São Paulo", country: "Brésil", lat: -23.5505, lng: -46.6333 },
+  mexico: { name: "Mexico", country: "Mexique", lat: 19.4326, lng: -99.1332 },
+  miami: { name: "Miami", country: "États-Unis", lat: 25.7617, lng: -80.1918 },
+  toronto: { name: "Toronto", country: "Canada", lat: 43.6532, lng: -79.3832 },
+  amsterdam: { name: "Amsterdam", country: "Pays-Bas", lat: 52.3676, lng: 4.9041 },
+  athenes: { name: "Athènes", country: "Grèce", lat: 37.9838, lng: 23.7275 },
+  vienne: { name: "Vienne", country: "Autriche", lat: 48.2082, lng: 16.3738 },
+  prague: { name: "Prague", country: "Tchéquie", lat: 50.0755, lng: 14.4378 },
+  budapest: { name: "Budapest", country: "Hongrie", lat: 47.4979, lng: 19.0402 },
+  dublin: { name: "Dublin", country: "Irlande", lat: 53.3498, lng: -6.2603 },
+  copenhague: { name: "Copenhague", country: "Danemark", lat: 55.6761, lng: 12.5683 },
 };
 
 const EUROPE = new Set(["France", "Belgique", "Espagne", "Italie", "Portugal", "Roumanie", "Pologne", "Royaume-Uni", "Allemagne", "Suisse"]);
@@ -462,3 +492,58 @@ export function buildParcels(trips: BulkTrip[], senderCount: number): BulkParcel
 }
 
 export { computeBookingAmounts };
+
+// 30 liaisons supplémentaires vers des destinations variées (ajoutées SANS toucher aux 54 trajets de base :
+// l'ordre et le mélange de buildTrips/buildParcels ne changent pas).
+const EXTRA_ROUTES: [string, string, Mode][] = [
+  // Asie et Moyen-Orient
+  ["paris", "tokyo", "PLANE"], ["paris", "bangkok", "PLANE"], ["paris", "shanghai", "PLANE"], ["paris", "delhi", "PLANE"],
+  ["paris", "doha", "PLANE"], ["paris", "beyrouth", "PLANE"], ["paris", "lecaire", "PLANE"],
+  // Afrique de l'Est, centrale et australe
+  ["paris", "johannesburg", "PLANE"], ["paris", "nairobi", "PLANE"], ["paris", "addis", "PLANE"], ["paris", "kinshasa", "PLANE"],
+  ["bruxelles", "kinshasa", "PLANE"], ["paris", "libreville", "PLANE"], ["paris", "antananarivo", "PLANE"],
+  // Afrique de l'Ouest
+  ["paris", "conakry", "PLANE"], ["paris", "ouagadougou", "PLANE"], ["paris", "lome", "PLANE"], ["paris", "cotonou", "PLANE"],
+  ["paris", "nouakchott", "PLANE"],
+  // Amériques
+  ["paris", "saopaulo", "PLANE"], ["paris", "mexico", "PLANE"], ["paris", "miami", "PLANE"], ["toronto", "paris", "PLANE"],
+  // Europe
+  ["paris", "amsterdam", "TRAIN"], ["paris", "athenes", "PLANE"], ["lyon", "vienne", "PLANE"], ["paris", "prague", "PLANE"],
+  ["paris", "budapest", "PLANE"], ["paris", "dublin", "PLANE"], ["paris", "copenhague", "PLANE"],
+];
+
+// Trajets supplémentaires : départs répartis sur les 60 prochains jours (toujours dans le futur).
+// travelerIndex tourne sur toute la liste de voyageurs ; relancer produit toujours les mêmes données.
+export function buildExtraTrips(now: Date, travelerCount: number): BulkTrip[] {
+  const rnd = mulberry32(20261004);
+  const hours: [number, number][] = [[6, 45], [8, 15], [9, 40], [11, 5], [13, 30], [15, 50], [18, 5], [19, 33], [21, 10]];
+  return EXTRA_ROUTES.map(([from, to, mode], i) => {
+    const a = C[from], b = C[to];
+    const km = haversineKm(a, b);
+    const cap = CAPACITY[mode];
+    const [h, m] = hours[Math.floor(rnd() * hours.length)];
+    const dep = new Date(now);
+    // 7 est premier avec 30 : les dates sont mélangées entre les destinations.
+    const slot = (i * 7) % EXTRA_ROUTES.length;
+    dep.setUTCDate(dep.getUTCDate() + 3 + Math.floor((slot * 57) / EXTRA_ROUTES.length) + Math.floor(rnd() * 3));
+    dep.setUTCHours(h, m, 0, 0);
+    const durationH = km / SPEED_KMH[mode] + (mode === "PLANE" ? 1.5 : 0.3);
+    const arr = new Date(dep.getTime() + durationH * 3600 * 1000);
+    const raw = Math.min(MAX_PRICE[mode], Math.max(MIN_PRICE[mode], km * RATE_PER_KM[mode]));
+    const price = Math.round((raw * (0.9 + rnd() * 0.25)) / 0.5) * 0.5;
+    return {
+      travelerIndex: (i * 5) % travelerCount,
+      originLabel: label(a), originLat: a.lat, originLng: a.lng,
+      destinationLabel: label(b), destinationLat: b.lat, destinationLng: b.lng,
+      departureAt: dep, arrivalAt: arr,
+      mode,
+      preexistingJourneyConfirmed: mode === "CAR" || mode === "VAN",
+      capacityWeightKg: cap.w, capacityLengthCm: cap.l, capacityWidthCm: cap.wi, capacityHeightCm: cap.h,
+      capacityParcels: cap.parcels, remainingParcels: cap.parcels,
+      pickupPointLabel: pickupLabel(mode, a), dropoffPointLabel: pickupLabel(mode, b),
+      contributionAmount: price,
+      status: "PUBLISHED",
+      createdAt: new Date(now.getTime() - ((i * 11) % EXTRA_ROUTES.length + 1) * 3 * 3600 * 1000),
+    };
+  });
+}

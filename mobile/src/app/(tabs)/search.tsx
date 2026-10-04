@@ -90,8 +90,8 @@ export default function Search() {
   const header = (
     <View style={{ paddingTop: 16 }}>
       <Text style={{ fontSize: 26, fontWeight: "800", color: colors.ink, marginBottom: 14 }}>Rechercher un trajet</Text>
-      <CityField label="Départ" placeholder="Ville de départ" value={from} onChange={(c) => { setFrom(c); apply(c, to, date); }} icon="radio-button-on-outline" allowLocation />
-      <CityField label="Arrivée" placeholder="Ville d'arrivée" value={to} onChange={(c) => { setTo(c); apply(from, c, date); }} icon="flag-outline" />
+      <CityField label="Départ" placeholder="Ville, aéroport, gare ou port" value={from} onChange={(c) => { setFrom(c); apply(c, to, date); }} icon="radio-button-on-outline" allowLocation />
+      <CityField label="Arrivée" placeholder="Ville, aéroport, gare ou port" value={to} onChange={(c) => { setTo(c); apply(from, c, date); }} icon="flag-outline" />
       <DateField label="Date (± 3 jours)" value={date} clearable minimumDate={new Date()} placeholder="Toutes les dates" onChange={(d) => { setDate(d); apply(from, to, d); }} />
       {canMap ? <Segmented options={[{ key: "list", label: "Liste" }, { key: "map", label: "Carte" }]} value={view} onChange={setView} /> : null}
       {!loading && !error ? <Text style={{ color: colors.muted, marginBottom: 10 }}>{total} trajet{total > 1 ? "s" : ""} disponible{total > 1 ? "s" : ""}</Text> : null}

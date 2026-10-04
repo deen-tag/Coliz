@@ -84,8 +84,8 @@ function Form() {
     <Screen footer={<Button title={tripId ? "Envoyer la demande" : "Trouver un voyageur"} onPress={submit} loading={loading} />}>
       {error ? <InlineMessage text={error} /> : null}
       <H2 style={{ marginBottom: 12 }}>Trajet souhaité</H2>
-      <CityField label="Départ" placeholder="Où récupérer le colis ?" value={origin} onChange={setOrigin} icon="radio-button-on-outline" allowLocation />
-      <CityField label="Arrivée" placeholder="Où l'envoyer ?" value={dest} onChange={setDest} icon="flag-outline" />
+      <CityField label="Départ" placeholder="Ville, aéroport, gare ou port" value={origin} onChange={setOrigin} icon="radio-button-on-outline" allowLocation />
+      <CityField label="Arrivée" placeholder="Ville, aéroport, gare ou port" value={dest} onChange={setDest} icon="flag-outline" />
 
       <H2 style={{ marginVertical: 12 }}>Le colis</H2>
       <Input label="Poids (kg)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="Ex. 4,5" />

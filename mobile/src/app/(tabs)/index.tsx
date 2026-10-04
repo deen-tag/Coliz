@@ -74,8 +74,8 @@ export default function Home() {
       <Card>
         <H2>Chercher un trajet</H2>
         <View style={{ marginTop: 10 }}>
-          <CityField label="Départ" placeholder="D'où part votre colis ?" value={from} onChange={setFrom} icon="radio-button-on-outline" allowLocation />
-          <CityField label="Arrivée" placeholder="Où doit-il aller ?" value={to} onChange={setTo} icon="flag-outline" />
+          <CityField label="Départ" placeholder="Ville, aéroport, gare ou port" value={from} onChange={setFrom} icon="radio-button-on-outline" allowLocation />
+          <CityField label="Arrivée" placeholder="Ville, aéroport, gare ou port" value={to} onChange={setTo} icon="flag-outline" />
         </View>
         <Button
           title="Voir les trajets disponibles"

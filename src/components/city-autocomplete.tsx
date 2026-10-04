@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { MapPinIcon } from "@/components/icons";
 
-type Suggestion = { label: string; lat: number; lng: number };
+// kindLabel : « Aéroport », « Gare », « Port »… pour les lieux de transport (absent pour une ville).
+type Suggestion = { label: string; lat: number; lng: number; kindLabel?: string | null };
 
 export function CityAutocomplete({
   label,
@@ -11,7 +12,7 @@ export function CityAutocomplete({
   onSelect,
   onText,
   defaultText = "",
-  placeholder = "Ville",
+  placeholder = "Ville, aéroport, gare ou port",
 }: {
   label: string;
   value?: { label: string; lat: number; lng: number } | null;
@@ -61,7 +62,7 @@ export function CityAutocomplete({
       </label>
 
       {open && suggestions.length > 0 && (
-        <ul className="absolute z-10 left-0 right-0 mt-1 bg-surface border border-line rounded-control shadow-md max-h-56 overflow-y-auto">
+        <ul className="absolute z-10 left-0 right-0 mt-1 bg-surface border border-line rounded-control shadow-md max-h-72 overflow-y-auto">
           {suggestions.map((s) => (
             <li key={s.label}>
               <button
@@ -71,9 +72,12 @@ export function CityAutocomplete({
                   onSelect?.(s);
                   setOpen(false);
                 }}
-                className="w-full text-left px-4 py-2.5 text-sm hover:bg-primary-light"
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-primary-light flex items-center justify-between gap-3"
               >
-                {s.label}
+                <span className="min-w-0">{s.label}</span>
+                {s.kindLabel && (
+                  <span className="shrink-0 rounded-full bg-surface-alt px-2 py-0.5 text-xs text-ink-muted">{s.kindLabel}</span>
+                )}
               </button>
             </li>
           ))}

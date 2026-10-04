@@ -258,8 +258,8 @@ function SearchForm({ from, to }: { from: PlaceInput; to: PlaceInput }) {
         <h1 className="text-lg font-extrabold tracking-tight text-ink">Où voulez-vous envoyer votre colis ?</h1>
         <p className="text-sm text-ink-muted mt-0.5">Coliz trouve les voyageurs qui font déjà ce trajet.</p>
       </div>
-      <CityAutocomplete label="Départ" placeholder="Ville de départ" defaultText={from.text} onText={(t) => setF((p) => ({ ...p, from: { text: t } }))} onSelect={(c) => setF((p) => ({ ...p, from: { text: c.label, lat: c.lat, lng: c.lng } }))} />
-      <CityAutocomplete label="Destination" placeholder="Ville d'arrivée" defaultText={to.text} onText={(t) => setF((p) => ({ ...p, to: { text: t } }))} onSelect={(c) => setF((p) => ({ ...p, to: { text: c.label, lat: c.lat, lng: c.lng } }))} />
+      <CityAutocomplete label="Départ" placeholder="Ville, aéroport, gare ou port" defaultText={from.text} onText={(t) => setF((p) => ({ ...p, from: { text: t } }))} onSelect={(c) => setF((p) => ({ ...p, from: { text: c.label, lat: c.lat, lng: c.lng } }))} />
+      <CityAutocomplete label="Destination" placeholder="Ville, aéroport, gare ou port" defaultText={to.text} onText={(t) => setF((p) => ({ ...p, to: { text: t } }))} onSelect={(c) => setF((p) => ({ ...p, to: { text: c.label, lat: c.lat, lng: c.lng } }))} />
       <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
     </Card>
   );

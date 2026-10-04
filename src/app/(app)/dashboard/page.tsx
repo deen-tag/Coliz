@@ -106,8 +106,8 @@ export default function DashboardPage() {
       {/* Recherche : directement sur le fond, pas dans une carte de plus */}
       <form onSubmit={search} className="mb-10 space-y-3">
         <h2 className="text-base font-bold tracking-tight text-ink">Chercher un trajet</h2>
-        <CityAutocomplete label="Départ" placeholder="Ville de départ" onText={(t) => setFrom({ text: t })} onSelect={(c) => setFrom({ text: c.label, lat: c.lat, lng: c.lng })} />
-        <CityAutocomplete label="Destination" placeholder="Ville d'arrivée" onText={(t) => setTo({ text: t })} onSelect={(c) => setTo({ text: c.label, lat: c.lat, lng: c.lng })} />
+        <CityAutocomplete label="Départ" placeholder="Ville, aéroport, gare ou port" onText={(t) => setFrom({ text: t })} onSelect={(c) => setFrom({ text: c.label, lat: c.lat, lng: c.lng })} />
+        <CityAutocomplete label="Destination" placeholder="Ville, aéroport, gare ou port" onText={(t) => setTo({ text: t })} onSelect={(c) => setTo({ text: c.label, lat: c.lat, lng: c.lng })} />
         <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
       </form>
 

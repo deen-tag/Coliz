@@ -19,7 +19,7 @@ type Props = {
 };
 
 // Champ « ville » : ouvre un écran de recherche avec suggestions + « Utiliser ma position ».
-export function CityField({ label, placeholder = "Ville", value, onChange, icon = "location-outline", error, allowLocation }: Props) {
+export function CityField({ label, placeholder = "Ville, aéroport, gare ou port", value, onChange, icon = "location-outline", error, allowLocation }: Props) {
   const [open, setOpen] = useState(false);
   return (
     <View style={{ marginBottom: 14 }}>
@@ -113,7 +113,7 @@ function CityPicker({ visible, title, allowLocation, onClose, onPick }: { visibl
         </View>
         <View style={[styles.field, { marginHorizontal: 16 }]}>
           <Ionicons name="search" size={20} color={colors.muted} style={{ marginRight: 8 }} />
-          <TextInput autoFocus value={q} onChangeText={setQ} placeholder="Tapez une ville…" placeholderTextColor={colors.placeholder} style={{ flex: 1, fontSize: 16, color: colors.ink }} returnKeyType="search" autoCorrect={false} />
+          <TextInput autoFocus value={q} onChangeText={setQ} placeholder="Ville, aéroport, gare ou port…" placeholderTextColor={colors.placeholder} style={{ flex: 1, fontSize: 16, color: colors.ink }} returnKeyType="search" autoCorrect={false} />
           {loading ? <ActivityIndicator color={colors.primary} /> : null}
         </View>
         {allowLocation ? (

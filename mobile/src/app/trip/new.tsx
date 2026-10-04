@@ -79,8 +79,8 @@ function Form() {
     <Screen footer={<Button title="Publier mon trajet" variant="traveler" onPress={submit} loading={loading} />}>
       {error ? <InlineMessage text={error} /> : null}
       <H2 style={{ marginBottom: 12 }}>Votre voyage</H2>
-      <CityField label="Départ" placeholder="D'où partez-vous ?" value={origin} onChange={setOrigin} icon="radio-button-on-outline" allowLocation />
-      <CityField label="Arrivée" placeholder="Où allez-vous ?" value={dest} onChange={setDest} icon="flag-outline" />
+      <CityField label="Départ" placeholder="D'où partez-vous ? (ville, aéroport, gare…)" value={origin} onChange={setOrigin} icon="radio-button-on-outline" allowLocation />
+      <CityField label="Arrivée" placeholder="Où allez-vous ? (ville, aéroport, gare…)" value={dest} onChange={setDest} icon="flag-outline" />
       <DateField label="Départ" value={departure} onChange={setDeparture} withTime minimumDate={new Date()} />
       <DateField label="Arrivée (facultatif)" value={arrival} onChange={setArrival} withTime clearable minimumDate={departure ?? new Date()} placeholder="Non précisée" />
 

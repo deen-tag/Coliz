@@ -80,8 +80,8 @@ export function HeroChoice() {
           <Card>
             <p className="text-sm text-ink-muted mb-4">Trouvez un voyageur qui va là où vous envoyez votre colis.</p>
             <form onSubmit={search} className="space-y-3">
-              <CityAutocomplete label="D'où part votre colis ?" placeholder="Ville de départ" onText={(t) => setFrom({ text: t })} onSelect={(c) => setFrom({ text: c.label, lat: c.lat, lng: c.lng })} />
-              <CityAutocomplete label="Où va votre colis ?" placeholder="Ville d'arrivée" onText={(t) => setTo({ text: t })} onSelect={(c) => setTo({ text: c.label, lat: c.lat, lng: c.lng })} />
+              <CityAutocomplete label="D'où part votre colis ?" placeholder="Ville, aéroport, gare ou port" onText={(t) => setFrom({ text: t })} onSelect={(c) => setFrom({ text: c.label, lat: c.lat, lng: c.lng })} />
+              <CityAutocomplete label="Où va votre colis ?" placeholder="Ville, aéroport, gare ou port" onText={(t) => setTo({ text: t })} onSelect={(c) => setTo({ text: c.label, lat: c.lat, lng: c.lng })} />
               <PrimaryButton type="submit">Voir les trajets disponibles</PrimaryButton>
             </form>
             <p className="mt-4 text-center text-sm text-ink-muted">

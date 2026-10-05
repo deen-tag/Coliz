@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import airportData from "@/server/data/airports.json";
 
 // Suggestions pour un champ « ville » : les villes d'abord, puis les lieux de transport
 // (aéroports, gares, ports, gares routières) — pratique pour les départs/arrivées en avion, train ou ferry.
@@ -24,6 +25,72 @@ function transportKind(props: any): Exclude<Kind, "city"> | null {
   return null;
 }
 
+
+// ── Aéroports : liste mondiale locale (OurAirports, vols commerciaux) ──────────────────────────
+// Ligne : [code IATA, nom, ville, pays ISO, lat, lng, taille (0 = grand, 1 = moyen, 2 = petit)]
+type AirportRow = [string, string, string, string, number, number, number];
+const AIRPORTS = airportData as AirportRow[];
+
+const norm = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+const COUNTRY_NAMES = new Intl.DisplayNames(["fr"], { type: "region" });
+const countryName = (iso: string) => {
+  try {
+    return COUNTRY_NAMES.of(iso) ?? iso;
+  } catch {
+    return iso;
+  }
+};
+
+// Texte de recherche pré-calculé une seule fois (reste en mémoire tant que le serveur est chaud).
+const SEARCHABLE = AIRPORTS.map((a) => norm(`${a[0]} ${a[1]} ${a[2]}`));
+
+function km(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const r = Math.PI / 180;
+  const h =
+    Math.sin(((lat2 - lat1) * r) / 2) ** 2 +
+    Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(((lng2 - lng1) * r) / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
+function airportHit(a: AirportRow): Hit {
+  return {
+    label: `${a[1]} (${a[0]}), ${a[2]}, ${countryName(a[3])}`,
+    lat: a[4],
+    lng: a[5],
+    kind: "airport",
+  };
+}
+
+// 1) code IATA exact (« CDG »), 2) nom/ville commençant par la saisie ou la contenant,
+// 3) aéroports proches de la première ville trouvée par Mapbox (« Paris » → CDG, Orly…),
+//    ce qui marche même quand la ville est écrite en français et l'aéroport en anglais.
+function findAirports(query: string, topCity?: { lat: number; lng: number }): Hit[] {
+  const q = norm(query);
+  if (q.length < 2) return [];
+  const picked = new Map<string, { a: AirportRow; score: number }>();
+  const add = (a: AirportRow, score: number) => {
+    const prev = picked.get(a[0]);
+    if (!prev || score < prev.score) picked.set(a[0], { a, score });
+  };
+
+  AIRPORTS.forEach((a, i) => {
+    const text = SEARCHABLE[i];
+    if (a[0].toLowerCase() === q) add(a, -100);
+    else if (q.length >= 3 && (text.includes(` ${q}`) || text.startsWith(q))) add(a, a[6] * 10 + 5);
+  });
+
+  if (topCity) {
+    for (const a of AIRPORTS) {
+      const d = km(topCity.lat, topCity.lng, a[4], a[5]);
+      if (d <= 60) add(a, a[6] * 10 + d / 10);
+    }
+  }
+
+  return [...picked.values()].sort((x, y) => x.score - y.score).slice(0, 4).map((p) => airportHit(p.a));
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q");
@@ -32,8 +99,8 @@ export async function GET(req: Request) {
   const token = process.env.MAPBOX_TOKEN;
   if (!token) {
     // Pas de clé configurée : on ne bloque pas le formulaire, on renvoie juste
-    // aucune suggestion (l'utilisateur peut toujours saisir le texte librement).
-    return NextResponse.json([]);
+    // les villes (l'utilisateur peut toujours saisir le texte librement) ; les aéroports, eux, marchent sans clé.
+    return NextResponse.json(findAirports(query).map((s) => ({ ...s, kindLabel: KIND_LABEL[s.kind] })));
   }
 
   const base = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`;
@@ -58,9 +125,11 @@ export async function GET(req: Request) {
       })
     : [];
 
-  // Villes d'abord (4 au plus), puis les lieux de transport, 8 suggestions maximum, sans doublon.
+  // Villes d'abord (4 au plus), puis les aéroports (liste locale), puis les autres lieux de transport
+  // trouvés par Mapbox, 8 suggestions maximum, sans doublon.
+  const airports = findAirports(query, cities[0]);
   const seen = new Set<string>();
-  const merged = [...cities.slice(0, 4), ...hubs, ...cities.slice(4)].filter((s) => {
+  const merged = [...cities.slice(0, 4), ...airports, ...hubs, ...cities.slice(4)].filter((s) => {
     if (seen.has(s.label)) return false;
     seen.add(s.label);
     return true;

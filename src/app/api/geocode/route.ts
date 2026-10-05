@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import airportData from "@/server/data/airports.json";
+import stationData from "@/server/data/stations.json";
 
 // Suggestions pour un champ « ville » : les villes d'abord, puis les lieux de transport
 // (aéroports, gares, ports, gares routières) — pratique pour les départs/arrivées en avion, train ou ferry.
@@ -26,6 +27,10 @@ function transportKind(props: any): Exclude<Kind, "city"> | null {
 }
 
 
+// Sources des données locales :
+//  - Aéroports : OurAirports (domaine public), aéroports avec vols commerciaux.
+//  - Gares : Trainline EU « stations » (https://github.com/trainline-eu/stations), licence ODbL — © Trainline EU
+//    et contributeurs (OpenStreetMap, SNCF Open Data, GeoNames). Couvre surtout l'Europe.
 // ── Aéroports : liste mondiale locale (OurAirports, vols commerciaux) ──────────────────────────
 // Ligne : [code IATA, nom, ville, pays ISO, lat, lng, taille (0 = grand, 1 = moyen, 2 = petit)]
 type AirportRow = [string, string, string, string, number, number, number];
@@ -54,9 +59,13 @@ function km(lat1: number, lng1: number, lat2: number, lng2: number) {
   return 12742 * Math.asin(Math.sqrt(h));
 }
 
+// « Charles de Gaulle International Airport » → « Charles de Gaulle » (le badge « Aéroport » le dit déjà).
+const shortAirportName = (name: string) =>
+  name.replace(/\s+(International\s+)?(Airport|Airfield|Aerodrome)$/i, "").replace(/\s+International$/i, "").trim() || name;
+
 function airportHit(a: AirportRow): Hit {
   return {
-    label: `${a[1]} (${a[0]}), ${a[2]}, ${countryName(a[3])}`,
+    label: `${shortAirportName(a[1])} (${a[0]}), ${a[2]}, ${countryName(a[3])}`,
     lat: a[4],
     lng: a[5],
     kind: "airport",
@@ -91,6 +100,45 @@ function findAirports(query: string, topCity?: { lat: number; lng: number }): Hi
   return [...picked.values()].sort((x, y) => x.score - y.score).slice(0, 4).map((p) => airportHit(p.a));
 }
 
+// ── Gares : liste locale (Trainline EU, surtout l'Europe) ──────────────────────────────────────
+// Ligne : [nom, pays ISO, lat, lng, gare principale (1) ou non (0)]
+type StationRow = [string, string, number, number, number];
+const STATIONS = stationData as StationRow[];
+const STATION_TEXT = STATIONS.map((st) => norm(st[0]));
+
+// 1) nom commençant par la saisie ou contenant un mot qui la commence (« Paris » → Gare du Nord, Lyon…),
+// 2) gares principales proches de la première ville Mapbox (« Londres » → London St Pancras…).
+// Les gares principales passent d'abord, puis les noms les plus courts.
+function findStations(query: string, topCity?: { lat: number; lng: number }): Hit[] {
+  const q = norm(query);
+  if (q.length < 3) return [];
+  const picked = new Map<number, number>();
+  STATIONS.forEach((st, i) => {
+    const text = STATION_TEXT[i];
+    if (text.startsWith(q) || text.includes(` ${q}`)) picked.set(i, (st[4] ? 0 : 100) + st[0].length);
+  });
+  if (topCity) {
+    STATIONS.forEach((st, i) => {
+      if (!st[4] || picked.has(i)) return;
+      const d = km(topCity.lat, topCity.lng, st[2], st[3]);
+      if (d <= 15) picked.set(i, 50 + d);
+    });
+  }
+  // Les données contiennent aussi une ligne par ville (« Paris », « Madrid »…) : on l'écarte quand
+  // de vraies gares de cette ville existent (« Paris Gare du Nord »), pour ne pas doubler la suggestion « ville ».
+  const hasSiblings = [...picked.keys()].some((i) => STATION_TEXT[i].startsWith(`${q} `));
+  return [...picked.entries()]
+    .filter(([i]) => !(hasSiblings && STATION_TEXT[i] === q && !STATIONS[i][4]))
+    .sort((x, y) => x[1] - y[1])
+    .slice(0, 3)
+    .map(([i]): Hit => ({
+      label: `${STATIONS[i][0]}, ${countryName(STATIONS[i][1])}`,
+      lat: STATIONS[i][2],
+      lng: STATIONS[i][3],
+      kind: "train",
+    }));
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q");
@@ -100,7 +148,9 @@ export async function GET(req: Request) {
   if (!token) {
     // Pas de clé configurée : on ne bloque pas le formulaire, on renvoie juste
     // les villes (l'utilisateur peut toujours saisir le texte librement) ; les aéroports, eux, marchent sans clé.
-    return NextResponse.json(findAirports(query).map((s) => ({ ...s, kindLabel: KIND_LABEL[s.kind] })));
+    return NextResponse.json(
+      [...findAirports(query), ...findStations(query)].map((s) => ({ ...s, kindLabel: KIND_LABEL[s.kind] }))
+    );
   }
 
   const base = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`;
@@ -125,11 +175,12 @@ export async function GET(req: Request) {
       })
     : [];
 
-  // Villes d'abord (4 au plus), puis les aéroports (liste locale), puis les autres lieux de transport
-  // trouvés par Mapbox, 8 suggestions maximum, sans doublon.
+  // Ordre : la première ville, puis ses aéroports et ses gares (listes locales), puis les autres villes
+  // et les lieux de transport trouvés par Mapbox. 8 suggestions maximum, sans doublon.
   const airports = findAirports(query, cities[0]);
+  const stations = findStations(query, cities[0]);
   const seen = new Set<string>();
-  const merged = [...cities.slice(0, 4), ...airports, ...hubs, ...cities.slice(4)].filter((s) => {
+  const merged = [...cities.slice(0, 1), ...airports.slice(0, 3), ...stations.slice(0, 2), ...cities.slice(1, 4), ...hubs, ...airports.slice(3), ...stations.slice(2), ...cities.slice(4)].filter((s) => {
     if (seen.has(s.label)) return false;
     seen.add(s.label);
     return true;

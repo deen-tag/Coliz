@@ -139,6 +139,42 @@ function findStations(query: string, topCity?: { lat: number; lng: number }): Hi
     }));
 }
 
+// Mapbox renvoie aussi des villes « approchantes » sans rapport (« Gare de » → Ware, Gary, Gore…).
+// Une ville n'est « pertinente » que si son nom commence par la saisie (ou la contient comme mot).
+// Les aéroports/gares proches ne sont cherchés que pour une ville pertinente.
+function mergeSuggestions(query: string, cities: Hit[], hubs: Hit[]): Hit[] {
+  const q = norm(query);
+  const isRelevant = (c: Hit) => {
+    const name = norm(c.label.split(",")[0]);
+    return name.startsWith(q) || q.startsWith(name) || name.includes(` ${q}`);
+  };
+  const relevant = cities.filter(isRelevant);
+  const others = cities.filter((c) => !isRelevant(c));
+
+  const airports = findAirports(query, relevant[0]);
+  const stations = findStations(query, relevant[0]);
+
+  // Ordre : la ville principale, puis ses aéroports et ses gares (listes locales), puis les autres villes
+  // pertinentes, les lieux de transport trouvés par Mapbox, le reste, et en dernier les villes approchantes.
+  const all = [
+    ...relevant.slice(0, 1),
+    ...airports.slice(0, 3),
+    ...stations.slice(0, 2),
+    ...relevant.slice(1, 4),
+    ...hubs,
+    ...airports.slice(3),
+    ...stations.slice(2),
+    ...relevant.slice(4),
+    ...others,
+  ];
+  const seen = new Set<string>();
+  return all.filter((s) => {
+    if (seen.has(s.label)) return false;
+    seen.add(s.label);
+    return true;
+  });
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q");
@@ -175,16 +211,7 @@ export async function GET(req: Request) {
       })
     : [];
 
-  // Ordre : la première ville, puis ses aéroports et ses gares (listes locales), puis les autres villes
-  // et les lieux de transport trouvés par Mapbox. 8 suggestions maximum, sans doublon.
-  const airports = findAirports(query, cities[0]);
-  const stations = findStations(query, cities[0]);
-  const seen = new Set<string>();
-  const merged = [...cities.slice(0, 1), ...airports.slice(0, 3), ...stations.slice(0, 2), ...cities.slice(1, 4), ...hubs, ...airports.slice(3), ...stations.slice(2), ...cities.slice(4)].filter((s) => {
-    if (seen.has(s.label)) return false;
-    seen.add(s.label);
-    return true;
-  });
+  const merged = mergeSuggestions(query, cities, hubs);
 
   return NextResponse.json(
     merged.slice(0, 8).map((s) => ({ ...s, kindLabel: KIND_LABEL[s.kind] }))

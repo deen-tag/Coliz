@@ -63,9 +63,9 @@ function km(lat1: number, lng1: number, lat2: number, lng2: number) {
 const shortAirportName = (name: string) =>
   name.replace(/\s+(International\s+)?(Airport|Airfield|Aerodrome)$/i, "").replace(/\s+International$/i, "").trim() || name;
 
-function airportHit(a: AirportRow): Hit {
+function airportHit(a: AirportRow, cityName?: string): Hit {
   return {
-    label: `${shortAirportName(a[1])} (${a[0]}), ${a[2]}, ${countryName(a[3])}`,
+    label: `${shortAirportName(a[1])} (${a[0]}), ${cityName ?? a[2]}, ${countryName(a[3])}`,
     lat: a[4],
     lng: a[5],
     kind: "airport",
@@ -75,7 +75,7 @@ function airportHit(a: AirportRow): Hit {
 // 1) code IATA exact (« CDG »), 2) nom/ville commençant par la saisie ou la contenant,
 // 3) aéroports proches de la première ville trouvée par Mapbox (« Paris » → CDG, Orly…),
 //    ce qui marche même quand la ville est écrite en français et l'aéroport en anglais.
-function findAirports(query: string, topCity?: { lat: number; lng: number }): Hit[] {
+function findAirports(query: string, topCity?: { lat: number; lng: number; label?: string }): Hit[] {
   const q = norm(query);
   if (q.length < 2) return [];
   const picked = new Map<string, { a: AirportRow; score: number }>();
@@ -97,7 +97,20 @@ function findAirports(query: string, topCity?: { lat: number; lng: number }): Hi
     }
   }
 
-  return [...picked.values()].sort((x, y) => x.score - y.score).slice(0, 4).map((p) => airportHit(p.a));
+  // Quand l'aéroport est tout près de la ville trouvée par Mapbox et que c'est la même ville écrite en anglais,
+  // on affiche le nom français (« Alger » plutôt que « Algiers », « Londres » plutôt que « London »).
+  const frenchCity = topCity?.label?.split(",")[0].trim();
+  return [...picked.values()]
+    .sort((x, y) => x.score - y.score)
+    .slice(0, 4)
+    .map((p) =>
+      airportHit(
+        p.a,
+        topCity && frenchCity && km(topCity.lat, topCity.lng, p.a[4], p.a[5]) <= 45 && norm(p.a[2]).slice(0, 3) === norm(frenchCity).slice(0, 3)
+          ? frenchCity
+          : undefined
+      )
+    );
 }
 
 // ── Gares : liste locale (Trainline EU, surtout l'Europe) ──────────────────────────────────────
@@ -106,7 +119,9 @@ type StationRow = [string, string, number, number, number];
 const STATIONS = stationData as StationRow[];
 // Le fichier contient aussi des gares routières : on les étiquette « Gare routière » plutôt que « Gare ».
 const BUS_STATION = /gare routi[eè]re|busbahnhof|bus station|bus terminal|autostazione|estaci[oó]n de autobuses|autobusov|busstation/i;
+const AIRPORT_STATION = /a[eé]roport|airport|flughafen|aeroporto|aeropuerto/i;
 const STATION_TEXT = STATIONS.map((st) => norm(st[0]));
+const STATION_WORDS = STATION_TEXT.map((t) => t.split(" "));
 
 // 1) nom commençant par la saisie ou contenant un mot qui la commence (« Paris » → Gare du Nord, Lyon…),
 // 2) gares principales proches de la première ville Mapbox (« Londres » → London St Pancras…).
@@ -115,15 +130,22 @@ function findStations(query: string, topCity?: { lat: number; lng: number }): Hi
   const q = norm(query);
   if (q.length < 3) return [];
   const picked = new Map<number, number>();
+  // Une saisie d'un seul mot doit correspondre à un mot entier du nom de la gare, ou au début d'un mot
+  // dont elle couvre déjà l'essentiel (60 %) : « Alger » ne propose pas « Algermissen », mais « Algermi » oui.
+  const oneWord = !q.includes(" ");
   STATIONS.forEach((st, i) => {
     const text = STATION_TEXT[i];
-    if (text.startsWith(q) || text.includes(` ${q}`)) picked.set(i, (st[4] ? 0 : 100) + st[0].length);
+    const ok = oneWord
+      ? STATION_WORDS[i].some((w) => w === q || (w.startsWith(q) && q.length >= w.length * 0.6))
+      : text.startsWith(q) || text.includes(` ${q}`);
+    // Les gares « Aéroport … » (déjà couvertes par les aéroports) passent après les autres.
+    if (ok) picked.set(i, (st[4] ? 0 : 100) + (AIRPORT_STATION.test(st[0]) ? 200 : 0) + st[0].length);
   });
   if (topCity) {
     STATIONS.forEach((st, i) => {
       if (!st[4] || picked.has(i)) return;
       const d = km(topCity.lat, topCity.lng, st[2], st[3]);
-      if (d <= 15) picked.set(i, 50 + d);
+      if (d <= 15) picked.set(i, 250 + d);
     });
   }
   // Les données contiennent aussi une ligne par ville (« Paris », « Madrid »…) : on l'écarte quand

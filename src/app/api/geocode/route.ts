@@ -104,6 +104,8 @@ function findAirports(query: string, topCity?: { lat: number; lng: number }): Hi
 // Ligne : [nom, pays ISO, lat, lng, gare principale (1) ou non (0)]
 type StationRow = [string, string, number, number, number];
 const STATIONS = stationData as StationRow[];
+// Le fichier contient aussi des gares routières : on les étiquette « Gare routière » plutôt que « Gare ».
+const BUS_STATION = /gare routi[eè]re|busbahnhof|bus station|bus terminal|autostazione|estaci[oó]n de autobuses|autobusov|busstation/i;
 const STATION_TEXT = STATIONS.map((st) => norm(st[0]));
 
 // 1) nom commençant par la saisie ou contenant un mot qui la commence (« Paris » → Gare du Nord, Lyon…),
@@ -135,7 +137,7 @@ function findStations(query: string, topCity?: { lat: number; lng: number }): Hi
       label: `${STATIONS[i][0]}, ${countryName(STATIONS[i][1])}`,
       lat: STATIONS[i][2],
       lng: STATIONS[i][3],
-      kind: "train",
+      kind: BUS_STATION.test(STATIONS[i][0]) ? "bus" : "train",
     }));
 }
 
@@ -151,8 +153,14 @@ function mergeSuggestions(query: string, cities: Hit[], hubs: Hit[]): Hit[] {
   const relevant = cities.filter(isRelevant);
   const others = cities.filter((c) => !isRelevant(c));
 
-  const airports = findAirports(query, relevant[0]);
-  const stations = findStations(query, relevant[0]);
+  // La recherche « autour de la ville » n'a lieu que si la saisie couvre presque tout le nom de la ville
+  // (« Paris » oui ; « Gare » pour « Garessio » non), sinon on ne trouve que des lieux sans rapport.
+  const top = relevant[0];
+  const topName = top ? norm(top.label.split(",")[0]) : "";
+  const near = top && q.length >= Math.ceil(topName.length * 0.75) ? top : undefined;
+
+  const airports = findAirports(query, near);
+  const stations = findStations(query, near);
 
   // Ordre : la ville principale, puis ses aéroports et ses gares (listes locales), puis les autres villes
   // pertinentes, les lieux de transport trouvés par Mapbox, le reste, et en dernier les villes approchantes.

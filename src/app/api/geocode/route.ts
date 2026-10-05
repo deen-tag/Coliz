@@ -118,7 +118,7 @@ function findAirports(query: string, topCity?: { lat: number; lng: number; label
 type StationRow = [string, string, number, number, number];
 const STATIONS = stationData as StationRow[];
 // Le fichier contient aussi des gares routières : on les étiquette « Gare routière » plutôt que « Gare ».
-const BUS_STATION = /gare routi[eè]re|busbahnhof|bus station|bus terminal|autostazione|estaci[oó]n de autobuses|autobusov|busstation/i;
+const BUS_STATION = /\bbus\b|gare routi[eè]re|busbahnhof|bus station|bus terminal|autostazione|estaci[oó]n de autobuses|autobusov|busstation/i;
 const AIRPORT_STATION = /a[eé]roport|airport|flughafen|aeroporto|aeropuerto/i;
 const STATION_TEXT = STATIONS.map((st) => norm(st[0]));
 const STATION_WORDS = STATION_TEXT.map((t) => t.split(" "));
@@ -126,35 +126,56 @@ const STATION_WORDS = STATION_TEXT.map((t) => t.split(" "));
 // 1) nom commençant par la saisie ou contenant un mot qui la commence (« Paris » → Gare du Nord, Lyon…),
 // 2) gares principales proches de la première ville Mapbox (« Londres » → London St Pancras…).
 // Les gares principales passent d'abord, puis les noms les plus courts.
-function findStations(query: string, topCity?: { lat: number; lng: number }): Hit[] {
-  const q = norm(query);
-  if (q.length < 3) return [];
+function findStations(query: string, topCity?: { lat: number; lng: number }, altQuery?: string): Hit[] {
   const picked = new Map<number, number>();
-  // Une saisie d'un seul mot doit correspondre à un mot entier du nom de la gare, ou au début d'un mot
-  // dont elle couvre déjà l'essentiel (60 %) : « Alger » ne propose pas « Algermissen », mais « Algermi » oui.
-  const oneWord = !q.includes(" ");
-  STATIONS.forEach((st, i) => {
-    const text = STATION_TEXT[i];
-    const ok = oneWord
-      ? STATION_WORDS[i].some((w) => w === q || (w.startsWith(q) && q.length >= w.length * 0.6))
-      : text.startsWith(q) || text.includes(` ${q}`);
-    // Les gares « Aéroport … » (déjà couvertes par les aéroports) passent après les autres.
-    if (ok) picked.set(i, (st[4] ? 0 : 100) + (AIRPORT_STATION.test(st[0]) ? 200 : 0) + st[0].length);
+  const skip = new Set<number>();
+
+  // On cherche avec la saisie telle quelle, puis (en second choix) sans les mots génériques « gare », « de »…
+  [query, altQuery].forEach((raw, pass) => {
+    if (!raw) return;
+    const q = norm(raw);
+    if (q.length < 3) return;
+    const extra = pass === 0 ? 0 : 150;
+    // Une saisie d'un seul mot doit correspondre à un mot entier du nom de la gare, ou au début d'un mot
+    // dont elle couvre déjà l'essentiel (60 %) : « Alger » ne propose pas « Algermissen », mais « Algermi » oui.
+    const oneWord = !q.includes(" ");
+    const hits: number[] = [];
+    STATIONS.forEach((st, i) => {
+      const text = STATION_TEXT[i];
+      const ok = oneWord
+        ? STATION_WORDS[i].some((w) => w === q || (w.startsWith(q) && q.length >= w.length * 0.6))
+        : text.startsWith(q) || text.includes(` ${q}`);
+      if (!ok) return;
+      hits.push(i);
+      // Les gares « Aéroport … » (déjà couvertes par les aéroports) passent après les autres.
+      // Quand on connaît la ville cherchée, une gare du même nom située à plus de 40 km (« Marseille-en-Beauvaisis »,
+      // « Pully Pré Pariset ») passe loin derrière celles de la ville (sauf si la saisie commence par « gare »).
+      const far = topCity && !altQuery && km(topCity.lat, topCity.lng, st[2], st[3]) > 40 ? 300 : 0;
+      const score = extra + far + (st[4] ? 0 : 100) + (AIRPORT_STATION.test(st[0]) ? 200 : 0) + st[0].length;
+      const prev = picked.get(i);
+      if (prev === undefined || score < prev) picked.set(i, score);
+    });
+    // Les données contiennent aussi une ligne par ville (« Paris », « Madrid »…) : on l'écarte quand
+    // de vraies gares de cette ville existent (« Paris Gare du Nord »), pour ne pas doubler la suggestion « ville ».
+    if (hits.some((i) => STATION_TEXT[i].startsWith(`${q} `))) {
+      hits.forEach((i) => {
+        if (STATION_TEXT[i] === q && !STATIONS[i][4]) skip.add(i);
+      });
+    }
   });
+
   if (topCity) {
     STATIONS.forEach((st, i) => {
       if (!st[4] || picked.has(i)) return;
       const d = km(topCity.lat, topCity.lng, st[2], st[3]);
-      if (d <= 15) picked.set(i, 250 + d);
+      if (d <= 15) picked.set(i, 400 + d);
     });
   }
-  // Les données contiennent aussi une ligne par ville (« Paris », « Madrid »…) : on l'écarte quand
-  // de vraies gares de cette ville existent (« Paris Gare du Nord »), pour ne pas doubler la suggestion « ville ».
-  const hasSiblings = [...picked.keys()].some((i) => STATION_TEXT[i].startsWith(`${q} `));
+
   return [...picked.entries()]
-    .filter(([i]) => !(hasSiblings && STATION_TEXT[i] === q && !STATIONS[i][4]))
+    .filter(([i]) => !skip.has(i))
     .sort((x, y) => x[1] - y[1])
-    .slice(0, 3)
+    .slice(0, 6)
     .map(([i]): Hit => ({
       label: `${STATIONS[i][0]}, ${countryName(STATIONS[i][1])}`,
       lat: STATIONS[i][2],
@@ -163,14 +184,24 @@ function findStations(query: string, topCity?: { lat: number; lng: number }): Hi
     }));
 }
 
+// Mots génériques que les gens tapent avant le nom du lieu : « Gare Montparnasse », « Aéroport Alger »,
+// « Gare de Lyon ». On les retire pour chercher le vrai nom (en gardant toujours au moins un mot).
+const GENERIC_WORDS = new Set(["gare", "gares", "aeroport", "aeroports", "airport", "station", "de", "du", "des", "d", "la", "le", "les", "l"]);
+function stripGeneric(query: string): string {
+  const tokens = query.trim().split(/\s+/);
+  let i = 0;
+  while (i < tokens.length - 1 && GENERIC_WORDS.has(norm(tokens[i]))) i++;
+  return tokens.slice(i).join(" ");
+}
+
 // Mapbox renvoie aussi des villes « approchantes » sans rapport (« Gare de » → Ware, Gary, Gore…).
 // Une ville n'est « pertinente » que si son nom commence par la saisie (ou la contient comme mot).
 // Les aéroports/gares proches ne sont cherchés que pour une ville pertinente.
-function mergeSuggestions(query: string, cities: Hit[], hubs: Hit[]): Hit[] {
-  const q = norm(query);
+function mergeSuggestions(query: string, cleaned: string, cities: Hit[], hubs: Hit[]): Hit[] {
+  const q = norm(cleaned);
   const isRelevant = (c: Hit) => {
     const name = norm(c.label.split(",")[0]);
-    return name.startsWith(q) || q.startsWith(name) || name.includes(` ${q}`);
+    return name.startsWith(q) || q.startsWith(`${name} `) || name.includes(` ${q}`);
   };
   const relevant = cities.filter(isRelevant);
   const others = cities.filter((c) => !isRelevant(c));
@@ -181,19 +212,27 @@ function mergeSuggestions(query: string, cities: Hit[], hubs: Hit[]): Hit[] {
   const topName = top ? norm(top.label.split(",")[0]) : "";
   const near = top && q.length >= Math.ceil(topName.length * 0.75) ? top : undefined;
 
-  const airports = findAirports(query, near);
-  const stations = findStations(query, near);
+  // Si la personne écrit « gare … », elle veut une gare ; « aéroport … », un aéroport : on ne mélange pas.
+  const firstWord = norm(query.trim().split(/\s+/)[0] ?? "");
+  const wantsStation = ["gare", "gares", "station"].includes(firstWord) && cleaned !== query;
+  const wantsAirport = ["aeroport", "aeroports", "airport"].includes(firstWord) && cleaned !== query;
+
+  const airports = wantsStation ? [] : findAirports(cleaned, near);
+  const stations = wantsAirport ? [] : findStations(query, near, cleaned !== query ? cleaned : undefined);
 
   // Ordre : la ville principale, puis ses aéroports et ses gares (listes locales), puis les autres villes
   // pertinentes, les lieux de transport trouvés par Mapbox, le reste, et en dernier les villes approchantes.
+  // Avec « gare … » ou « aéroport … », les lieux de ce type passent avant les villes.
+  const typed = wantsStation ? stations : wantsAirport ? airports : [];
   const all = [
+    ...typed,
     ...relevant.slice(0, 1),
     ...airports.slice(0, 3),
-    ...stations.slice(0, 2),
+    ...stations.slice(0, 5),
     ...relevant.slice(1, 4),
     ...hubs,
     ...airports.slice(3),
-    ...stations.slice(2),
+    ...stations.slice(5),
     ...relevant.slice(4),
     ...others,
   ];
@@ -210,16 +249,19 @@ export async function GET(req: Request) {
   const query = searchParams.get("q");
   if (!query || query.length < 2) return NextResponse.json([]);
 
+  // « Gare Montparnasse » → « Montparnasse » pour Mapbox et pour les aéroports ; les gares essaient les deux.
+  const cleaned = stripGeneric(query);
+
   const token = process.env.MAPBOX_TOKEN;
   if (!token) {
     // Pas de clé configurée : on ne bloque pas le formulaire, on renvoie juste
     // les villes (l'utilisateur peut toujours saisir le texte librement) ; les aéroports, eux, marchent sans clé.
     return NextResponse.json(
-      [...findAirports(query), ...findStations(query)].map((s) => ({ ...s, kindLabel: KIND_LABEL[s.kind] }))
+      [...findAirports(cleaned), ...findStations(query, undefined, cleaned !== query ? cleaned : undefined)].map((s) => ({ ...s, kindLabel: KIND_LABEL[s.kind] }))
     );
   }
 
-  const base = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`;
+  const base = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(cleaned)}.json`;
   const [placesRes, poiRes] = await Promise.all([
     fetch(`${base}?types=place&language=fr&limit=5&access_token=${token}`).catch(() => null),
     fetch(`${base}?types=poi&language=fr&limit=10&access_token=${token}`).catch(() => null),
@@ -241,9 +283,9 @@ export async function GET(req: Request) {
       })
     : [];
 
-  const merged = mergeSuggestions(query, cities, hubs);
+  const merged = mergeSuggestions(query, cleaned, cities, hubs);
 
   return NextResponse.json(
-    merged.slice(0, 8).map((s) => ({ ...s, kindLabel: KIND_LABEL[s.kind] }))
+    merged.slice(0, 10).map((s) => ({ ...s, kindLabel: KIND_LABEL[s.kind] }))
   );
 }

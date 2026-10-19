@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import { Card, PrimaryButton } from "@/components/ui";
 import { CityAutocomplete } from "@/components/city-autocomplete";
@@ -8,7 +9,10 @@ import { DateField } from "@/components/date-field";
 import { IconField, IconSelect } from "@/components/form-field";
 import { CalendarIcon, CarIcon, TrainIcon, BusIcon, PlaneIcon, TruckIcon, FerryIcon, MotorcycleIcon, BicycleIcon, PackageIcon, ScaleIcon, EuroIcon, SuitcaseIcon } from "@/components/icons";
 import { formatPrice } from "@/components/trip-parts";
-import { PLATFORM_FEE_RATE, computeBookingAmounts } from "@/server/pricing";
+import { PLATFORM_FEE_RATE, computeBookingAmounts, minContributionForTotal } from "@/server/pricing";
+import { countryFromLabel, formatEuro, normalizeCountry, toCents, type PriceTier } from "@/server/pricing-grid";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 type Place = { label: string; lat: number; lng: number };
 
@@ -46,8 +50,25 @@ export default function NouveauTrajetPage() {
   // Montant saisi : sert à montrer tout de suite ce que le voyageur reçoit et ce que paie l'expéditeur.
   const [amount, setAmount] = useState("");
   const parsedAmount = Number(amount.replace(",", "."));
-  const preview = parsedAmount > 0 ? computeBookingAmounts(parsedAmount) : null;
-  const feePercent = Math.round(PLATFORM_FEE_RATE * 100);
+  // Grille et taux de commission en vigueur (modifiables en admin) — le serveur les ré-applique à la publication.
+  const { data: pricing } = useSWR<{ feeRate: number; tiers: PriceTier[] }>("/api/pricing", fetcher, { revalidateOnFocus: false });
+  const feeRate = pricing?.feeRate ?? PLATFORM_FEE_RATE;
+  const preview = parsedAmount > 0 ? computeBookingAmounts(parsedAmount, feeRate) : null;
+  const feePercent = Math.round(feeRate * 1000) / 10;
+
+  // Tranches applicables à ce couloir (règle par défaut, ou règle propre aux pays choisis).
+  const originCountry = normalizeCountry(countryFromLabel(origin?.label));
+  const destinationCountry = normalizeCountry(countryFromLabel(destination?.label));
+  const tiers = (pricing?.tiers ?? []).filter(
+    (t) =>
+      (!normalizeCountry(t.originCountry) || normalizeCountry(t.originCountry) === originCountry) &&
+      (!normalizeCountry(t.destinationCountry) || normalizeCountry(t.destinationCountry) === destinationCountry)
+  );
+  // Plancher : le prix tout compris d'un trajet ne descend pas sous le plus petit minimum de la grille
+  // (le minimum exact dépend du poids du colis, appliqué à chaque demande).
+  const floor = tiers.length > 0 ? Math.min(...tiers.map((t) => t.minPrice)) : null;
+  const belowFloor = Boolean(preview && floor !== null && toCents(preview.totalAmount) < toCents(floor));
+  const floorContribution = floor !== null ? minContributionForTotal(floor, feeRate) : null;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -82,8 +103,11 @@ export default function NouveauTrajetPage() {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      const data = await res.json();
-      setError(data.error?.fieldErrors?.preexistingJourneyConfirmed?.[0] ?? "Vérifiez les informations saisies.");
+      const data = await res.json().catch(() => ({}));
+      setError(
+        data.error?.fieldErrors?.preexistingJourneyConfirmed?.[0] ??
+          (typeof data.error === "string" ? data.error : "Vérifiez les informations saisies.")
+      );
       return;
     }
     router.push("/mes-voyages");
@@ -161,6 +185,11 @@ export default function NouveauTrajetPage() {
                 <p className="text-xs text-ink-muted mt-1">
                   L&apos;expéditeur paie {formatPrice(preview.totalAmount)}, frais de service Coliz de {feePercent} % inclus.
                 </p>
+                {belowFloor && floor !== null && floorContribution !== null && (
+                  <p className="text-sm text-error mt-2" role="alert">
+                    Le prix minimum autorisé est de {formatEuro(floor)} tout compris. Saisissez au moins {formatEuro(floorContribution)}.
+                  </p>
+                )}
               </>
             ) : (
               <p className="text-xs text-ink-muted">
@@ -169,6 +198,25 @@ export default function NouveauTrajetPage() {
               </p>
             )}
           </div>
+          {tiers.length > 0 && (
+            <details className="text-sm -mt-1">
+              <summary className="cursor-pointer font-medium text-primary py-1">Prix minimums selon le poids du colis</summary>
+              <div className="mt-2 rounded-control border border-line overflow-hidden">
+                {tiers.map((t, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3 px-3 py-2 border-b border-line last:border-b-0">
+                    <span className="text-ink">{t.label ?? `${t.minWeightKg} à ${t.maxWeightKg} kg`}</span>
+                    <span className="text-right text-ink-muted">
+                      min. <span className="font-semibold text-ink">{formatEuro(t.minPrice)}</span>
+                      <span className="block text-xs">conseillé {formatEuro(t.recommendedMin).replace(" €", "")} à {formatEuro(t.recommendedMax)}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-ink-muted mt-2">
+                Tout compris, payé par l&apos;expéditeur. Le prix final dépend du poids du colis et reste négociable avec lui, jamais sous le minimum.
+              </p>
+            </details>
+          )}
           {mode === "CAR" && (
             <label className="flex items-start gap-3 text-sm text-ink border-t border-line pt-4">
               <input
@@ -203,7 +251,7 @@ export default function NouveauTrajetPage() {
 
         {error && <p className="text-sm text-error">{error}</p>}
 
-        <PrimaryButton type="submit">Publier mon trajet</PrimaryButton>
+        <PrimaryButton type="submit" disabled={belowFloor}>Publier mon trajet</PrimaryButton>
       </form>
     </main>
   );

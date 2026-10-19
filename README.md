@@ -59,7 +59,14 @@ Inscription et connexion, profils avec badge « Profil vérifié », création d
 ## Décisions techniques
 
 - **Paiement** : « separate charges & transfers ». L'expéditeur paie la plateforme, le transfert au voyageur est déclenché à la livraison confirmée. Ce n'est pas un séquestre juridique.
-- **Commission** : 15 % de la contribution du voyageur, dans `computeBookingAmounts()`.
+- **Commission** : taux configurable en admin (`PricingSettings`, 15 % par défaut), prélevée *dans* le prix tout compris payé par l'expéditeur (`splitTotal()` dans `src/server/pricing.ts`).
+
+## Tarification et négociation
+
+- **Grille** (`PricingTier`, éditable dans Admin → Tarification) : prix minimum obligatoire + fourchette conseillée par tranche de poids, tout compris. Tranche = ]de ; à] kg. Règles optionnelles par pays de départ/arrivée (pays déduit de la fin du libellé de la ville) et supplément. Sans grille en base, la grille de départ de `src/server/pricing-grid.ts` s'applique.
+- **Négociation** (`PriceOffer`) : offre, refus, contre-offre, acceptation ; historique conservé. Le prix de la réservation ne change qu'à l'acceptation. Routes : `POST /api/bookings/[id]/offers`, `POST /api/bookings/[id]/offers/[offerId]` (`{action: accept|reject}`), `/negotiate` (alias).
+- **Serveur d'abord** : le minimum est contrôlé à chaque colis, trajet, offre, acceptation, acceptation de la demande et paiement (`src/server/negotiation.ts`, `negotiation-service.ts`).
+- Tests : `npm test` (`src/server/__tests__`).
 - **Remboursement** : 100 % (plus de 48 h avant le départ), 50 % (24 à 48 h), 0 % (moins de 24 h), dans `computeRefundRate()`.
 - **Badge « Profil vérifié »** : seulement si identité **et** email sont vérifiés.
 - **Codes de remise et de réception** : codes chiffrés (AES-256-GCM, modèle `TransferCode`), générés au paiement. Les événements du colis sont gardés dans `BookingEvent` (preuve en cas de litige). Le voyageur ne peut plus déclarer lui-même une livraison.

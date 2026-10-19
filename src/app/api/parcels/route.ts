@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/server/auth/session";
+import { bandForParcel, loadPricingConfig } from "@/server/pricing-config";
+import { checkAmount } from "@/server/pricing-grid";
 
 const parcelSchema = z.object({
   originLabel: z.string().min(1),
@@ -20,6 +22,8 @@ const parcelSchema = z.object({
   parcelCount: z.number().int().min(1).default(1),
   declaredValue: z.number().nonnegative(),
   photoUrl: z.string().url().optional(),
+  // Prix tout compris que l'expéditeur propose (facultatif) : doit respecter le minimum de la grille.
+  proposedAmount: z.number().positive().optional(),
   prohibitedItemsAccepted: z.literal(true, {
     errorMap: () => ({ message: "Vous devez confirmer avoir lu la liste des objets interdits." }),
   }),
@@ -47,6 +51,14 @@ export async function POST(req: Request) {
         { status: 422 }
       );
     }
+  }
+
+  // Prix proposé : le minimum de la grille s'applique ici aussi (et pas seulement dans le formulaire).
+  if (data.proposedAmount !== undefined) {
+    const band = bandForParcel(await loadPricingConfig(), data);
+    if (!band) return NextResponse.json({ error: "Le poids du colis est invalide." }, { status: 422 });
+    const check = checkAmount(data.proposedAmount, band);
+    if (!check.ok) return NextResponse.json({ error: check.message, code: check.code, minPrice: band.minPrice }, { status: 422 });
   }
 
   const parcel = await prisma.parcel.create({

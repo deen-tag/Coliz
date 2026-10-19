@@ -25,7 +25,7 @@ export default function TrajetDetailPage() {
   const [reserving, setReserving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: trip, isLoading } = useSWR(`/api/trips/${id}`, fetcher);
+  const { data: trip, isLoading } = useSWR(parcelId ? `/api/trips/${id}?parcelId=${parcelId}` : `/api/trips/${id}`, fetcher);
   const { data: session, status } = useSession();
 
   // Mon propre trajet : je le regarde en tant que voyageur (cuivre). Sinon je suis expéditeur (pétrole).
@@ -112,7 +112,12 @@ export default function TrajetDetailPage() {
                 <p className="text-3xl font-semibold text-ink leading-none">
                   {formatPrice(trip.totalAmount ?? trip.contributionAmount)}
                 </p>
-                <p className="text-xs text-ink-muted mt-1.5">Tout compris, frais de service inclus</p>
+                <p className="text-xs text-ink-muted mt-1.5">
+                  Tout compris, frais de service inclus.{" "}
+                  {trip.priceAdjustedToMinimum
+                    ? "Prix ajusté au minimum pour votre colis, négociable au-dessus."
+                    : "Prix négociable avec le voyageur, dans le respect du minimum selon le poids."}
+                </p>
               </>
             )}
           </div>

@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/server/auth/session";
 import { countCompatibleParcels, findCompatibleParcels } from "@/server/matching/engine";
 import { notifyUser } from "@/server/notifications/service";
+import { floorForRoute, loadPricingConfig } from "@/server/pricing-config";
+import { computeBookingAmounts } from "@/server/pricing";
+import { formatEuro, toCents } from "@/server/pricing-grid";
 
 const tripSchema = z
   .object({
@@ -44,6 +47,22 @@ export async function POST(req: Request) {
   const modeRule = await prisma.transportModeRule.findUnique({ where: { mode: data.mode } });
   if (modeRule && !modeRule.enabled) {
     return NextResponse.json({ error: "Ce mode de transport n'est pas disponible actuellement." }, { status: 422 });
+  }
+
+  // Plancher de prix : le prix tout compris du trajet ne peut pas descendre sous le plus petit minimum
+  // de la grille. Le minimum exact dépend ensuite du poids du colis (appliqué à chaque réservation).
+  const config = await loadPricingConfig();
+  const floor = floorForRoute(config, data);
+  const total = computeBookingAmounts(data.contributionAmount, config.feeRate).totalAmount;
+  if (floor !== null && toCents(total) < toCents(floor)) {
+    return NextResponse.json(
+      {
+        error: `Le prix minimum autorisé est de ${formatEuro(floor)} tout compris (frais de service Coliz inclus). Augmentez le montant que vous souhaitez recevoir.`,
+        code: "TOO_LOW",
+        minPrice: floor,
+      },
+      { status: 422 }
+    );
   }
 
   const trip = await prisma.trip.create({

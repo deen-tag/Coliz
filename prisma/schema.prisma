@@ -72,6 +72,7 @@ model User {
   incidents          Incident[]
   wallet             Wallet?
   adminAuditLogs     AdminAuditLog[]
+  priceOffers        PriceOffer[]
 
   @@index([email])
 }
@@ -142,6 +143,10 @@ model Parcel {
   parcelCount       Int          @default(1)
   declaredValue     Decimal      @db.Decimal(10, 2)
   photoUrl          String?
+
+  // Prix (tout compris, en €) que l'expéditeur propose à la publication de l'annonce — facultatif.
+  // Il devient la première offre de la réservation si elle diffère du tarif du trajet.
+  proposedAmount    Decimal?     @db.Decimal(10, 2)
 
   prohibitedItemsAccepted Boolean @default(false)
 
@@ -284,7 +289,10 @@ model Booking {
   contributionAmount Decimal    @db.Decimal(10, 2) // part du voyageur — recalculée si negotiatedAmount est fixé
   platformFeeAmount  Decimal    @db.Decimal(10, 2) // commission Coliz
   totalAmount        Decimal    @db.Decimal(10, 2) // payé par l'expéditeur
-  negotiatedAmount   Decimal?   @db.Decimal(10, 2) // montant convenu en dehors du prix initial du trajet, avant paiement uniquement
+  // Prix total (payé par l'expéditeur) issu d'une négociation acceptée, avant paiement uniquement.
+  // Historique complet des offres : table PriceOffer.
+  // (Avant la grille tarifaire, cette colonne contenait la part du voyageur : ancien usage, informatif.)
+  negotiatedAmount   Decimal?   @db.Decimal(10, 2)
 
   status          BookingStatus @default(REQUESTED)
   cancellationReason String?
@@ -298,10 +306,80 @@ model Booking {
   incidents       Incident[]
   transferCodes   TransferCode[]
   events          BookingEvent[]
+  priceOffers     PriceOffer[]
 
   @@index([senderId])
   @@index([travelerId])
   @@index([status])
+}
+
+// ─────────────────────────────────────────────
+// TARIFICATION & NÉGOCIATION
+// ─────────────────────────────────────────────
+
+// Grille tarifaire configurable en admin. Les montants sont TOUT COMPRIS : c'est le prix que paie
+// l'expéditeur (la commission Coliz est prélevée dedans, pas ajoutée par-dessus).
+// Une tranche couvre ]minWeightKg ; maxWeightKg] (borne haute incluse : un colis de 2 kg est dans « 1 à 2 kg »).
+// originCountry / destinationCountry vides = règle par défaut ; renseignés = règle propre à ce couloir
+// (la règle la plus précise l'emporte).
+model PricingTier {
+  id                 String   @id @default(cuid())
+  label              String?
+  originCountry      String?
+  destinationCountry String?
+  minWeightKg        Float
+  maxWeightKg        Float
+  minPrice           Decimal  @db.Decimal(10, 2) // minimum obligatoire
+  recommendedMin     Decimal  @db.Decimal(10, 2) // fourchette conseillée (début)
+  recommendedMax     Decimal  @db.Decimal(10, 2) // fourchette conseillée (fin)
+  surcharge          Decimal  @default(0) @db.Decimal(10, 2) // supplément ajouté au minimum et à la fourchette
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([active])
+}
+
+// Réglages de tarification globaux (une seule ligne). Le taux de commission est modifiable ici
+// sans toucher au code ; sans ligne, le taux par défaut du code s'applique (15 %).
+model PricingSettings {
+  id              String   @id @default("singleton")
+  platformFeeRate Decimal  @db.Decimal(5, 4) @default(0.15)
+  updatedAt       DateTime @updatedAt
+}
+
+enum PriceOfferStatus {
+  PENDING    // en attente de réponse de l'autre partie
+  ACCEPTED   // acceptée : le prix de la réservation a été mis à jour
+  REJECTED   // refusée
+  COUNTERED  // remplacée par une contre-proposition de l'autre partie
+  WITHDRAWN  // remplacée par une nouvelle offre de son auteur
+}
+
+enum NegotiationParty {
+  SENDER
+  TRAVELER
+}
+
+// Historique des offres, contre-offres et acceptations d'une réservation.
+// Une offre est un prix TOUT COMPRIS (payé par l'expéditeur). Son auteur la confirme en la proposant ;
+// l'autre partie la confirme en l'acceptant — le prix n'est appliqué qu'à cet instant.
+model PriceOffer {
+  id            String           @id @default(cuid())
+  bookingId     String
+  booking       Booking          @relation(fields: [bookingId], references: [id])
+  authorId      String
+  author        User             @relation(fields: [authorId], references: [id])
+  authorRole    NegotiationParty
+  amount        Decimal          @db.Decimal(10, 2)
+  minAtOffer    Decimal          @db.Decimal(10, 2) // minimum applicable au moment de l'offre (traçabilité)
+  status        PriceOfferStatus @default(PENDING)
+  respondedById String?
+  respondedAt   DateTime?
+  createdAt     DateTime         @default(now())
+
+  @@index([bookingId, createdAt])
+  @@index([bookingId, status])
 }
 
 // ─────────────────────────────────────────────

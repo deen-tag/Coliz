@@ -120,6 +120,13 @@ export type BookingDetail = {
   platformFeeAmount: Money;
   totalAmount: Money;
   negotiatedAmount: Money | null;
+  // Négociation : prix TOUT COMPRIS ; minimum et fourchette selon le poids ; historique des offres.
+  pricing?: {
+    feeRate: number;
+    band: { minPrice: number; recommendedMin: number | null; recommendedMax: number | null; beyondGrid: boolean } | null;
+    offers: PriceOffer[];
+    pendingOffer: PriceOffer | null;
+  };
   parcel: {
     originLabel: string;
     destinationLabel: string;
@@ -200,3 +207,13 @@ export type WalletData = {
 };
 
 export type CityChoice = { label: string; lat: number; lng: number };
+
+export type PriceOffer = {
+  id: string;
+  authorId: string;
+  authorRole: "SENDER" | "TRAVELER";
+  authorFirstName: string;
+  amount: number;
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "COUNTERED" | "WITHDRAWN";
+  createdAt: string;
+};

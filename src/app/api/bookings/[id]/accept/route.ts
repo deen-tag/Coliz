@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/server/auth/session";
 import { notifyUser } from "@/server/notifications/service";
+import { assertPriceGate } from "@/server/negotiation-service";
 
 // L'accord explicite du voyageur avant paiement — jusqu'ici le paiement
 // pouvait démarrer directement depuis REQUESTED, sans que le voyageur ait
@@ -19,6 +20,13 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       { error: `Impossible d'accepter depuis l'état ${booking.status}` },
       { status: 422 }
     );
+  }
+
+  // Pas d'accord sur la demande tant qu'une offre de prix est en attente, ou si le prix est sous le
+  // minimum de la grille : le voyageur s'engage sur un prix précis.
+  const gate = await assertPriceGate(booking.id);
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error, code: gate.code, minPrice: gate.minPrice }, { status: gate.status });
   }
 
   await prisma.booking.update({ where: { id: booking.id }, data: { status: "ACCEPTED" } });

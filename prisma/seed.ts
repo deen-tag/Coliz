@@ -1,4 +1,6 @@
 import { PrismaClient } from "@prisma/client";
+import { DEFAULT_PRICE_TIERS } from "../src/server/pricing-grid";
+import { PLATFORM_FEE_RATE } from "../src/server/pricing";
 
 const prisma = new PrismaClient();
 
@@ -36,6 +38,17 @@ async function main() {
       prohibitedItemsText:
         "Espèces, bijoux de valeur, armes, produits illicites, denrées périssables, animaux vivants, produits dangereux/inflammables.",
     },
+  });
+
+  // Grille tarifaire de lancement (modifiable ensuite en admin). Créée seulement si aucune grille n'existe :
+  // relancer le seed n'écrase jamais les tarifs modifiés. Sans seed, le code applique la même grille par défaut.
+  if ((await prisma.pricingTier.count()) === 0) {
+    await prisma.pricingTier.createMany({ data: DEFAULT_PRICE_TIERS.map((t) => ({ ...t, surcharge: 0, active: true })) });
+  }
+  await prisma.pricingSettings.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: { id: "singleton", platformFeeRate: PLATFORM_FEE_RATE },
   });
 
   console.log("Seed terminé.");

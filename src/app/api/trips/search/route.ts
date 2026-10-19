@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { displayPrice } from "@/server/pricing";
+import { bandForParcel, loadPricingConfig } from "@/server/pricing-config";
+import { clampToMinimum } from "@/server/pricing-grid";
 import { prisma } from "@/lib/prisma";
 import { findMatchingTrips } from "@/server/matching/engine";
 import { requireUser } from "@/server/auth/session";
@@ -20,6 +22,15 @@ export async function GET(req: Request) {
   const sortBy = (searchParams.get("sortBy") as any) ?? "best_match";
   const results = await findMatchingTrips(parcel, { sortBy });
 
+  // Le prix affiché est celui de CE colis : le tarif du trajet, remonté au minimum de la grille pour
+  // son poids (c'est exactement le prix de départ de la réservation).
+  const config = await loadPricingConfig();
+  const band = bandForParcel(config, parcel);
+  const priceFor = (contribution: { toString(): string }) => {
+    const total = displayPrice(contribution, config.feeRate);
+    return band ? clampToMinimum(total, band) : { total, adjustedToMinimum: false };
+  };
+
   return NextResponse.json(
     results.map((r) => ({
       tripId: r.tripId,
@@ -35,7 +46,9 @@ export async function GET(req: Request) {
       departureAt: r.trip.departureAt,
       arrivalAt: r.trip.arrivalAt,
       contributionAmount: r.trip.contributionAmount,
-      totalAmount: displayPrice(r.trip.contributionAmount),
+      totalAmount: priceFor(r.trip.contributionAmount).total,
+      priceAdjustedToMinimum: priceFor(r.trip.contributionAmount).adjustedToMinimum,
+      minPrice: band?.minPrice ?? null,
       remainingParcels: r.trip.remainingParcels,
       distanceOriginKm: Math.round(r.distanceOriginKm),
       distanceDestinationKm: Math.round(r.distanceDestinationKm),

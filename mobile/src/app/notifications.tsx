@@ -13,7 +13,7 @@ import type { IconName } from "@/components/ui";
 
 const ICONS: Record<string, IconName> = {
   new_match: "sparkles-outline", booking_requested: "mail-unread-outline", booking_accepted: "checkmark-circle-outline", booking_refused: "close-circle-outline",
-  price_proposed: "pricetag-outline", payment_confirmed: "card-outline", parcel_picked_up: "cube-outline", trip_departed: "airplane-outline",
+  price_proposed: "pricetag-outline", price_countered: "pricetag-outline", price_accepted: "pricetag-outline", price_rejected: "pricetag-outline", payment_confirmed: "card-outline", parcel_picked_up: "cube-outline", trip_departed: "airplane-outline",
   trip_arrived: "flag-outline", delivery_confirmed: "gift-outline", new_message: "chatbubble-outline", incident_action_required: "alert-circle-outline",
 };
 

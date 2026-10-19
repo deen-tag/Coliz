@@ -8,10 +8,10 @@ import { useSession } from "next-auth/react";
 import { Card, PrimaryButton, SecondaryButton, TransportModeBadge, VerifiedBadge, LoadingState } from "@/components/ui";
 import { StripeProvider } from "@/components/stripe-provider";
 import { PaymentForm } from "@/components/payment-form";
-import { IconField } from "@/components/form-field";
-import { EuroIcon, LockIcon, ChevronRightIcon } from "@/components/icons";
+import { LockIcon, ChevronRightIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { StatusBanner } from "@/components/status-banner";
+import { NegotiationPanel } from "@/components/negotiation-panel";
 import { JourneySteps } from "@/components/journey-steps";
 import { formatPrice, formatTripDate, formatTripTime, shortCity } from "@/components/trip-parts";
 import { useRoleOverride } from "@/components/role-scope";
@@ -28,8 +28,9 @@ export default function ReservationPage() {
   });
   const { data: session } = useSession();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [negotiating, setNegotiating] = useState(false);
   const [cancelMsg, setCancelMsg] = useState<string | null>(null);
+  // Refus du serveur (offre en attente, prix sous le minimum…) : on l'affiche au lieu de l'ignorer.
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const userId = (session?.user as any)?.id;
   const isSender = booking && userId === booking.senderId;
@@ -39,7 +40,12 @@ export default function ReservationPage() {
   useRoleOverride(isSender ? "sender" : isTraveler ? "traveler" : null);
 
   async function respond(action: "accept" | "refuse") {
-    await fetch(`/api/bookings/${id}/${action}`, { method: "POST" });
+    setActionError(null);
+    const res = await fetch(`/api/bookings/${id}/${action}`, { method: "POST" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setActionError(typeof data.error === "string" ? data.error : "L'action n'a pas pu aboutir. Réessayez.");
+    }
     mutate();
   }
 
@@ -66,9 +72,14 @@ export default function ReservationPage() {
   }
 
   async function startPayment() {
+    setActionError(null);
     const res = await fetch(`/api/bookings/${id}/pay`, { method: "POST" });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (data.clientSecret) setClientSecret(data.clientSecret);
+    else {
+      setActionError(typeof data.error === "string" ? data.error : "Le paiement n'a pas pu démarrer. Réessayez.");
+      mutate();
+    }
   }
 
   if (!booking) return <LoadingState />;
@@ -76,7 +87,8 @@ export default function ReservationPage() {
 
   const role = isSender ? "sender" : "traveler";
   const name = counterpart?.firstName ?? "l'autre personne";
-  const canNegotiate = ["REQUESTED", "ACCEPTED"].includes(booking.status);
+  // Tant qu'une offre de prix attend une réponse, le prix n'est pas définitif : ni acceptation de la demande, ni paiement.
+  const hasPendingOffer = Boolean(booking.pricing?.pendingOffer);
   const awaitingConfirmation = paid && ["ACCEPTED", "PAYMENT_PENDING"].includes(booking.status);
   const baseInfo = awaitingConfirmation
     ? { title: "Paiement reçu", hint: "Nous confirmons votre réservation, cela ne prend que quelques secondes.", tone: "info" as const, actionNeeded: false }
@@ -143,30 +155,36 @@ export default function ReservationPage() {
             Paiement protégé jusqu&apos;à la remise du colis.
           </p>
         )}
-        {canNegotiate && (
-          <div className="mt-3">
-            {negotiating ? (
-              <NegotiateForm bookingId={id} onDone={() => { setNegotiating(false); mutate(); }} />
-            ) : (
-              <button onClick={() => setNegotiating(true)} className="text-sm font-medium text-primary py-1">
-                Proposer un autre prix
-              </button>
-            )}
-          </div>
-        )}
+        <NegotiationPanel
+          bookingId={id}
+          status={booking.status}
+          isSender={Boolean(isSender)}
+          counterpartName={name}
+          pricing={booking.pricing}
+          weightKg={Number(booking.parcel?.weightKg ?? 0)}
+          onChanged={() => mutate()}
+        />
       </div>
 
       {/* L'action principale de cette étape, jamais noyée parmi les autres */}
       <div className="mt-6 space-y-3">
+        {hasPendingOffer && ["REQUESTED", "ACCEPTED"].includes(booking.status) && (
+          <p className="text-sm text-ink-muted">Une offre de prix est en attente : le prix doit être convenu avant de continuer.</p>
+        )}
+        {actionError && (
+          <p className="text-sm text-error" role="alert">
+            {actionError}
+          </p>
+        )}
         {isTraveler && booking.status === "REQUESTED" && (
           <div className="flex gap-2">
-            <PrimaryButton onClick={() => respond("accept")}>Accepter la demande</PrimaryButton>
+            <PrimaryButton onClick={() => respond("accept")} disabled={hasPendingOffer}>Accepter la demande</PrimaryButton>
             <SecondaryButton onClick={() => respond("refuse")}>Refuser</SecondaryButton>
           </div>
         )}
 
         {isSender && ["ACCEPTED", "PAYMENT_PENDING"].includes(booking.status) && !clientSecret && !awaitingConfirmation && (
-          <PrimaryButton onClick={startPayment}>Payer {formatPrice(booking.totalAmount)}</PrimaryButton>
+          <PrimaryButton onClick={startPayment} disabled={hasPendingOffer}>Payer {formatPrice(booking.totalAmount)}</PrimaryButton>
         )}
 
         {clientSecret && !awaitingConfirmation && (
@@ -250,47 +268,5 @@ export default function ReservationPage() {
         </button>
       )}
     </main>
-  );
-}
-
-function NegotiateForm({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
-  const [amount, setAmount] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  async function submit() {
-    setError(null);
-    const value = Number(amount.replace(",", "."));
-    if (!value || value <= 0) {
-      setError("Montant invalide.");
-      return;
-    }
-    const res = await fetch(`/api/bookings/${bookingId}/negotiate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: value }),
-    });
-    if (res.ok) onDone();
-    else setError("Impossible d'enregistrer ce montant.");
-  }
-
-  return (
-    <Card>
-      <p className="text-sm font-medium text-ink mb-2">Proposer un nouveau prix</p>
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <IconField
-            icon={<EuroIcon size={18} />}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            inputMode="decimal"
-            placeholder="Montant en €"
-          />
-        </div>
-        <button onClick={submit} className="rounded-[14px] bg-primary text-white px-4 text-sm font-bold">
-          Envoyer
-        </button>
-      </div>
-      {error && <p className="text-xs text-error mt-2">{error}</p>}
-    </Card>
   );
 }

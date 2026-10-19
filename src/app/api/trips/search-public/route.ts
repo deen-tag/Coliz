@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { displayPrice } from "@/server/pricing";
+import { getFeeRate } from "@/server/pricing-config";
 import { prisma } from "@/lib/prisma";
 
 // Rayon de recherche autour d'une ville choisie (à vol d'oiseau).
@@ -68,6 +69,7 @@ export async function GET(req: Request) {
     prisma.trip.count({ where }),
   ]);
 
+  const feeRate = await getFeeRate();
   const items = trips.map((t) => ({
       tripId: t.id,
       traveler: {
@@ -87,7 +89,7 @@ export async function GET(req: Request) {
       departureAt: t.departureAt,
       arrivalAt: t.arrivalAt,
       contributionAmount: t.contributionAmount,
-      totalAmount: displayPrice(t.contributionAmount),
+      totalAmount: displayPrice(t.contributionAmount, feeRate),
       remainingParcels: t.remainingParcels,
     }));
 

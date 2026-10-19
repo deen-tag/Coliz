@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/server/auth/session";
+import { getNegotiationState } from "@/server/negotiation-service";
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const user = await requireUser();
@@ -17,5 +18,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (booking.senderId !== user.id && booking.travelerId !== user.id) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
-  return NextResponse.json(booking);
+
+  // Prix : minimum et fourchette conseillée pour ce colis, historique des offres, offre en attente.
+  const pricing = await getNegotiationState(booking);
+  return NextResponse.json({ ...booking, pricing });
 }

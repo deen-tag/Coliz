@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripe, toStripeAmount } from "@/server/stripe/client";
 import { requireUser } from "@/server/auth/session";
+import { assertPriceGate } from "@/server/negotiation-service";
 
 /**
  * Stratégie de paiement retenue : "separate charges & transfers".
@@ -26,6 +27,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Cette réservation n'est pas payable dans son état actuel" }, { status: 422 });
   }
 
+  // Le prix à payer doit être définitif : aucune offre en attente, et jamais sous le minimum.
+  const gate = await assertPriceGate(booking.id);
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error, code: gate.code, minPrice: gate.minPrice }, { status: gate.status });
+  }
+
   const paymentIntent = await stripe.paymentIntents.create({
     amount: toStripeAmount(Number(booking.totalAmount)),
     currency: "eur",
@@ -37,18 +44,26 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     automatic_payment_methods: { enabled: true },
   });
 
-  await prisma.$transaction([
-    prisma.booking.update({ where: { id: booking.id }, data: { status: "PAYMENT_PENDING" } }),
-    prisma.transaction.create({
-      data: {
-        bookingId: booking.id,
-        type: "PAYMENT_INTENT",
-        status: "PENDING",
-        amount: booking.totalAmount,
-        stripeObjectId: paymentIntent.id,
-      },
-    }),
-  ]);
+  // Si le prix a été modifié (offre acceptée) pendant la création du paiement, on annule ce paiement
+  // plutôt que d'encaisser un montant qui n'est plus le prix convenu.
+  const locked = await prisma.booking.updateMany({
+    where: { id: booking.id, status: { in: ["ACCEPTED", "PAYMENT_PENDING"] }, totalAmount: booking.totalAmount },
+    data: { status: "PAYMENT_PENDING" },
+  });
+  if (locked.count === 0) {
+    await stripe.paymentIntents.cancel(paymentIntent.id).catch(() => {});
+    return NextResponse.json({ error: "Le prix vient d'être modifié : rechargez la réservation avant de payer." }, { status: 409 });
+  }
+
+  await prisma.transaction.create({
+    data: {
+      bookingId: booking.id,
+      type: "PAYMENT_INTENT",
+      status: "PENDING",
+      amount: booking.totalAmount,
+      stripeObjectId: paymentIntent.id,
+    },
+  });
 
   return NextResponse.json({ clientSecret: paymentIntent.client_secret });
 }

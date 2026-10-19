@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { computeBookingAmounts } from "@/server/stripe/client";
+import { loadPricingConfig, bandForParcel } from "@/server/pricing-config";
+import { computeInitialPricing } from "@/server/negotiation";
+import { formatEuro } from "@/server/pricing-grid";
 import { requireUser } from "@/server/auth/session";
 import { notifyUser } from "@/server/notifications/service";
 import { reserveCapacity } from "@/server/bookings/capacity";
@@ -38,16 +40,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Capacité insuffisante sur ce trajet" }, { status: 422 });
   }
 
-  const { contributionAmount, platformFeeAmount, totalAmount } = computeBookingAmounts(
-    Number(trip.contributionAmount)
-  );
+  // Prix de départ = tarif du trajet (tout compris), jamais sous le minimum de la grille pour le poids
+  // du colis. Si l'expéditeur a proposé son propre prix à la publication, c'est une première offre
+  // en attente : le voyageur l'accepte, la refuse ou contre-propose.
+  const config = await loadPricingConfig();
+  const band = bandForParcel(config, parcel);
+  if (!band) {
+    return NextResponse.json({ error: "Le poids du colis est invalide." }, { status: 422 });
+  }
+  const pricing = computeInitialPricing({
+    tripContribution: Number(trip.contributionAmount),
+    feeRate: config.feeRate,
+    band,
+    proposedAmount: parcel.proposedAmount === null ? null : Number(parcel.proposedAmount.toString()),
+  });
+  const { contributionAmount, platformFeeAmount, totalAmount } = pricing.amounts;
 
   // Réservation de la place et création de la demande dans la même transaction :
   // si la capacité vient de se remplir entre-temps, rien n'est créé.
   const booking = await prisma.$transaction(async (tx) => {
     const reserved = await reserveCapacity(tx, trip.id, parcel.parcelCount);
     if (!reserved) return null;
-    return tx.booking.create({
+    const created = await tx.booking.create({
       data: {
         parcelId: parcel.id,
         tripId: trip.id,
@@ -59,12 +73,31 @@ export async function POST(req: Request) {
         status: "REQUESTED",
       },
     });
+    if (pricing.initialOffer !== null) {
+      await tx.priceOffer.create({
+        data: {
+          bookingId: created.id,
+          authorId: user.id,
+          authorRole: "SENDER",
+          amount: pricing.initialOffer,
+          minAtOffer: band.minPrice,
+        },
+      });
+    }
+    return created;
   });
   if (!booking) {
     return NextResponse.json({ error: "Capacité insuffisante sur ce trajet" }, { status: 422 });
   }
 
-  await notifyUser(trip.travelerId, "booking_requested", `Nouvelle demande de réservation pour votre trajet.`, { bookingId: booking.id });
+  await notifyUser(
+    trip.travelerId,
+    "booking_requested",
+    pricing.initialOffer !== null
+      ? `Nouvelle demande de réservation pour votre trajet. L'expéditeur propose ${formatEuro(pricing.initialOffer)} (tout compris).`
+      : `Nouvelle demande de réservation pour votre trajet.`,
+    { bookingId: booking.id }
+  );
 
   return NextResponse.json(booking, { status: 201 });
 }

@@ -111,6 +111,13 @@ export default function BookingScreen() {
       await silentReload();
     });
 
+  const pending = b.pricing?.pendingOffer ?? null;
+  const incoming = pending && pending.authorRole !== (isSender ? "SENDER" : "TRAVELER") ? pending : null;
+  const outgoing = pending && !incoming ? pending : null;
+  const band = b.pricing?.band ?? null;
+  const respondOffer = (offerId: string, action: "accept" | "reject") =>
+    run(action, async () => { await post(`offers/${offerId}`, { action }); await silentReload(); });
+
   const showCodes = isSender && ["CONFIRMED", "PICKED_UP"].includes(b.status);
 
   return (
@@ -121,7 +128,7 @@ export default function BookingScreen() {
       {/* ── Actions selon le statut et le rôle ── */}
       {!isSender && b.status === "REQUESTED" ? (
         <View style={{ gap: 10, marginBottom: 14 }}>
-          <Button title="Accepter la demande" icon="checkmark" variant="traveler" onPress={accept} loading={busy === "accept"} />
+          <Button title="Accepter la demande" icon="checkmark" variant="traveler" onPress={accept} loading={busy === "accept"} disabled={Boolean(pending)} />
           <View style={{ flexDirection: "row", gap: 10 }}>
             <Button title="Proposer un prix" variant="secondary" style={{ flex: 1 }} onPress={() => setPriceOpen(true)} />
             <Button title="Refuser" variant="secondary" style={{ flex: 1 }} onPress={refuse} loading={busy === "refuse"} />
@@ -130,11 +137,31 @@ export default function BookingScreen() {
       ) : null}
       {isSender && ["ACCEPTED", "PAYMENT_PENDING"].includes(b.status) ? (
         <View style={{ gap: 10, marginBottom: 14 }}>
-          <Button title={`Payer ${eur(b.totalAmount)}`} icon="card-outline" onPress={pay} loading={busy === "pay"} />
+          <Button title={`Payer ${eur(b.totalAmount)}`} icon="card-outline" onPress={pay} loading={busy === "pay"} disabled={Boolean(pending)} />
           <Button title="Proposer un autre prix" variant="secondary" onPress={() => setPriceOpen(true)} />
         </View>
       ) : null}
       {isSender && b.status === "REQUESTED" ? <Button title="Proposer un autre prix" variant="secondary" onPress={() => setPriceOpen(true)} style={{ marginBottom: 14 }} /> : null}
+
+      {["REQUESTED", "ACCEPTED"].includes(b.status) && band ? (
+        <Card>
+          <H2 style={{ marginBottom: 6 }}>Prix</H2>
+          <Text style={{ color: colors.muted, lineHeight: 20 }}>
+            Minimum autorisé : {eur(band.minPrice)}
+            {band.recommendedMin !== null && band.recommendedMax !== null ? ` · conseillé : ${eur(band.recommendedMin)} à ${eur(band.recommendedMax)}` : ""}. Prix tout compris, négociable dans le respect du minimum fixé par Coliz.
+          </Text>
+          {incoming ? (
+            <View style={{ marginTop: 12, gap: 8 }}>
+              <Text style={{ color: colors.ink, fontWeight: "700" }}>{incoming.authorFirstName} propose {eur(incoming.amount)}</Text>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <Button title="Accepter" style={{ flex: 1 }} onPress={() => respondOffer(incoming.id, "accept")} loading={busy === "accept"} />
+                <Button title="Refuser" variant="secondary" style={{ flex: 1 }} onPress={() => respondOffer(incoming.id, "reject")} loading={busy === "reject"} />
+              </View>
+            </View>
+          ) : null}
+          {outgoing ? <Text style={{ color: colors.muted, marginTop: 10 }}>Votre offre de {eur(outgoing.amount)} attend la réponse de {other.firstName}.</Text> : null}
+        </Card>
+      ) : null}
 
       {showCodes && b.status === "CONFIRMED" ? (
         <CodeCard bookingId={b.id} kind="pickup" title="Code de remise" help={`À donner en main propre à ${other.firstName} au moment de lui confier le colis.`} />
@@ -228,12 +255,13 @@ export default function BookingScreen() {
 
       <PriceModal
         visible={priceOpen}
-        initial={String(Number(b.contributionAmount))}
+        initial={String(Number(b.totalAmount))}
+        minPrice={band?.minPrice ?? null}
         onClose={() => setPriceOpen(false)}
         onSubmit={async (amount) => {
           await post("negotiate", { amount });
           setPriceOpen(false);
-          setMsg({ tone: "success", text: "Nouveau prix proposé. L'autre personne est prévenue." });
+          setMsg({ tone: "success", text: "Prix proposé. L'autre personne est prévenue et doit l'accepter." });
           await silentReload();
         }}
       />
@@ -319,13 +347,14 @@ function CodeEntry({ title, help, cta, onSubmit }: { title: string; help: string
   );
 }
 
-function PriceModal({ visible, initial, onClose, onSubmit }: { visible: boolean; initial: string; onClose: () => void; onSubmit: (amount: number) => Promise<void> }) {
+function PriceModal({ visible, initial, minPrice, onClose, onSubmit }: { visible: boolean; initial: string; minPrice: number | null; onClose: () => void; onSubmit: (amount: number) => Promise<void> }) {
   const [v, setV] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   async function submit() {
     const n = Number(v.replace(",", "."));
     if (!(n > 0)) return setErr("Saisissez un montant supérieur à 0.");
+    if (minPrice !== null && Math.round(n * 100) < Math.round(minPrice * 100)) return setErr(`Le prix minimum autorisé est de ${eur(minPrice)}.`);
     setBusy(true);
     setErr(null);
     try {
@@ -341,7 +370,7 @@ function PriceModal({ visible, initial, onClose, onSubmit }: { visible: boolean;
       <Pressable style={{ flex: 1, backgroundColor: colors.overlay, justifyContent: "center", padding: 20 }} onPress={onClose}>
         <Pressable style={{ backgroundColor: colors.surface, borderRadius: radius.block, padding: 20 }} onPress={() => {}}>
           <H2 style={{ marginBottom: 6 }}>Proposer un prix</H2>
-          <Text style={{ color: colors.muted, marginBottom: 14, lineHeight: 20 }}>Montant destiné au voyageur, avant les frais de service Coliz. Il s'applique immédiatement (avant paiement uniquement).</Text>
+          <Text style={{ color: colors.muted, marginBottom: 14, lineHeight: 20 }}>Prix tout compris payé par l'expéditeur{minPrice !== null ? `, minimum ${eur(minPrice)}` : ""}. Il ne s'applique que si l'autre personne l'accepte.</Text>
           <Input value={v} onChangeText={setV} keyboardType="decimal-pad" label="Montant (€)" error={err} autoFocus />
           <View style={{ flexDirection: "row", gap: 10 }}>
             <Button title="Annuler" variant="secondary" style={{ flex: 1 }} onPress={onClose} />

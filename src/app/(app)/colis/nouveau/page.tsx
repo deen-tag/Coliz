@@ -11,6 +11,8 @@ import { ScaleIcon, EuroIcon } from "@/components/icons";
 import { JourneySteps } from "@/components/journey-steps";
 import { AuthTripContext } from "@/components/auth-context";
 import { formatPrice, formatTripMoment, shortCity } from "@/components/trip-parts";
+import { PriceField, PriceGuide, parseEuroInput, priceInputError, usePriceBand } from "@/components/price-guide";
+import { clampToMinimum } from "@/server/pricing-grid";
 
 type Place = { label: string; lat: number; lng: number };
 
@@ -62,6 +64,8 @@ function NouveauColisContent() {
     declaredValue: "",
   });
   const [accepted, setAccepted] = useState(false);
+  // Prix tout compris que l'expéditeur propose (facultatif) — doit respecter le minimum de la grille.
+  const [price, setPrice] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   // Si le colis est créé mais que la demande échoue, on ne recrée pas un second colis au nouvel essai.
@@ -73,6 +77,14 @@ function NouveauColisContent() {
       setForm((f) => ({ ...f, [key]: e.target.value }));
     };
   }
+
+  // Minimum et fourchette conseillée pour le poids saisi (le pays des villes peut avoir sa propre règle).
+  const weight = Number(form.weightKg);
+  const routeOrigin: string | undefined = (tripId && trip && !trip.error ? trip.originLabel : origin?.label) ?? undefined;
+  const routeDestination: string | undefined = (tripId && trip && !trip.error ? trip.destinationLabel : destination?.label) ?? undefined;
+  const band = usePriceBand(weight, { originLabel: routeOrigin, destinationLabel: routeDestination });
+  const proposed = parseEuroInput(price);
+  const priceInvalid = Number.isNaN(proposed) || Boolean(priceInputError(price, band));
 
   // Pas de date pour un colis publié seul : seules les villes comptent. (Depuis un trajet précis, on reprend sa date.)
   function parcelPayload(o: Place, d: Place, desiredDate?: string) {
@@ -89,6 +101,7 @@ function NouveauColisContent() {
       widthCm: Number(form.widthCm),
       heightCm: Number(form.heightCm),
       declaredValue: Number(form.declaredValue),
+      ...(proposed !== null && !Number.isNaN(proposed) ? { proposedAmount: proposed } : {}),
       prohibitedItemsAccepted: accepted,
     };
   }
@@ -173,7 +186,8 @@ function NouveauColisContent() {
           Number(form.lengthCm) > 0 &&
           Number(form.widthCm) > 0 &&
           Number(form.heightCm) > 0 &&
-          form.declaredValue !== ""
+          form.declaredValue !== "" &&
+          !priceInvalid
         : accepted;
 
   // ---------- Depuis un trajet ----------
@@ -197,6 +211,9 @@ function NouveauColisContent() {
       3: { title: "Vérifiez votre demande", subtitle: `Rien n'est payé maintenant : vous ne payez que si ${name} accepte.` },
     };
     const text = tripText[step === 3 ? 3 : 2];
+    // Prix de départ de la demande : le tarif du voyageur, remonté au minimum de la grille pour ce poids.
+    const tripPrice = Number(trip.totalAmount ?? trip.contributionAmount);
+    const startPrice = band ? clampToMinimum(tripPrice, band).total : tripPrice;
 
     return (
       <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto">
@@ -218,6 +235,15 @@ function NouveauColisContent() {
                 <Field label="H (cm)" type="number" value={form.heightCm} onChange={update("heightCm")} />
               </div>
               <IconField label="Valeur déclarée (€)" type="number" value={form.declaredValue} onChange={update("declaredValue")} icon={<EuroIcon size={18} />} />
+              <PriceGuide band={band} weightKg={weight} />
+              <PriceField
+                label="Prix que vous proposez (€)"
+                optional
+                value={price}
+                onChange={(v) => { setCreatedParcelId(null); setPrice(v); }}
+                band={band}
+                placeholder={band ? `Prix du voyageur par défaut (min. ${band.minPrice} €)` : undefined}
+              />
             </div>
           ) : (
             <div className="space-y-5">
@@ -228,7 +254,10 @@ function NouveauColisContent() {
                 <SummaryRow label="Poids" value={`${form.weightKg} kg`} />
                 <SummaryRow label="Dimensions" value={`${form.lengthCm}×${form.widthCm}×${form.heightCm} cm`} />
                 <SummaryRow label="Valeur déclarée" value={`${form.declaredValue} €`} />
-                <SummaryRow label="Total si accepté" value={formatPrice(trip.totalAmount ?? trip.contributionAmount)} />
+                <SummaryRow label="Prix de départ (tout compris)" value={formatPrice(startPrice)} />
+                {proposed !== null && !Number.isNaN(proposed) && Math.round(proposed * 100) !== Math.round(startPrice * 100) && (
+                  <SummaryRow label="Votre proposition" value={formatPrice(proposed)} />
+                )}
               </dl>
               <label className="flex items-start gap-3 text-sm text-ink pt-4 border-t border-line">
                 <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-1" />
@@ -240,6 +269,11 @@ function NouveauColisContent() {
         </Card>
 
         <div className="space-y-3">
+          {step === 3 && proposed !== null && !Number.isNaN(proposed) && Math.round(proposed * 100) !== Math.round(startPrice * 100) && (
+            <p className="text-sm text-ink-muted text-center">
+              {name} pourra accepter votre prix, le refuser ou vous faire une contre-proposition.
+            </p>
+          )}
           <PrimaryButton
             disabled={loading || !canContinue}
             onClick={() => (step === 3 ? handleSendRequest() : setStep(3))}
@@ -286,6 +320,8 @@ function NouveauColisContent() {
               <Field label="H (cm)" type="number" value={form.heightCm} onChange={update("heightCm")} />
             </div>
             <IconField label="Valeur déclarée (€)" type="number" value={form.declaredValue} onChange={update("declaredValue")} icon={<EuroIcon size={18} />} />
+            <PriceGuide band={band} weightKg={weight} />
+            <PriceField label="Prix que vous proposez (€)" optional value={price} onChange={setPrice} band={band} />
           </div>
         )}
         {step === 3 && (
@@ -295,6 +331,8 @@ function NouveauColisContent() {
               <SummaryRow label="Poids" value={`${form.weightKg} kg`} />
               <SummaryRow label="Dimensions" value={`${form.lengthCm}×${form.widthCm}×${form.heightCm} cm`} />
               <SummaryRow label="Valeur déclarée" value={`${form.declaredValue} €`} />
+              {band && <SummaryRow label="Prix minimum autorisé" value={formatPrice(band.minPrice)} />}
+              {proposed !== null && !Number.isNaN(proposed) && <SummaryRow label="Votre proposition" value={formatPrice(proposed)} />}
             </dl>
             <label className="flex items-start gap-3 text-sm text-ink pt-4 border-t border-line">
               <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-1" />

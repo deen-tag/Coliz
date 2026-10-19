@@ -2,6 +2,7 @@
 
 import useSWR from "swr";
 import { Card, SectionHeader } from "@/components/ui";
+import { AdminPricing } from "@/components/admin-pricing";
 
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -19,6 +20,8 @@ export default function AdminDashboardPage() {
         <Counter label="Réservations aujourd'hui" value={data?.counters?.bookingsToday} />
         <Counter label="Volume ce mois-ci" value={data ? `${Number(data.counters?.gmvThisMonth ?? 0).toFixed(0)} €` : "…"} />
       </div>
+
+      <AdminPricing />
 
       <h2 className="text-sm font-medium text-ink-muted mb-3">Incidents à traiter</h2>
       <div className="space-y-3">

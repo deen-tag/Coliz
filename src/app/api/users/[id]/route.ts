@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getVerificationSummary } from "@/server/auth/verification";
 import { displayPrice } from "@/server/pricing";
+import { getFeeRate } from "@/server/pricing-config";
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const user = await prisma.user.findUnique({ where: { id: params.id } });
@@ -29,6 +30,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     }),
   ]);
 
+  const feeRate = await getFeeRate();
+
   return NextResponse.json({
     id: user.id,
     memberSince: user.createdAt,
@@ -39,7 +42,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       destinationLabel: t.destinationLabel,
       departureAt: t.departureAt,
       mode: t.mode,
-      totalAmount: displayPrice(t.contributionAmount),
+      totalAmount: displayPrice(t.contributionAmount, feeRate),
     })),
     firstName: user.firstName,
     avatarUrl: user.avatarUrl,

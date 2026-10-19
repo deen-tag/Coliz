@@ -68,7 +68,7 @@ describe("réponse à une offre", () => {
     expect(respond({ role: "SENDER" })).toMatchObject({ ok: false, code: "OWN_OFFER", httpStatus: 403 });
   });
   it("une offre déjà traitée ou remplacée ne peut plus être acceptée", () => {
-    for (const status of ["ACCEPTED", "REJECTED", "COUNTERED", "WITHDRAWN"]) {
+    for (const status of (["ACCEPTED", "REJECTED", "COUNTERED", "WITHDRAWN"] as const)) {
       expect(respond({ offer: offer({ status }) })).toMatchObject({ ok: false, code: "OFFER_NOT_PENDING", httpStatus: 409 });
     }
   });

@@ -48,6 +48,8 @@ export function AdminPricing() {
   const [feePercent, setFeePercent] = useState("15");
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [aligning, setAligning] = useState(false);
+  const [alignResult, setAlignResult] = useState<any>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -104,6 +106,20 @@ export function AdminPricing() {
     setMessage({ tone: "ok", text: "Tarifs enregistrés. Ils s'appliquent immédiatement aux nouvelles offres et aux paiements." });
     setLoaded(false);
     mutate();
+  }
+
+  async function align(apply: boolean) {
+    if (apply && !window.confirm("Appliquer ces changements ? Les trajets et demandes concernés seront relevés au minimum et leurs utilisateurs prévenus.")) return;
+    setAligning(true);
+    const res = await fetch("/api/admin/pricing/align", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ apply }) });
+    const body = await res.json().catch(() => ({}));
+    setAligning(false);
+    if (!res.ok) {
+      setAlignResult(null);
+      setMessage({ tone: "error", text: typeof body.error === "string" ? body.error : "Opération impossible." });
+      return;
+    }
+    setAlignResult(body);
   }
 
   if (!data) return <p className="text-sm text-ink-muted">Chargement des tarifs…</p>;
@@ -182,6 +198,31 @@ export function AdminPricing() {
         <PrimaryButton onClick={save} disabled={saving || rows.length === 0} className="sm:w-auto sm:px-8">
           {saving ? "Enregistrement…" : "Enregistrer les tarifs"}
         </PrimaryButton>
+
+        <div className="border-t border-line pt-4 space-y-3">
+          <p className="text-sm font-semibold text-ink">Anciens prix hors grille</p>
+          <p className="text-sm text-ink-muted">
+            Relève au minimum les trajets ouverts et les demandes non payées dont le prix est sous la grille. Les réservations payées, en cours ou
+            terminées ne sont jamais modifiées. Enregistrez d&apos;abord vos tarifs, puis regardez l&apos;aperçu.
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => align(false)} disabled={aligning} className="rounded-[14px] bg-primary-light text-primary font-bold px-4 py-2.5 text-sm disabled:opacity-40">
+              Voir ce qui serait modifié
+            </button>
+            {alignResult && !alignResult.applied && alignResult.trips.count + alignResult.bookings.count + alignResult.parcels.count > 0 && (
+              <button onClick={() => align(true)} disabled={aligning} className="rounded-[14px] bg-primary text-white font-bold px-4 py-2.5 text-sm disabled:opacity-40">
+                Appliquer
+              </button>
+            )}
+          </div>
+          {alignResult && (
+            <p className="text-sm text-ink" role="status">
+              {alignResult.applied ? "Fait : " : "Aperçu : "}
+              {alignResult.trips.count} trajet(s), {alignResult.bookings.count} demande(s) non payée(s), {alignResult.parcels.count} prix proposé(s) sur colis
+              {alignResult.applied ? " mis en conformité." : " à mettre en conformité."}
+            </p>
+          )}
+        </div>
       </Card>
     </section>
   );

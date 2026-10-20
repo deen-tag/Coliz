@@ -10,6 +10,7 @@ export type NotificationType =
   | "price_countered"
   | "price_accepted"
   | "price_rejected"
+  | "price_adjusted"
   | "payment_confirmed"
   | "parcel_picked_up"
   | "trip_departed"

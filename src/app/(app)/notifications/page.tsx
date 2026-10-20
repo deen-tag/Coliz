@@ -23,6 +23,7 @@ const TYPE_ICON: Record<string, (p: { size?: number; className?: string }) => JS
   price_countered: CardIcon,
   price_accepted: CardIcon,
   price_rejected: CardIcon,
+  price_adjusted: CardIcon,
   payment_confirmed: CardIcon,
   parcel_picked_up: MapPinIcon,
   trip_departed: MapPinIcon,

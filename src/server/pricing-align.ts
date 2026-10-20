@@ -15,7 +15,7 @@ import { planBookingFix, planTripFix, proposedAmountIsBelowMinimum } from "./pri
 const num = (d: { toString(): string }) => Number(d.toString());
 const SAMPLE = 20;
 
-export async function alignPrices({ apply, adminId }: { apply: boolean; adminId: string }) {
+export async function alignPrices({ apply, adminId }: { apply: boolean; adminId?: string }) {
   const config = await loadPricingConfig();
   const rate = config.feeRate;
 
@@ -74,7 +74,8 @@ export async function alignPrices({ apply, adminId }: { apply: boolean; adminId:
     if (parcelFixes.length > 0) {
       await prisma.parcel.updateMany({ where: { id: { in: parcelFixes.map((p) => p.id) } }, data: { proposedAmount: null } });
     }
-    await prisma.adminAuditLog.create({
+    // Journal d'audit : seulement quand l'action vient d'un administrateur (pas du script de déploiement).
+    if (adminId) await prisma.adminAuditLog.create({
       data: {
         adminId,
         action: "ALIGN_PRICES",

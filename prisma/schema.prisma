@@ -313,6 +313,12 @@ model Booking {
   @@index([status])
 }
 
+// Opérations de maintenance exécutées une seule fois au déploiement (ex. remise en conformité des prix).
+model MaintenanceRun {
+  id    String   @id
+  ranAt DateTime @default(now())
+}
+
 // ─────────────────────────────────────────────
 // TARIFICATION & NÉGOCIATION
 // ─────────────────────────────────────────────

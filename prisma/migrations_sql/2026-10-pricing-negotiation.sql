@@ -48,3 +48,9 @@ CREATE INDEX "PriceOffer_bookingId_createdAt_idx" ON "PriceOffer"("bookingId", "
 CREATE INDEX "PriceOffer_bookingId_status_idx" ON "PriceOffer"("bookingId", "status");
 ALTER TABLE "PriceOffer" ADD CONSTRAINT "PriceOffer_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "PriceOffer" ADD CONSTRAINT "PriceOffer_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+CREATE TABLE "MaintenanceRun" (
+  "id" TEXT NOT NULL,
+  "ranAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "MaintenanceRun_pkey" PRIMARY KEY ("id")
+);

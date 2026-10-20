@@ -93,7 +93,6 @@ export default function NouveauTrajetPage() {
       capacityLengthCm: Number(fd.get("capacityLengthCm") || 50),
       capacityWidthCm: Number(fd.get("capacityWidthCm") || 40),
       capacityHeightCm: Number(fd.get("capacityHeightCm") || 40),
-      capacityParcels: Number(fd.get("capacityParcels") || 1),
       contributionAmount: Number(fd.get("contributionAmount")),
     };
 
@@ -163,8 +162,8 @@ export default function NouveauTrajetPage() {
         </Card>
 
         <Card className="space-y-4">
-          <IconField name="capacityWeightKg" label="Capacité disponible (kg)" type="number" required icon={<ScaleIcon size={18} />} />
-          <IconField name="capacityParcels" label="Nombre de colis acceptés" type="number" defaultValue={1} icon={<PackageIcon size={18} />} />
+          <IconField name="capacityWeightKg" label="Poids total que vous pouvez emporter (kg)" type="number" step="0.1" min="0.1" required icon={<ScaleIcon size={18} />} />
+          <p className="text-xs text-ink-muted -mt-2">Vous pouvez recevoir plusieurs colis tant que le poids total reste dans cette limite.</p>
           <IconField
             name="contributionAmount"
             label="Ce que vous souhaitez recevoir (€)"

@@ -50,6 +50,7 @@ export async function GET(req: Request) {
       priceAdjustedToMinimum: priceFor(r.trip.contributionAmount).adjustedToMinimum,
       minPrice: band?.minPrice ?? null,
       remainingParcels: r.trip.remainingParcels,
+      remainingWeightKg: r.trip.remainingWeightKg,
       distanceOriginKm: Math.round(r.distanceOriginKm),
       distanceDestinationKm: Math.round(r.distanceDestinationKm),
       originLabel: r.trip.originLabel,

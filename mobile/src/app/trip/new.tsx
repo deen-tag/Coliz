@@ -34,7 +34,6 @@ function Form() {
   const [l, setL] = useState("");
   const [w, setW] = useState("");
   const [h, setH] = useState("");
-  const [parcels, setParcels] = useState("1");
   const [price, setPrice] = useState("");
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
@@ -61,7 +60,6 @@ function Form() {
           mode,
           preexistingJourneyConfirmed: confirmed,
           capacityWeightKg: num(weight), capacityLengthCm: num(l), capacityWidthCm: num(w), capacityHeightCm: num(h),
-          capacityParcels: Math.max(1, Math.round(num(parcels) || 1)),
           pickupPointLabel: pickup.trim() || undefined,
           dropoffPointLabel: dropoff.trim() || undefined,
           contributionAmount: num(price),
@@ -98,13 +96,12 @@ function Form() {
       ) : null}
 
       <H2 style={{ marginVertical: 12 }}>Ce que vous acceptez</H2>
-      <Input label="Poids maximum (kg)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
+      <Input label="Poids total que vous pouvez emporter (kg)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
       <View style={{ flexDirection: "row", gap: 10 }}>
         <View style={{ flex: 1 }}><Input label="Long. (cm)" value={l} onChangeText={setL} keyboardType="decimal-pad" /></View>
         <View style={{ flex: 1 }}><Input label="Larg. (cm)" value={w} onChangeText={setW} keyboardType="decimal-pad" /></View>
         <View style={{ flex: 1 }}><Input label="Haut. (cm)" value={h} onChangeText={setH} keyboardType="decimal-pad" /></View>
       </View>
-      <Input label="Nombre de colis acceptés" value={parcels} onChangeText={setParcels} keyboardType="number-pad" />
       <Input label="Votre rémunération par colis (€)" value={price} onChangeText={setPrice} keyboardType="decimal-pad" hint="Coliz ajoute sa commission : l'expéditeur voit le prix tout compris." />
       <Input label="Point de remise (facultatif)" value={pickup} onChangeText={setPickup} placeholder="Ex. Gare de Lyon-Part-Dieu" />
       <Input label="Point de livraison (facultatif)" value={dropoff} onChangeText={setDropoff} placeholder="Ex. Aéroport d'Alger" />

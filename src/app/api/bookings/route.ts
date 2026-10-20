@@ -4,9 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { loadPricingConfig, bandForParcel } from "@/server/pricing-config";
 import { computeInitialPricing } from "@/server/negotiation";
 import { formatEuro } from "@/server/pricing-grid";
+import { formatKg } from "@/server/bookings/weight";
 import { requireUser } from "@/server/auth/session";
 import { notifyUser } from "@/server/notifications/service";
-import { reserveCapacity } from "@/server/bookings/capacity";
+import { reserveCapacity, tripHasRoomFor } from "@/server/bookings/capacity";
 
 const bookingSchema = z.object({
   parcelId: z.string(),
@@ -36,8 +37,16 @@ export async function POST(req: Request) {
   if (trip.departureAt.getTime() <= Date.now()) {
     return NextResponse.json({ error: "Ce trajet est déjà parti" }, { status: 422 });
   }
-  if (trip.remainingParcels < parcel.parcelCount) {
-    return NextResponse.json({ error: "Capacité insuffisante sur ce trajet" }, { status: 422 });
+  if (!tripHasRoomFor(trip, parcel)) {
+    return NextResponse.json(
+      {
+        error:
+          trip.remainingWeightKg !== null
+            ? `Ce trajet n'a plus assez de place pour ce colis (${formatKg(trip.remainingWeightKg)} disponibles).`
+            : "Capacité insuffisante sur ce trajet",
+      },
+      { status: 422 }
+    );
   }
 
   // Prix de départ = tarif du trajet (tout compris), jamais sous le minimum de la grille pour le poids
@@ -59,7 +68,7 @@ export async function POST(req: Request) {
   // Réservation de la place et création de la demande dans la même transaction :
   // si la capacité vient de se remplir entre-temps, rien n'est créé.
   const booking = await prisma.$transaction(async (tx) => {
-    const reserved = await reserveCapacity(tx, trip.id, parcel.parcelCount);
+    const reserved = await reserveCapacity(tx, trip.id, parcel.parcelCount, parcel.weightKg);
     if (!reserved) return null;
     const created = await tx.booking.create({
       data: {

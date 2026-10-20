@@ -12,6 +12,7 @@ import { MapPinIcon, ChevronRightIcon, StarIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { JourneySteps } from "@/components/journey-steps";
 import { RouteLine, TrustStrip, formatPrice, formatTripMoment } from "@/components/trip-parts";
+import { remainingCapacityLabel } from "@/server/bookings/weight";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -196,7 +197,7 @@ function RechercheContent() {
 // Toute la carte est cliquable : la réservation se termine sur la page du trajet.
 function TripResultCard({ r, parcelId }: { r: any; parcelId: string | null }) {
   const href = parcelId ? `/trajets/${r.tripId}?parcelId=${parcelId}` : `/trajets/${r.tripId}`;
-  const places = r.remainingParcels;
+  const capacityText = remainingCapacityLabel(r);
   return (
     <Link href={href} className="block">
       <Card className="!p-4 active:bg-surface-alt transition-colors">
@@ -223,7 +224,7 @@ function TripResultCard({ r, parcelId }: { r: any; parcelId: string | null }) {
           <div className="space-y-1.5">
             <TransportModeBadge mode={r.mode} />
             <p className="text-xs text-ink-muted">
-              {places} place{places > 1 ? "s" : ""} restante{places > 1 ? "s" : ""}
+              {capacityText}
             </p>
           </div>
           <div className="text-right">

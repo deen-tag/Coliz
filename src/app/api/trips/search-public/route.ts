@@ -91,6 +91,7 @@ export async function GET(req: Request) {
       contributionAmount: t.contributionAmount,
       totalAmount: displayPrice(t.contributionAmount, feeRate),
       remainingParcels: t.remainingParcels,
+      remainingWeightKg: t.remainingWeightKg,
     }));
 
   return NextResponse.json({ trips: items, total, hasMore: offset + items.length < total });

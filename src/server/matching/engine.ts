@@ -29,8 +29,11 @@ export async function findMatchingTrips(parcel: Parcel, filters: MatchFilters = 
     where: {
       status: { in: ["PUBLISHED", "PARTIALLY_BOOKED"] },
       departureAt: { gte: new Date() }, // seulement les trajets à venir
-      remainingParcels: { gte: parcel.parcelCount },
-      capacityWeightKg: { gte: parcel.weightKg },
+      // Trajet en kilos : le colis doit tenir dans ce qu'il reste ; ancien trajet : places et poids max.
+      OR: [
+        { remainingWeightKg: { gte: parcel.weightKg } },
+        { remainingWeightKg: null, remainingParcels: { gte: parcel.parcelCount }, capacityWeightKg: { gte: parcel.weightKg } },
+      ],
       ...(filters.transportModes ? { mode: { in: filters.transportModes } } : {}),
     },
     include: { traveler: true },
@@ -118,6 +121,7 @@ type TripLike = {
   capacityWidthCm: number;
   capacityHeightCm: number;
   remainingParcels: number;
+  remainingWeightKg?: number | null;
 };
 
 // Colis ouverts potentiellement compatibles avec un trajet donné — utilisé
@@ -136,8 +140,12 @@ export async function findCompatibleParcels(trip: TripLike): Promise<Parcel[]> {
   const radiusKm = proximityRadiusKm(trip.mode);
 
   return openParcels.filter((parcel) => {
-    if (parcel.parcelCount > trip.remainingParcels) return false;
-    if (parcel.weightKg > trip.capacityWeightKg) return false;
+    if (trip.remainingWeightKg !== null && trip.remainingWeightKg !== undefined) {
+      if (parcel.weightKg > trip.remainingWeightKg) return false;
+    } else {
+      if (parcel.parcelCount > trip.remainingParcels) return false;
+      if (parcel.weightKg > trip.capacityWeightKg) return false;
+    }
     if (!fitsDimensions(parcel, trip)) return false;
 
     const distanceOrigin = haversineKm(parcel.originLat, parcel.originLng, trip.originLat, trip.originLng);

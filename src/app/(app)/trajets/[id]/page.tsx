@@ -12,6 +12,7 @@ import { JourneySteps } from "@/components/journey-steps";
 import { TrustStrip, formatPrice, formatTripMoment, formatTripTime, formatTripDate, shortCity } from "@/components/trip-parts";
 import { authHref } from "@/lib/callback-url";
 import { useRoleOverride } from "@/components/role-scope";
+import { remainingCapacityLabel } from "@/server/bookings/weight";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -78,7 +79,7 @@ export default function TrajetDetailPage() {
   const departed = new Date(trip.departureAt).getTime() <= Date.now();
   const bookable = !departed && trip.remainingParcels > 0 && ["PUBLISHED", "PARTIALLY_BOOKED"].includes(trip.status);
   const departureTime = formatTripTime(trip.departureAt);
-  const places = trip.remainingParcels;
+  const capacityText = trip.remainingWeightKg !== null && trip.remainingWeightKg !== undefined ? remainingCapacityLabel(trip) : String(trip.remainingParcels);
 
   return (
     <main className="min-h-screen bg-surface-alt px-4 py-6 max-w-md mx-auto md:max-w-2xl">
@@ -141,8 +142,8 @@ export default function TrajetDetailPage() {
 
         <dl className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-line text-sm">
           <div>
-            <dt className="text-ink-muted">Places restantes</dt>
-            <dd className="font-semibold text-ink mt-0.5">{places}</dd>
+            <dt className="text-ink-muted">{trip.remainingWeightKg !== null && trip.remainingWeightKg !== undefined ? "Capacité restante" : "Places restantes"}</dt>
+            <dd className="font-semibold text-ink mt-0.5">{capacityText}</dd>
           </div>
           <div>
             <dt className="text-ink-muted">Colis accepté</dt>

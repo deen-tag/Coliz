@@ -213,6 +213,9 @@ model Trip {
   capacityHeightCm  Float
   capacityParcels   Int          @default(1)
   remainingParcels  Int          @default(1)
+  // Poids encore disponible (kg). Renseigné pour les trajets créés avec la capacité en kilos : chaque
+  // réservation en retire le poids de son colis. Vide = ancien trajet, limité par le nombre de colis.
+  remainingWeightKg Float?
 
   pickupPointLabel  String?
   dropoffPointLabel String?

@@ -53,6 +53,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     priceAdjustedToMinimum: price.adjustedToMinimum,
     minPrice: band?.minPrice ?? null,
     remainingParcels: trip.remainingParcels,
+    remainingWeightKg: trip.remainingWeightKg,
     capacityWeightKg: trip.capacityWeightKg,
     capacityLengthCm: trip.capacityLengthCm,
     capacityWidthCm: trip.capacityWidthCm,

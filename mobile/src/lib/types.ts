@@ -56,6 +56,7 @@ export type TripDetail = {
   contributionAmount: Money;
   totalAmount: Money;
   remainingParcels: number;
+  remainingWeightKg?: number | null;
   capacityWeightKg: number;
   capacityLengthCm: number;
   capacityWidthCm: number;
@@ -72,6 +73,7 @@ export type MyTrip = {
   mode: string;
   contributionAmount: Money;
   remainingParcels: number;
+  remainingWeightKg?: number | null;
   capacityParcels: number;
   compatibleParcelsCount: number;
   pendingRequests: number;

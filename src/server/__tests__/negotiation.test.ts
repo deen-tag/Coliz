@@ -9,24 +9,24 @@ import {
   type OfferView,
 } from "../negotiation";
 
-const band3kg = resolvePriceBand(3, DEFAULT_PRICE_TIERS)!; // minimum 80 €, conseillé 80–120 €
+const band3kg = resolvePriceBand(3, DEFAULT_PRICE_TIERS)!; // minimum 90 €, conseillé 90–140 €
 const offer = (patch: Partial<OfferView> = {}): OfferView => ({ id: "o1", authorRole: "SENDER", amount: 90, status: "PENDING", ...patch });
 const base = { role: "SENDER" as const, bookingStatus: "REQUESTED", currentTotal: 100, band: band3kg, pending: null };
 
 describe("nouvelle offre", () => {
-  it("refuse toute offre sous le minimum (3 kg → 80 €)", () => {
-    for (const amount of [79.99, 60, 10]) {
+  it("refuse toute offre sous le minimum (3 kg → 90 €)", () => {
+    for (const amount of [89.99, 60, 10]) {
       const r = evaluateNewOffer({ ...base, amount });
       expect(r.ok).toBe(false);
       if (!r.ok) {
         expect(r.code).toBe("TOO_LOW");
         expect(r.httpStatus).toBe(422);
-        expect(r.minPrice).toBe(80);
+        expect(r.minPrice).toBe(90);
       }
     }
   });
   it("accepte le minimum exact et la fourchette", () => {
-    for (const amount of [80, 95, 120, 200]) expect(evaluateNewOffer({ ...base, amount }).ok).toBe(true);
+    for (const amount of [90, 95, 120, 200]) expect(evaluateNewOffer({ ...base, amount }).ok).toBe(true);
   });
   it("refuse un montant illisible (400)", () => {
     const r = evaluateNewOffer({ ...base, amount: "abc" });
@@ -74,7 +74,7 @@ describe("réponse à une offre", () => {
   });
   it("refuse d'accepter une offre devenue inférieure au minimum (grille relevée)", () => {
     const r = respond({ offer: offer({ amount: 70 }) });
-    expect(r).toMatchObject({ ok: false, code: "TOO_LOW", minPrice: 80 });
+    expect(r).toMatchObject({ ok: false, code: "TOO_LOW", minPrice: 90 });
     // …mais elle peut toujours être refusée
     expect(respond({ offer: offer({ amount: 70 }), action: "reject" }).ok).toBe(true);
   });
@@ -88,10 +88,10 @@ describe("verrou avant acceptation de la demande / paiement", () => {
     expect(evaluatePriceGate({ totalAmount: 100, band: band3kg, pending: offer() })).toMatchObject({ ok: false, code: "PENDING_OFFER" });
   });
   it("bloque un prix sous le minimum (réservation ancienne ou grille relevée)", () => {
-    expect(evaluatePriceGate({ totalAmount: 79.99, band: band3kg, pending: null })).toMatchObject({ ok: false, code: "BELOW_MINIMUM" });
+    expect(evaluatePriceGate({ totalAmount: 89.99, band: band3kg, pending: null })).toMatchObject({ ok: false, code: "BELOW_MINIMUM" });
   });
   it("laisse passer un prix conforme", () => {
-    expect(evaluatePriceGate({ totalAmount: 80, band: band3kg, pending: null })).toEqual({ ok: true });
+    expect(evaluatePriceGate({ totalAmount: 90, band: band3kg, pending: null })).toEqual({ ok: true });
   });
 });
 
@@ -102,10 +102,10 @@ describe("prix initial d'une réservation", () => {
     expect(r.adjustedToMinimum).toBe(false);
     expect(r.initialOffer).toBeNull();
   });
-  it("tarif du trajet sous le minimum : remonté à 80 € tout compris", () => {
+  it("tarif du trajet sous le minimum : remonté à 90 € tout compris", () => {
     const r = computeInitialPricing({ tripContribution: 20, feeRate: 0.15, band: band3kg });
-    expect(r.amounts.totalAmount).toBe(80);
-    expect(r.amounts.contributionAmount + r.amounts.platformFeeAmount).toBeCloseTo(80, 2);
+    expect(r.amounts.totalAmount).toBe(90);
+    expect(r.amounts.contributionAmount + r.amounts.platformFeeAmount).toBeCloseTo(90, 2);
     expect(r.adjustedToMinimum).toBe(true);
   });
   it("prix proposé par l'expéditeur → première offre en attente (le prix ne change pas encore)", () => {
@@ -129,12 +129,12 @@ describe("rôles", () => {
 });
 
 describe("négociation complète (scénario)", () => {
-  it("offre 90 € → contre-offre 100 € → acceptation ; jamais sous 80 €", () => {
-    // L'expéditeur propose 90 €
-    const o1 = evaluateNewOffer({ ...base, amount: 90 });
+  it("offre 95 € → contre-offre 105 € → acceptation ; jamais sous 90 €", () => {
+    // L'expéditeur propose 95 €
+    const o1 = evaluateNewOffer({ ...base, amount: 95 });
     expect(o1.ok).toBe(true);
     // Le voyageur contre-propose 105 €
-    const o2 = evaluateNewOffer({ ...base, role: "TRAVELER", amount: 105, pending: offer({ id: "o1", amount: 90 }) });
+    const o2 = evaluateNewOffer({ ...base, role: "TRAVELER", amount: 105, pending: offer({ id: "o1", amount: 95 }) });
     expect(o2).toMatchObject({ ok: true, supersede: { as: "COUNTERED" } });
     // L'expéditeur tente 60 € : refusé
     const low = evaluateNewOffer({ ...base, amount: 60, pending: offer({ id: "o2", authorRole: "TRAVELER", amount: 105 }) });

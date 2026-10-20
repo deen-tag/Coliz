@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { Card, SectionHeader, StatusBadge, TransportModeBadge, EmptyState, PrimaryButton } from "@/components/ui";
 import { ChevronRightIcon } from "@/components/icons";
 import { RouteLine, formatPrice, formatTripMoment } from "@/components/trip-parts";
+import { remainingCapacityLabel } from "@/server/bookings/weight";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -52,7 +53,7 @@ export default function MesVoyagesPage() {
                 <p className="text-sm text-ink-muted">
                   {formatTripMoment(t.departureAt)}
                   {" · "}
-                  {t.remainingParcels} place{t.remainingParcels > 1 ? "s" : ""} restante{t.remainingParcels > 1 ? "s" : ""}
+                  {remainingCapacityLabel(t)}
                 </p>
 
                 <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-line">

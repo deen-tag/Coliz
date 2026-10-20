@@ -28,14 +28,23 @@ export type PriceTier = {
 
 // Grille de départ (hypothèses commerciales de lancement, PAS des tarifs de marché vérifiés).
 // Sert de valeurs initiales (seed) et de repli tant qu'aucune grille n'est enregistrée en base.
+// Ancienne grille de lancement (avant le relèvement des tranches à partir de 2 kg) : sert uniquement à
+// reconnaître une grille enregistrée en base qui n'a jamais été modifiée à la main (cf. scripts/align-prices.ts).
+export const LEGACY_PRICE_TIERS_V1: { minWeightKg: number; maxWeightKg: number; minPrice: number; recommendedMin: number; recommendedMax: number }[] = [
+  { minWeightKg: 2, maxWeightKg: 5, minPrice: 80, recommendedMin: 80, recommendedMax: 120 },
+  { minWeightKg: 5, maxWeightKg: 10, minPrice: 130, recommendedMin: 130, recommendedMax: 180 },
+  { minWeightKg: 10, maxWeightKg: 15, minPrice: 180, recommendedMin: 180, recommendedMax: 250 },
+  { minWeightKg: 15, maxWeightKg: 20, minPrice: 230, recommendedMin: 230, recommendedMax: 320 },
+];
+
 export const DEFAULT_PRICE_TIERS: PriceTier[] = [
   { label: "Jusqu'à 500 g", minWeightKg: 0, maxWeightKg: 0.5, minPrice: 25, recommendedMin: 25, recommendedMax: 40 },
   { label: "500 g à 1 kg", minWeightKg: 0.5, maxWeightKg: 1, minPrice: 35, recommendedMin: 35, recommendedMax: 55 },
   { label: "1 à 2 kg", minWeightKg: 1, maxWeightKg: 2, minPrice: 50, recommendedMin: 50, recommendedMax: 75 },
-  { label: "2 à 5 kg", minWeightKg: 2, maxWeightKg: 5, minPrice: 80, recommendedMin: 80, recommendedMax: 120 },
-  { label: "5 à 10 kg", minWeightKg: 5, maxWeightKg: 10, minPrice: 130, recommendedMin: 130, recommendedMax: 180 },
-  { label: "10 à 15 kg", minWeightKg: 10, maxWeightKg: 15, minPrice: 180, recommendedMin: 180, recommendedMax: 250 },
-  { label: "15 à 20 kg", minWeightKg: 15, maxWeightKg: 20, minPrice: 230, recommendedMin: 230, recommendedMax: 320 },
+  { label: "2 à 5 kg", minWeightKg: 2, maxWeightKg: 5, minPrice: 90, recommendedMin: 90, recommendedMax: 140 },
+  { label: "5 à 10 kg", minWeightKg: 5, maxWeightKg: 10, minPrice: 160, recommendedMin: 160, recommendedMax: 230 },
+  { label: "10 à 15 kg", minWeightKg: 10, maxWeightKg: 15, minPrice: 240, recommendedMin: 240, recommendedMax: 330 },
+  { label: "15 à 20 kg", minWeightKg: 15, maxWeightKg: 20, minPrice: 320, recommendedMin: 320, recommendedMax: 440 },
 ];
 
 // ───────── Montants ─────────

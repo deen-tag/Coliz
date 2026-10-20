@@ -95,7 +95,7 @@ export default function TripScreen() {
         <Card>
           <View style={{ flexDirection: "row", gap: 6, marginBottom: 12 }}>
             <Badge label={mode.label} tone="traveler" icon={mode.icon as IconName} />
-            <Badge label={`${trip.remainingParcels} place${trip.remainingParcels > 1 ? "s" : ""} restante${trip.remainingParcels > 1 ? "s" : ""}`} tone={trip.remainingParcels > 0 ? "success" : "error"} />
+            <Badge label={trip.remainingWeightKg != null ? `${String(Math.round(trip.remainingWeightKg * 1000) / 1000).replace(".", ",")} kg disponibles` : `${trip.remainingParcels} place${trip.remainingParcels > 1 ? "s" : ""} restante${trip.remainingParcels > 1 ? "s" : ""}`} tone={trip.remainingParcels > 0 ? "success" : "error"} />
           </View>
           <View style={{ flexDirection: "row" }}>
             <View style={{ alignItems: "center", marginRight: 12, paddingTop: 4 }}>

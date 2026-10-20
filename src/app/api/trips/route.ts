@@ -24,7 +24,6 @@ const tripSchema = z
     capacityLengthCm: z.number().positive(),
     capacityWidthCm: z.number().positive(),
     capacityHeightCm: z.number().positive(),
-    capacityParcels: z.number().int().min(1).default(1),
     pickupPointLabel: z.string().optional(),
     dropoffPointLabel: z.string().optional(),
     contributionAmount: z.number().nonnegative(),
@@ -69,7 +68,11 @@ export async function POST(req: Request) {
     data: {
       travelerId: user.id,
       ...data,
-      remainingParcels: data.capacityParcels,
+      // Capacité en kilos : le trajet se remplit au fil des réservations (cf. server/bookings/weight.ts).
+      // Pas de limite en nombre de colis : « 1 » signifie simplement « encore de la place ».
+      capacityParcels: 1,
+      remainingParcels: 1,
+      remainingWeightKg: data.capacityWeightKg,
       status: "PUBLISHED",
     },
   });

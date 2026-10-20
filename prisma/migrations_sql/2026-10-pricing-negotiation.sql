@@ -54,3 +54,6 @@ CREATE TABLE "MaintenanceRun" (
   "ranAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "MaintenanceRun_pkey" PRIMARY KEY ("id")
 );
+
+-- Capacité d'un trajet en kilos (appliqué automatiquement par `prisma db push` au build).
+ALTER TABLE "Trip" ADD COLUMN IF NOT EXISTS "remainingWeightKg" DOUBLE PRECISION;

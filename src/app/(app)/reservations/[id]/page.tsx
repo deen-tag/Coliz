@@ -247,6 +247,12 @@ export default function ReservationPage() {
         </div>
         {booking.parcel && (
           <dl className="grid grid-cols-2 gap-4 p-4 text-sm">
+            {booking.parcel.description && (
+              <div className="col-span-2">
+                <dt className="text-ink-muted">Contenu</dt>
+                <dd className="font-semibold text-ink mt-0.5 break-words">{booking.parcel.description}</dd>
+              </div>
+            )}
             <div>
               <dt className="text-ink-muted">Poids du colis</dt>
               <dd className="font-semibold text-ink mt-0.5">{booking.parcel.weightKg} kg</dd>

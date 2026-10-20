@@ -57,3 +57,6 @@ CREATE TABLE "MaintenanceRun" (
 
 -- Capacité d'un trajet en kilos (appliqué automatiquement par `prisma db push` au build).
 ALTER TABLE "Trip" ADD COLUMN IF NOT EXISTS "remainingWeightKg" DOUBLE PRECISION;
+
+-- Description du colis (contenu) — facultative en base, obligatoire à la création côté API.
+ALTER TABLE "Parcel" ADD COLUMN IF NOT EXISTS "description" TEXT;

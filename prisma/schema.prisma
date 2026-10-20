@@ -144,6 +144,9 @@ model Parcel {
   declaredValue     Decimal      @db.Decimal(10, 2)
   photoUrl          String?
 
+  // Ce que contient le colis, en quelques mots (obligatoire à la création ; vide pour les anciens colis).
+  description       String?
+
   // Prix (tout compris, en €) que l'expéditeur propose à la publication de l'annonce — facultatif.
   // Il devient la première offre de la réservation si elle diffère du tarif du trajet.
   proposedAmount    Decimal?     @db.Decimal(10, 2)

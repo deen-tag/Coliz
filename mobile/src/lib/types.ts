@@ -139,6 +139,7 @@ export type BookingDetail = {
     weightKg: number;
     parcelCount: number;
     declaredValue: Money;
+    description?: string | null;
     photoUrl: string | null;
   };
   trip: {

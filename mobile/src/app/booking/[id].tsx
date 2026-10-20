@@ -241,6 +241,7 @@ export default function BookingScreen() {
 
       <Card>
         <H2 style={{ marginBottom: 10 }}>Colis</H2>
+        {b.parcel.description ? <Line label="Contenu" value={b.parcel.description} /> : null}
         <Line label="Poids" value={`${b.parcel.weightKg} kg`} />
         <Line label="Nombre" value={String(b.parcel.parcelCount)} />
         <Line label="Valeur déclarée" value={eur(b.parcel.declaredValue)} />

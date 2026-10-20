@@ -21,6 +21,12 @@ const parcelSchema = z.object({
   heightCm: z.number().positive(),
   parcelCount: z.number().int().min(1).default(1),
   declaredValue: z.number().nonnegative(),
+  // Contenu du colis, montré au voyageur avant qu'il accepte.
+  description: z
+    .string({ required_error: "Décrivez le contenu du colis." })
+    .trim()
+    .min(3, "Décrivez le contenu du colis en quelques mots.")
+    .max(200, "La description est limitée à 200 caractères."),
   photoUrl: z.string().url().optional(),
   // Prix tout compris que l'expéditeur propose (facultatif) : doit respecter le minimum de la grille.
   proposedAmount: z.number().positive().optional(),

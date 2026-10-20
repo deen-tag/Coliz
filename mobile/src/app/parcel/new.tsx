@@ -31,6 +31,7 @@ function Form() {
   const [h, setH] = useState("");
   const [count, setCount] = useState("1");
   const [value, setValue] = useState("");
+  const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,6 +49,7 @@ function Form() {
     if (!origin || !dest) return setError("Choisissez la ville de départ et la ville d'arrivée.");
     if (![weight, l, w, h].every((v) => num(v) > 0)) return setError("Renseignez le poids et les trois dimensions du colis.");
     if (value.trim() === "" || num(value) < 0) return setError("Indiquez la valeur déclarée (0 si aucune).");
+    if (description.trim().length < 3) return setError("Décrivez le contenu du colis en quelques mots.");
     if (!accepted) return setError("Vous devez confirmer avoir lu la liste des objets interdits.");
     setError(null);
     setLoading(true);
@@ -62,6 +64,7 @@ function Form() {
           weightKg: num(weight), lengthCm: num(l), widthCm: num(w), heightCm: num(h),
           parcelCount: Math.max(1, Math.round(num(count) || 1)),
           declaredValue: num(value),
+          description: description.trim(),
           photoUrl,
           prohibitedItemsAccepted: true,
         },
@@ -98,6 +101,8 @@ function Form() {
         <View style={{ flex: 1 }}><Input label="Nombre de colis" value={count} onChangeText={setCount} keyboardType="number-pad" /></View>
         <View style={{ flex: 1 }}><Input label="Valeur déclarée (€)" value={value} onChangeText={setValue} keyboardType="decimal-pad" /></View>
       </View>
+
+      <Input label="Que contient votre colis ?" value={description} onChangeText={setDescription} placeholder="Ex. vêtements, un téléphone…" maxLength={200} />
 
       <Text style={{ fontSize: 14, fontWeight: "600", color: colors.ink, marginBottom: 6 }}>Photo (facultatif)</Text>
       <Pressable onPress={choosePhoto} style={{ height: photo ? 180 : 96, borderRadius: radius.control, borderWidth: 1.5, borderStyle: "dashed", borderColor: colors.line, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: 16 }} accessibilityRole="button" accessibilityLabel="Ajouter une photo du colis">

@@ -63,6 +63,8 @@ function NouveauColisContent() {
     heightCm: "",
     declaredValue: "",
   });
+  // Contenu du colis (obligatoire) : le voyageur le voit avant d'accepter.
+  const [description, setDescription] = useState("");
   const [accepted, setAccepted] = useState(false);
   // Prix tout compris que l'expéditeur propose (facultatif) — doit respecter le minimum de la grille.
   const [price, setPrice] = useState("");
@@ -101,6 +103,7 @@ function NouveauColisContent() {
       widthCm: Number(form.widthCm),
       heightCm: Number(form.heightCm),
       declaredValue: Number(form.declaredValue),
+      description: description.trim(),
       ...(proposed !== null && !Number.isNaN(proposed) ? { proposedAmount: proposed } : {}),
       prohibitedItemsAccepted: accepted,
     };
@@ -187,6 +190,7 @@ function NouveauColisContent() {
           Number(form.widthCm) > 0 &&
           Number(form.heightCm) > 0 &&
           form.declaredValue !== "" &&
+          description.trim().length >= 3 &&
           !priceInvalid
         : accepted;
 
@@ -235,6 +239,7 @@ function NouveauColisContent() {
                 <Field label="H (cm)" type="number" value={form.heightCm} onChange={update("heightCm")} />
               </div>
               <IconField label="Valeur déclarée (€)" type="number" value={form.declaredValue} onChange={update("declaredValue")} icon={<EuroIcon size={18} />} />
+              <DescriptionField value={description} onChange={(v) => { setCreatedParcelId(null); setDescription(v); }} />
               <PriceGuide band={band} weightKg={weight} />
               <PriceField
                 label="Prix que vous proposez (€)"
@@ -251,6 +256,7 @@ function NouveauColisContent() {
                 <SummaryRow label="Trajet" value={`${shortCity(trip.originLabel)} → ${shortCity(trip.destinationLabel)}`} />
                 <SummaryRow label="Départ" value={formatTripMoment(trip.departureAt)} />
                 <SummaryRow label="Voyageur" value={name} />
+                <SummaryRow label="Contenu" value={description.trim()} />
                 <SummaryRow label="Poids" value={`${form.weightKg} kg`} />
                 <SummaryRow label="Dimensions" value={`${form.lengthCm}×${form.widthCm}×${form.heightCm} cm`} />
                 <SummaryRow label="Valeur déclarée" value={`${form.declaredValue} €`} />
@@ -320,6 +326,7 @@ function NouveauColisContent() {
               <Field label="H (cm)" type="number" value={form.heightCm} onChange={update("heightCm")} />
             </div>
             <IconField label="Valeur déclarée (€)" type="number" value={form.declaredValue} onChange={update("declaredValue")} icon={<EuroIcon size={18} />} />
+            <DescriptionField value={description} onChange={setDescription} />
             <PriceGuide band={band} weightKg={weight} />
             <PriceField label="Prix que vous proposez (€)" optional value={price} onChange={setPrice} band={band} />
           </div>
@@ -328,6 +335,7 @@ function NouveauColisContent() {
           <div className="space-y-5">
             <dl className="space-y-3 text-sm">
               <SummaryRow label="Trajet" value={`${shortCity(origin?.label ?? "")} → ${shortCity(destination?.label ?? "")}`} />
+              <SummaryRow label="Contenu" value={description.trim()} />
               <SummaryRow label="Poids" value={`${form.weightKg} kg`} />
               <SummaryRow label="Dimensions" value={`${form.lengthCm}×${form.widthCm}×${form.heightCm} cm`} />
               <SummaryRow label="Valeur déclarée" value={`${form.declaredValue} €`} />
@@ -355,6 +363,23 @@ function NouveauColisContent() {
         )}
       </div>
     </main>
+  );
+}
+
+function DescriptionField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="block">
+      <span className="block text-sm font-semibold text-ink mb-1.5">Que contient votre colis ?</span>
+      <textarea
+        className="w-full rounded-control border border-line px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-primary/40"
+        rows={2}
+        maxLength={200}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Ex. vêtements d'enfant, un téléphone, des médicaments sur ordonnance"
+      />
+      <span className="block text-xs text-ink-muted mt-1">Le voyageur le voit avant d&apos;accepter. {value.length}/200</span>
+    </label>
   );
 }
 
